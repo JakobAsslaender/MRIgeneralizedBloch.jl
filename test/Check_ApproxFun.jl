@@ -65,7 +65,8 @@ u0[4] = m0s
 u0[5] = 1.0
 gBloch_sol_grad = solve(DDEProblem(gBloch_Hamiltonian_Gradient!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 10.0)), alg)
 
-gBloch_sol_Approx = solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a)), alg)
+grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s()]
+gBloch_sol_Approx = solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
 
 ##
 t = 0:1e-5:TRF
@@ -101,4 +102,4 @@ plot!(dzsa, label="zs a")
 ## cf. benchmarks
 @benchmark solve(DDEProblem(gBloch_Hamiltonian_Gradient!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 10.0)), alg)
 
-@benchmark solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a)), alg)
+@benchmark solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)

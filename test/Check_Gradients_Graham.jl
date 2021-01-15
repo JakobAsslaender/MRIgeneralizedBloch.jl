@@ -8,6 +8,7 @@ plotlyjs(ticks=:native)
 theme(:lime);
 
 include("../src/MT_Hamiltonians.jl")
+using Main.MT_Hamiltonians
 
 ## set parameters
 ω1 = π / 500e-6
@@ -37,10 +38,12 @@ u0[1] = 0.5 * (1-m0s)
 u0[3] = 0.5 * (1-m0s)
 u0[4] = m0s
 u0[5] = 1.0
-gBloch_sol_grad = solve(ODEProblem(Graham_Hamiltonian_Gradient!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, R1, R2f, T2s, Rx)), Tsit5())
+grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s()]
+
+gBloch_sol_grad = solve(ODEProblem(Graham_Hamiltonian_Gradient!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5())
 
 u1 = gBloch_sol_grad[end]
-FP_sol_grad = solve(ODEProblem(FreePrecession_Hamiltonian_Gradient!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx)), Tsit5())
+FP_sol_grad = solve(ODEProblem(FreePrecession_Hamiltonian_Gradient!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
 
 ## FD derivative wrt. m0s
 dm0s = 1e-9

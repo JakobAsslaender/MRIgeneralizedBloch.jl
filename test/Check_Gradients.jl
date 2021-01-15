@@ -8,6 +8,7 @@ plotlyjs(ticks=:native)
 theme(:lime);
 
 include("../src/MT_Hamiltonians.jl")
+using Main.MT_Hamiltonians
 
 ## set parameters
 ω1 = π / 500e-6
@@ -42,15 +43,17 @@ FP_sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, m0s,
 plot(FP_sol)
 
 ## Analytical gradients (using ApproxFun)
-u0 = zeros(30,1)
+grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_ω1()]
+u0 = zeros(5 * (length(grad_list)+1),1)
 u0[1] = 0.5 * (1-m0s)
 u0[3] = 0.5 * (1-m0s)
 u0[4] = m0s
 u0[5] = 1.0
-gBloch_sol_grad = solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a)), alg)
+
+gBloch_sol_grad = solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
 
 u1 = gBloch_sol_grad[end]
-FP_sol_grad = solve(ODEProblem(FreePrecession_Hamiltonian_Gradient!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx)), Tsit5())
+FP_sol_grad = solve(ODEProblem(FreePrecession_Hamiltonian_Gradient!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
 
 ## FD derivative wrt. m0s
 dm0s = 1e-9
@@ -225,7 +228,7 @@ plot!(t, dzs, label="zs")
 plot!(t, dzs_fd, label="zs_fd")
 
 ## test derivative wrt. T2s
-dT2s = 1e-12
+dT2s = 1e-15
 
 gBloch_sol_dT2s = solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, (T2s + dT2s), Rx, N)), alg)
 u1 = gBloch_sol_dT2s[end]
@@ -252,6 +255,88 @@ for i = 1: length(t)
         dyf[i] = FP_sol_grad(t[i])[27]
         dzf[i] = FP_sol_grad(t[i])[28]
         dzs[i] = FP_sol_grad(t[i])[29]
+    end
+end
+
+plot(t, dxf, ticks=:native, label="xf", legend=:bottomleft)
+plot!(t, dxf_fd, label="xf_fd")
+plot!(t, dyf, ticks=:native, label="yf")
+plot!(t, dyf_fd, label="yf_fd")
+plot!(t, dzf, ticks=:native, label="zf")
+plot!(t, dzf_fd, label="zf_fd")
+plot!(t, dzs, label="zs")
+plot!(t, dzs_fd, label="zs_fd")
+
+
+## test derivative wrt. ω0
+dω0 = 1e-9
+
+gBloch_sol_dω0 = solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, (ω0 + dω0), m0s, R1, R2f, T2s, Rx, N)), alg)
+u1 = gBloch_sol_dω0[end]
+FP_sol_dω0 = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), ((ω0 + dω0), m0s, R1, R2f, Rx)), Tsit5())
+
+for i = 1: length(t)
+    if t[i] <= TRF
+        dxf_fd[i] = (gBloch_sol_dω0(t[i])[1] - gBloch_sol(t[i])[1]) /dω0
+        dyf_fd[i] = (gBloch_sol_dω0(t[i])[2] - gBloch_sol(t[i])[2]) /dω0
+        dzf_fd[i] = (gBloch_sol_dω0(t[i])[3] - gBloch_sol(t[i])[3]) /dω0
+        dzs_fd[i] = (gBloch_sol_dω0(t[i])[4] - gBloch_sol(t[i])[4]) /dω0
+
+        dxf[i] = gBloch_sol_grad(t[i])[31]
+        dyf[i] = gBloch_sol_grad(t[i])[32]
+        dzf[i] = gBloch_sol_grad(t[i])[33]
+        dzs[i] = gBloch_sol_grad(t[i])[34]
+    else
+        dxf_fd[i] = (FP_sol_dω0(t[i])[1] - FP_sol(t[i])[1]) /dω0
+        dyf_fd[i] = (FP_sol_dω0(t[i])[2] - FP_sol(t[i])[2]) /dω0
+        dzf_fd[i] = (FP_sol_dω0(t[i])[3] - FP_sol(t[i])[3]) /dω0
+        dzs_fd[i] = (FP_sol_dω0(t[i])[4] - FP_sol(t[i])[4]) /dω0
+
+        dxf[i] = FP_sol_grad(t[i])[31]
+        dyf[i] = FP_sol_grad(t[i])[32]
+        dzf[i] = FP_sol_grad(t[i])[33]
+        dzs[i] = FP_sol_grad(t[i])[34]
+    end
+end
+
+plot(t, dxf, ticks=:native, label="xf", legend=:bottomleft)
+plot!(t, dxf_fd, label="xf_fd")
+plot!(t, dyf, ticks=:native, label="yf")
+plot!(t, dyf_fd, label="yf_fd")
+plot!(t, dzf, ticks=:native, label="zf")
+plot!(t, dzf_fd, label="zf_fd")
+plot!(t, dzs, label="zs")
+plot!(t, dzs_fd, label="zs_fd")
+
+
+## test derivative wrt. ω1
+dω1 = 1e-9
+
+gBloch_sol_dω1 = solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF), ((ω1+dω1), ω0, m0s, R1, R2f, T2s, Rx, N)), alg)
+u1 = gBloch_sol_dω1[end]
+FP_sol_dω1 = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx)), Tsit5())
+
+for i = 1: length(t)
+    if t[i] <= TRF
+        dxf_fd[i] = (gBloch_sol_dω1(t[i])[1] - gBloch_sol(t[i])[1]) /dω1
+        dyf_fd[i] = (gBloch_sol_dω1(t[i])[2] - gBloch_sol(t[i])[2]) /dω1
+        dzf_fd[i] = (gBloch_sol_dω1(t[i])[3] - gBloch_sol(t[i])[3]) /dω1
+        dzs_fd[i] = (gBloch_sol_dω1(t[i])[4] - gBloch_sol(t[i])[4]) /dω1
+
+        dxf[i] = gBloch_sol_grad(t[i])[36]
+        dyf[i] = gBloch_sol_grad(t[i])[37]
+        dzf[i] = gBloch_sol_grad(t[i])[38]
+        dzs[i] = gBloch_sol_grad(t[i])[39]
+    else
+        dxf_fd[i] = (FP_sol_dω1(t[i])[1] - FP_sol(t[i])[1]) /dω1
+        dyf_fd[i] = (FP_sol_dω1(t[i])[2] - FP_sol(t[i])[2]) /dω1
+        dzf_fd[i] = (FP_sol_dω1(t[i])[3] - FP_sol(t[i])[3]) /dω1
+        dzs_fd[i] = (FP_sol_dω1(t[i])[4] - FP_sol(t[i])[4]) /dω1
+
+        dxf[i] = FP_sol_grad(t[i])[36]
+        dyf[i] = FP_sol_grad(t[i])[37]
+        dzf[i] = FP_sol_grad(t[i])[38]
+        dzs[i] = FP_sol_grad(t[i])[39]
     end
 end
 

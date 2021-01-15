@@ -41,11 +41,17 @@ ga = g(x)
 dg_oT2 = (τ) -> quadgk(ct -> exp(- τ^2 * (3.0 * ct^2 - 1)^2 / 8.0) * (τ^2 * (3.0 * ct^2 - 1)^2 / 4.0), 0.0, 1.0)[1]
 dg_oT2_a = dg_oT2(x)
 
+grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s()]
+
 u0 = zeros(5 * (length(grad_list)+1))
 u0[1] = 0.5 * (1 - m0s)
 u0[3] = 0.5 * (1 - m0s)
 u0[4] = m0s
 u0[5] = 1.0
 
-@benchmark solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, tspan, (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a)), alg, save_everystep=false)
+@benchmark solve(DDEProblem(gBloch_Hamiltonian_Gradient_ApproxFun!, u0, h, tspan, (ω1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg, save_everystep=false)
 
+
+
+##
+@benchmark solve(ODEProblem(FreePrecession_Hamiltonian_Gradient!, u0, tspan, (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false)
