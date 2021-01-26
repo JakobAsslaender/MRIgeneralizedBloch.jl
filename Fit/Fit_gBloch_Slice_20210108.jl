@@ -63,9 +63,8 @@ if todo == "save_x"
 
 ##
     B1 = matread(string(x_path, "B1_Maps_registered.mat"))["B1_AFI"]
-    B1 = B1[:,:,iz]
+    B1 = B1[end:-1:1,end:-1:1,iz]
     B1 = B1[mask]
-
 
 ##
     matwrite(string(save_path, x_filename, "_iz", iz, "_fit.mat"), Dict(
@@ -154,4 +153,5 @@ elseif todo == "fit"
     end
 end
 
+##
 exit()

@@ -31,7 +31,8 @@ struct grad_ω0 end
 struct grad_B1 end
 
 function add_partial_derivative!(du, u, h, p, t, grad_type::grad_m0s)
-    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
+    # ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
+    _, _, _, _, R1, _, _, Rx, _, _ = p
 
     du[3] -= Rx * u[3] + Rx * u[4] + R1
     du[4] += Rx * u[3] + Rx * u[4] + R1
@@ -75,11 +76,19 @@ end
 
 # version for Graham's model
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
-    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF = p
+    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, _ = p
     
     df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0)[1]
         
     du[4] -= df_PSD(TRF / T2s) * B1^2 * ωy^2 * u[4]
+    return nothing
+end
+
+# version for linearized gBloch
+function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_T2s)
+    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, Rrf_d, _ = p
+    
+    du[4] -= Rrf_d[2] * u[4]
     return nothing
 end
 
@@ -106,13 +115,23 @@ end
 
 # version for Graham
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
-    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF = p
+    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, _ = p
 
     f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0)[1]
 
-    du[1] += ω1 * u[3]
-    du[3] -= ω1 * u[1]
+    du[1] += ωy * u[3]
+    du[3] -= ωy * u[1]
     du[4] -= f_PSD(TRF / T2s) * 2 * B1 * ωy^2 * T2s / π * u[4]
+    return nothing
+end
+
+# version for linearized gBloch
+function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_B1)
+    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, Rrf_d, _ = p
+
+    du[1] += ωy * u[3]
+    du[3] -= ωy * u[1]
+    du[4] -= Rrf_d[3] * u[4]
     return nothing
 end
 
@@ -274,7 +293,8 @@ function Linear_Hamiltonian!(du, u, p::NTuple{8,Any}, t)
 end
 
 function Linear_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
-    ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf, grad_list = p
+    ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf_d, grad_list = p
+    Rrf = Rrf_d[1]
     
      # Apply Hamiltonian to M
     u_v1 = @view u[1:5]
@@ -287,7 +307,7 @@ function Linear_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
         u_v  = @view u[5 * i + 1:5 * (i + 1)]
         Linear_Hamiltonian!(du_v, u_v, (ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf), t)
  
-        add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
+        add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, 0.0, Rx, Rrf_d, []), t, grad_list[i])
     end
 end
 
