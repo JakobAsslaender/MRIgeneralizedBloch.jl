@@ -88,7 +88,7 @@ end
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_T2s)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, Rrf_d, _ = p
     
-    du[4] -= Rrf_d[2] * u[4]
+    du[4] -= Rrf_d[3] * u[4]
     return nothing
 end
 
@@ -99,7 +99,7 @@ function add_partial_derivative!(du, u, h, p, t, grad_type::grad_ω0)
 end
 
 # version for gBloch (using ApproxFun)
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_B1)
+function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Any}, t, grad_type::grad_B1)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
     
     du[1] += ωy * u[3]
@@ -131,7 +131,7 @@ function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,
 
     du[1] += ωy * u[3]
     du[3] -= ωy * u[1]
-    du[4] -= Rrf_d[3] * u[4]
+    du[4] -= Rrf_d[2] * u[4]
     return nothing
 end
 
@@ -249,7 +249,7 @@ function gBloch_Hamiltonian_ApproxFun!(du, u, h, p::NTuple{11,Any}, t)
     for i = 1:length(grad_list)
         du_v = @view du[5 * i + 1:5 * (i + 1)]
         u_v  = @view u[5 * i + 1:5 * (i + 1)]
-        gBloch_Hamiltonian_ApproxFun!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (5 * i + 4), g), t)
+        gBloch_Hamiltonian_ApproxFun!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
 
         add_partial_derivative!(du_v, u_v1, x -> h(p, x; idxs=4), (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2), t, grad_list[i])
     end

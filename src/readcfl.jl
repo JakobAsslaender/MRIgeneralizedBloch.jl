@@ -2,17 +2,34 @@ module Readcfl
 
 export readcfl
 
-# READCFL Read complex data from file.
-#    READCFL(filenameBase) read in reconstruction data stored in filenameBase.cfl 
-#    (complex float) based on dimensions stored in filenameBase.hdr.
-#    Parameters:
-#        filenameBase:   path and filename of cfl file (without extension)
-#    Written to edit data with the Berkeley Advanced Reconstruction Toolbox (BART).
-function readcfl(filenameBase)
-    dims = readReconHeader(filenameBase);
+"""
+    readcfl(filename(no extension)) -> Array{ComplexF32,N} where N is defined the filename.hdr file
+    readcfl(filename.cfl) -> Array{ComplexF32,N} where N is defined the filename.hdr file
+    readcfl(filename.hdr) -> Array{ComplexF32,N} where N is defined the filename.hdr file
+
+Reads complex data from files created by the Berkeley Advanced Reconstruction Toolbox (BART).
+The output is an Array of ComplexF32 with the dimensions stored in a .hdr file.
+
+Parameters:
+    filenameBase:   path and filename of the cfl and hdr files, which can either be without extension, end on .cfl, or end on .hdr
+
+Copyright: Jakob Asslaender, NYU School of Medicine, 2021 (jakob.aslaender@nyumc.org)
+"""
+function readcfl(filename)
+
+    if filename[end-3:end] == ".cfl"
+        filenameBase = filename[1:end-4]
+    elseif filename[end-3:end] == ".hdr"
+        filenameBase = filename[1:end-4]
+        filename = string(filenameBase, ".cfl");
+    else
+        filenameBase = filename
+        filename = string(filenameBase, ".cfl");
+    end
+
+    dims = readreconheader(filenameBase);
     data = Array{ComplexF32}(undef, Tuple(dims))
 
-    filename = string(filenameBase, ".cfl");
     fid = open(filename);
 
     for i in eachindex(data)
@@ -23,7 +40,7 @@ function readcfl(filenameBase)
     return data
 end
 
-function readReconHeader(filenameBase)
+function readreconheader(filenameBase)
     filename = string(filenameBase, ".hdr");
     fid = open(filename);
     
