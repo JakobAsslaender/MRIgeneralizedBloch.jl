@@ -1,35 +1,4 @@
-## Define functions
-module MT_Hamiltonians
-import Cubature
-using QuadGK
-using SpecialFunctions
-using ApproxFun
-
-export gBloch_Hamiltonian!
-export gBloch_Hamiltonian_Gradient!
-export gBloch_Hamiltonian_ApproxFun!
-export gBloch_Hamiltonian_Gradient_ApproxFun!
-export FreePrecession_Hamiltonian!
-export Linear_Hamiltonian!
-export Graham_Hamiltonian!
-export Sled_Hamiltonian!
-export grad_m0s
-export grad_R1
-export grad_R2f
-export grad_Rx
-export grad_T2s
-export grad_ω0
-export grad_B1
-
-
-struct grad_m0s end
-struct grad_R1 end
-struct grad_R2f end
-struct grad_Rx end
-struct grad_T2s end
-struct grad_ω0 end
-struct grad_B1 end
-
+##
 function add_partial_derivative!(du, u, h, p, t, grad_type::grad_m0s)
     # ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
     _, _, _, _, R1, _, _, Rx, _, _ = p
@@ -345,6 +314,4 @@ function Graham_Hamiltonian!(du, u, p::NTuple{10,Any}, t)
  
         add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
     end
-end
- 
 end

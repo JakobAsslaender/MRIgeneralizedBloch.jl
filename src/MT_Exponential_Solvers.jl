@@ -1,9 +1,4 @@
 ##
-using StaticArrays
-using LinearAlgebra
-using BenchmarkTools
-
-##
 function Linear_Hamiltonian_Matrix(ωy, B1, ωz, T, m0s, R1, R2f, Rx, Rrf, _, _, grad_type::Array)
     u = @SMatrix [
         -R2f * T  -ωz * T           B1 * ωy * T                      0.0            0.0;
@@ -103,7 +98,6 @@ function Linear_Hamiltonian_Matrix(ωy, B1, ωz, T, m0s, R1, R2f, Rx, Rrf, _, dR
                  0.0      0.0                  0.0                       -dRrfdB1 * T          0.0      0.0         Rx * m0s * T (-R1 - Rrf - Rx * (1.0 - m0s)) * T                  0.0;
                  0.0      0.0                  0.0                                0.0          0.0      0.0                  0.0                                0.0                  0.0]
 end
-
 
 function Inversion_Pulse_Propagator(ωy, T, B1, Rrf, _, _, grad_type::Array)
     u = zeros(Float64, 5, 5)

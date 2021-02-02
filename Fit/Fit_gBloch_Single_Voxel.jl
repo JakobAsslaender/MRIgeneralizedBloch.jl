@@ -2,6 +2,9 @@ using LinearAlgebra
 using BenchmarkTools
 using MAT
 using LsqFit
+using ApproxFun
+using QuadGK
+using SpecialFunctions
 using Revise
 using Plots
 plotlyjs(ticks=:native)
@@ -9,10 +12,11 @@ theme(:lime);
 
 include("../src/readcfl.jl")
 using Main.Readcfl
-include("../src/MT_Diff_Equation_Sovlers.jl")
-using Main.MT_Diff_Equation_Sovlers
-Revise.track("src/MT_Diff_Equation_Sovlers.jl")
-# Revise.track("../src/MT_Hamiltonians.jl")
+include("../src/MT_generalizedBloch.jl")
+using Main.MT_generalizedBloch
+# Revise.track("src/MT_Diff_Equation_Sovlers.jl")
+# Revise.track("src/MT_Hamiltonians.jl")
+includet("../src/MT_Diff_Equation_Sovlers.jl")
 
 ## read new v3.2 data
 x = readcfl(expanduser("~/mygs/20210108_InVivo_MT_0p3sweeping/x_mid1555_reg7e-06_R_13_svd_basis_v3.2_sweep_0_std_B0_pio2_symmetric_B1_0.9pm0.2"))
@@ -50,21 +54,21 @@ p0   = [-1.0,  0.1, 0.1,    1,  15,  15,  0.0, 1.0];
 pmin = [-1e3, -1e3,   0,  0.1, 1.0,   5, -1e4, 0.5];
 pmax = [ 1e3,  1e3, 0.5,  100, 100,  40,  1e4, 1.5];
 
-# ω0 = B0[ix,iy]
 B1vx = B1[ix,iy,iz]
 ω0 = 0.0
 T2s = 10e-6
 Rx = 15
 
-Rrf_T = PreCompute_Saturation(minimum(TRF), maximum(TRF), T2s, T2s, minimum(ω1), maximum(ω1), pmin[end], pmax[end])
-# Rrf_T = PreCompute_Saturation(minimum(TRF), maximum(TRF), T2s, T2s, minimum(ω1), maximum(ω1), pmin[end], pmax[end])
+Rrf_T = PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minimum(ω1), maximum(ω1), pmin[end], pmax[end])
+# Rrf_T = PreCompute_Saturation_Graham(minimum(TRF), maximum(TRF), T2s, T2s)
+
 
 ##
 function model(t, p) 
-    # println("paramters = ", p)
+    println("paramters = ", p)
     M0 = p[1] + 1im * p[2] 
-    # m = M0 .* LinearApprox_calculate_signal(ω1, TRF, TR, ω0, B1vx, p[3], p[4], p[5], p[6], T2s, 2, Rrf_T)
-    m = M0 .* MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, Rrf_T)
+    m = M0 .* Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, 2)
+    # m = M0 .* MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, Rrf_T)
     m = u' * m;
     m = [real(m); imag(m)]
     return m
@@ -72,11 +76,12 @@ end
 
 function jacobian_model(t, p)
     M0 = p[1] + 1im * p[2] 
-    # @time J = transpose(LinearApprox_calculate_signal(ω1, TRF, TR, ω0, B1vx, p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_T))
+    J = transpose(Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2))
     J = transpose(MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T))
     J[:,2:end] .*= M0
     J = u' * J;
 
+    # convert complex to concatenated real-valued Jacobian
     Jv = zeros(2 * size(J, 1), length(p))
     Jv[:,1] = [real(J[:,1]); imag(J[:,1])];
     Jv[:,2] = [-imag(J[:,1]); real(J[:,1])];
@@ -84,7 +89,7 @@ function jacobian_model(t, p)
     return Jv
 end
 
-@benchmark fit = curve_fit(model, jacobian_model, 1:length(yfit), yfit, p0, lower=pmin, upper=pmax, show_trace=false)
+fit = curve_fit(model, 1:length(yfit), yfit, p0, lower=pmin, upper=pmax, show_trace=true)
 param = fit.param
 println("m0s = ", param[3])
 println("T1  = ", 1 / param[4], "s")
@@ -93,3 +98,15 @@ println("Rx  = ", param[6], "/s")
 # println("T2s = ", param[7]*1e6, "μs")
 println("ω0  = ", param[7], "rad/s")
 println("B1/B1nom  = ", param[8])
+
+##
+p = [-1.0,  0.1, 0.1,    1,  15,  15, 300.0, 0.9];
+JG = Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2)
+JM = MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T)
+
+##
+i = 1;
+plot(real(JG[i,:]))
+plot!(imag(JG[i,:]))
+plot!(real(JM[i,:]))
+plot!(imag(JM[i,:]))
