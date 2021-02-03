@@ -7,8 +7,8 @@ using Plots
 plotlyjs(ticks=:native)
 theme(:lime);
 
-include("../src/MT_Hamiltonians.jl")
-using Main.MT_Hamiltonians
+using MT_generalizedBloch
+
 
 ## set parameters
 ω1 = π / 500e-6

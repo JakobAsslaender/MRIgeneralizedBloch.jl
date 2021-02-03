@@ -12,11 +12,7 @@ theme(:lime);
 
 include("../src/readcfl.jl")
 using Main.Readcfl
-include("../src/MT_generalizedBloch.jl")
-using Main.MT_generalizedBloch
-# Revise.track("src/MT_Diff_Equation_Sovlers.jl")
-# Revise.track("src/MT_Hamiltonians.jl")
-includet("../src/MT_Diff_Equation_Sovlers.jl")
+using MT_generalizedBloch
 
 ## read new v3.2 data
 x = readcfl(expanduser("~/mygs/20210108_InVivo_MT_0p3sweeping/x_mid1555_reg7e-06_R_13_svd_basis_v3.2_sweep_0_std_B0_pio2_symmetric_B1_0.9pm0.2"))
@@ -77,7 +73,7 @@ end
 function jacobian_model(t, p)
     M0 = p[1] + 1im * p[2] 
     J = transpose(Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2))
-    J = transpose(MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T))
+    # J = transpose(MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T))
     J[:,2:end] .*= M0
     J = u' * J;
 
@@ -100,13 +96,16 @@ println("ω0  = ", param[7], "rad/s")
 println("B1/B1nom  = ", param[8])
 
 ##
-p = [-1.0,  0.1, 0.1,    1,  15,  15, 300.0, 0.9];
+p = [-1.0,  0.1, 0.1,    1,  15,  15, 600.0, 0.9];
 JG = Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2)
+JL = LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_T)
 JM = MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T)
 
 ##
 i = 1;
 plot(real(JG[i,:]))
 plot!(imag(JG[i,:]))
+plot!(real(JL[i,:]))
+plot!(imag(JL[i,:]))
 plot!(real(JM[i,:]))
 plot!(imag(JM[i,:]))

@@ -138,6 +138,7 @@ function gBloch_Hamiltonian!(du, u, h, p::NTuple{9,Any}, t)
     gBloch_Hamiltonian!(du, u, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, N), t)
 end
 
+# TODO: Implement with modular gradients and convert to gBloch_Hamiltonian! using multiple dispatch
 function gBloch_Hamiltonian_Gradient!(du, u, h, p, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, N = p
 

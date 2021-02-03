@@ -146,7 +146,7 @@ function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
         # free precession
         T_FP = TR - TRF[2] / 2
         TE = TR / 2
-        sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), alg, save_everystep=false, saveat=TE)
+        sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Vern6(), save_everystep=false, saveat=TE)
         s[:,1] = sol[2]
         s[1:5:end,1] .*= (-1)^(1 + ic)
         s[2:5:end,1] .*= (-1)^(1 + ic)
@@ -164,6 +164,7 @@ function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
             end
             s[:,ip] = sol[2]
             s[1:5:end,ip] .*= (-1)^(ip + ic)
+            s[2:5:end,ip] .*= (-1)^(ip + ic)
             u0 = sol[end]
         end
     end

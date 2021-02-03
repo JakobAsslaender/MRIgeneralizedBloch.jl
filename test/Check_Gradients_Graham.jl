@@ -7,12 +7,12 @@ using Plots
 plotlyjs(ticks=:native)
 theme(:lime);
 
-include("../src/MT_Hamiltonians.jl")
-using Main.MT_Hamiltonians
+using MT_generalizedBloch
 
 ## set parameters
 ω1 = π / 500e-6
 ω0 = 200.0
+B1 = 0.9
 m0s = 0.15
 R1 = 1.0
 R2f = 1 / 65e-3
@@ -24,7 +24,7 @@ TE = 3.5e-3 / 2 - TRF
 
 ## baseline ODE solution
 u0 = [0.5 * (1-m0s), 0.0, 0.5 * (1-m0s), m0s, 1.0]
-gBloch_sol = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, R1, R2f, T2s, Rx)), Tsit5())
+gBloch_sol = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx)), Tsit5())
 plot(gBloch_sol)
 
 ## free precession
@@ -40,16 +40,16 @@ u0[4] = m0s
 u0[5] = 1.0
 grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s()]
 
-gBloch_sol_grad = solve(ODEProblem(Graham_Hamiltonian_Gradient!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5())
+gBloch_sol_grad = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5())
 
 u1 = gBloch_sol_grad[end]
-FP_sol_grad = solve(ODEProblem(FreePrecession_Hamiltonian_Gradient!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
+FP_sol_grad = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
 
 ## FD derivative wrt. m0s
 dm0s = 1e-9
 
 u0 = u0[1:5]
-gBloch_sol_dm0s = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, ω0, TRF, (m0s + dm0s), R1, R2f, T2s, Rx)), Tsit5())
+gBloch_sol_dm0s = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, B1, ω0, TRF, (m0s + dm0s), R1, R2f, T2s, Rx)), Tsit5())
 u1 = gBloch_sol_dm0s[end]
 FP_sol_dm0s = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, (m0s + dm0s), R1, R2f, Rx)), Tsit5())
 
@@ -100,7 +100,7 @@ plot!(t, dzs_fd, label="zs_fd")
 ## test derivative wrt. R1 
 dR1 = 1e-9
 
-gBloch_sol_dR1 = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, (R1+ dR1), R2f, T2s, Rx)), Tsit5())
+gBloch_sol_dR1 = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, B1, ω0, TRF, m0s, (R1+ dR1), R2f, T2s, Rx)), Tsit5())
 u1 = gBloch_sol_dR1[end]
 FP_sol_dR1 = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, m0s, (R1+ dR1), R2f, Rx)), Tsit5())
 
@@ -140,7 +140,7 @@ plot!(t, dzs_fd, label="zs_fd")
 ## test derivative wrt. R2f
 dR2f = 1e-9
 
-gBloch_sol_dR2f = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, R1, (R2f+dR2f), T2s, Rx)), Tsit5())
+gBloch_sol_dR2f = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1, (R2f+dR2f), T2s, Rx)), Tsit5())
 u1 = gBloch_sol_dR2f[end]
 FP_sol_dR2f = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, m0s, R1, (R2f+dR2f), Rx)), Tsit5())
 
@@ -180,7 +180,7 @@ plot!(t, dzs_fd, label="zs_fd")
 ## test derivative wrt. Rx
 dRx = 1e-9
 
-gBloch_sol_dRx = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, R1, R2f, T2s, (Rx + dRx))), Tsit5())
+gBloch_sol_dRx = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, (Rx + dRx))), Tsit5())
 u1 = gBloch_sol_dRx[end]
 FP_sol_dRx = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, m0s, R1, R2f, (Rx+dRx))), Tsit5())
 
@@ -220,7 +220,7 @@ plot!(t, dzs_fd, label="zs_fd")
 ## test derivative wrt. T2s
 dT2s = 1e-12
 
-gBloch_sol_dT2s = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, ω0, TRF, m0s, R1, R2f, (T2s + dT2s), Rx)), Tsit5())
+gBloch_sol_dT2s = solve(ODEProblem(Graham_Hamiltonian!, u0, (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, (T2s + dT2s), Rx)), Tsit5())
 u1 = gBloch_sol_dT2s[end]
 FP_sol_dT2s = solve(ODEProblem(FreePrecession_Hamiltonian!, u1, (TRF, TE), (ω0, m0s, R1, R2f, Rx)), Tsit5())
 

@@ -1,0 +1,22 @@
+name = "MT_generalizedBloch"
+uuid = "9689932d-8765-44d0-985b-2d9644d92569"
+authors = ["Jakob Asslaender <jakob.asslaender@nyumc.org> and contributors"]
+version = "0.1.0"
+
+[deps]
+ApproxFun = "28f2ccd6-bb30-5033-b560-165f7b14dc2f"
+Cubature = "667455a9-e2ce-5579-9412-b964f529a492"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+[compat]
+julia = "1.5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
