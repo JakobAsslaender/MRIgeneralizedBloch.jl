@@ -27,6 +27,7 @@ export gBloch_Hamiltonian_ApproxFun!
 export gBloch_Hamiltonian_Gradient_ApproxFun!
 export FreePrecession_Hamiltonian!
 export Linear_Hamiltonian!
+export Linear_Hamiltonian_InversionPulse!
 export Graham_Hamiltonian!
 export Sled_Hamiltonian!
 

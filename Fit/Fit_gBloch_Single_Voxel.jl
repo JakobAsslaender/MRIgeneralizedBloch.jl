@@ -45,10 +45,10 @@ B1 = matread(expanduser("~/mygs/20210108_InVivo_MT_0p3sweeping/B1_Maps_registere
 
 ## fit m0s    R1  R2f   Rx    T2s
 grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_ω0(), grad_B1()]
-#      re(M0) i(M0) m0s    R1  R2f   Rx    T2s
-p0   = [-1.0,  0.1, 0.1,    1,  15,  15,  0.0, 1.0];
-pmin = [-1e3, -1e3,   0,  0.1, 1.0,   5, -1e4, 0.5];
-pmax = [ 1e3,  1e3, 0.5,  100, 100,  40,  1e4, 1.5];
+#      re(M0) i(M0) m0s     R1  R2f   Rx    w0    B1
+p0   = [-0.5,  0.1, 0.15,  1.0,  15,  20,  0.0, 1.0];
+pmin = [-1e3, -1e3,    0,  0.1, 1.0,   5, -1e4, 0.5];
+pmax = [ 1e3,  1e3,  0.5,  100, 100,  40,  1e4, 1.5];
 
 B1vx = B1[ix,iy,iz]
 ω0 = 0.0
@@ -61,10 +61,11 @@ Rrf_T = PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minim
 
 ##
 function model(t, p) 
-    println("paramters = ", p)
+    # println("paramters = ", p)
     M0 = p[1] + 1im * p[2] 
-    m = M0 .* Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, 2)
-    # m = M0 .* MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, Rrf_T)
+    # m = M0 .* Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, 2)
+    # m = M0 .* LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, 2, Rrf_T)
+    m = M0 .* MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, Rrf_T)
     m = u' * m;
     m = [real(m); imag(m)]
     return m
@@ -72,8 +73,10 @@ end
 
 function jacobian_model(t, p)
     M0 = p[1] + 1im * p[2] 
-    J = transpose(Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2))
-    # J = transpose(MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T))
+    # J = transpose(Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2))
+    # J = transpose(LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_T))
+    J = transpose(MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T))
+
     J[:,2:end] .*= M0
     J = u' * J;
 
@@ -85,7 +88,7 @@ function jacobian_model(t, p)
     return Jv
 end
 
-fit = curve_fit(model, 1:length(yfit), yfit, p0, lower=pmin, upper=pmax, show_trace=true)
+fit = curve_fit(model, jacobian_model, 1:length(yfit), yfit, p0, lower=pmin, upper=pmax, show_trace=false, maxIter=100)
 param = fit.param
 println("m0s = ", param[3])
 println("T1  = ", 1 / param[4], "s")
@@ -96,16 +99,32 @@ println("ω0  = ", param[7], "rad/s")
 println("B1/B1nom  = ", param[8])
 
 ##
-p = [-1.0,  0.1, 0.1,    1,  15,  15, 600.0, 0.9];
-JG = Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2)
-JL = LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_T)
-JM = MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_T)
+Rrf_gB = PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minimum(ω1), maximum(ω1), pmin[end], pmax[end])
+Rrf_Gr = PreCompute_Saturation_Graham(minimum(TRF), maximum(TRF), T2s, T2s)
+
+p = [-1.0,  0.1, 0.1,    1,  15,  15, 300.0, 0.9];
+# p = [-1.0,  0.1, 0.1,    1,  15,  15, 0.0, 1.0];
 
 ##
-i = 1;
+JG = Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2)
+JL = LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_Gr)
+JM = MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_Gr)
+
+##
+JG = gBloch_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2)
+JL = LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_gB)
+JM = MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_gB)
+
+##
+i = 1
 plot(real(JG[i,:]))
 plot!(imag(JG[i,:]))
 plot!(real(JL[i,:]))
 plot!(imag(JL[i,:]))
 plot!(real(JM[i,:]))
 plot!(imag(JM[i,:]))
+
+##
+matwrite(expanduser("~/mygs/asslaj01/tmp.mat"), Dict(
+            "JG" => JG,
+        ));

@@ -90,7 +90,7 @@ function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,
 
     du[1] += ωy * u[3]
     du[3] -= ωy * u[1]
-    du[4] -= f_PSD(TRF / T2s) * 2 * B1 * ωy^2 * T2s / π * u[4]
+    du[4] -= f_PSD(TRF / T2s) * 2 * B1 * ωy^2 * T2s * u[4]
     return nothing
 end
 
@@ -225,6 +225,26 @@ function gBloch_Hamiltonian_ApproxFun!(du, u, h, p::NTuple{11,Any}, t)
     end
 end
 
+function gBloch_Hamiltonian_ApproxFun_InversionPulse!(du, u, h, p::NTuple{11,Any}, t)
+    ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2, grad_list = p
+    
+    # Apply Hamiltonian to M
+    u_v1 = @view u[1:5]
+    du_v1 = @view du[1:5]
+    gBloch_Hamiltonian_ApproxFun!(du_v1, u_v1, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, g), t)
+
+    # Apply Hamiltonian to all derivatives and add partial derivatives
+    for i = 1:length(grad_list)
+        du_v = @view du[5 * i + 1:5 * (i + 1)]
+        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        gBloch_Hamiltonian_ApproxFun!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
+
+        if isa(grad_list[i], grad_T2s) || isa(grad_list[i], grad_B1)
+            add_partial_derivative!(du_v, u_v1, x -> h(p, x; idxs=4), (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2), t, grad_list[i])
+        end
+    end
+end
+
 function FreePrecession_Hamiltonian!(du, u, p::NTuple{5,Any}, t)
     ωz, m0s, R1, R2f, Rx = p
 
@@ -281,6 +301,27 @@ function Linear_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
     end
 end
 
+function Linear_Hamiltonian_InversionPulse!(du, u, p::NTuple{9,Any}, t)
+    ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf_d, grad_list = p
+    Rrf = Rrf_d[1]
+    
+     # Apply Hamiltonian to M
+    u_v1 = @view u[1:5]
+    du_v1 = @view du[1:5]
+    Linear_Hamiltonian!(du_v1, u_v1, (ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf), t)
+ 
+     # Apply Hamiltonian to M and all its derivatives
+    for i = 1:length(grad_list)
+        du_v = @view du[5 * i + 1:5 * (i + 1)]
+        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        Linear_Hamiltonian!(du_v, u_v, (ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf), t)
+ 
+        if isa(grad_list[i], grad_T2s) || isa(grad_list[i], grad_B1)
+            add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, 0.0, Rx, Rrf_d, []), t, grad_list[i])
+        end
+    end
+end
+
 function Graham_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
     ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx = p
 
@@ -293,7 +334,7 @@ end
 function Sled_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
     ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx = p
 
-    f_Sinc = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3*ct^2) * erf(τ/4/sqrt(2) * abs(1 - 3*ct^2)), 0.0, 1.0)[1]
+    f_Sinc = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * erf(τ / 4 / sqrt(2) * abs(1 - 3 * ct^2)), 0.0, 1.0)[1]
     Rrf = f_Sinc(TRF / T2s) * B1^2 * ωy^2 * T2s
 
     Linear_Hamiltonian!(du, u, (ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf), t)
@@ -314,5 +355,25 @@ function Graham_Hamiltonian!(du, u, p::NTuple{10,Any}, t)
         Graham_Hamiltonian!(du_v, u_v, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
  
         add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
+    end
+end
+
+function Graham_Hamiltonian_InversionPulse!(du, u, p::NTuple{10,Any}, t)
+    ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
+    
+     # Apply Hamiltonian to M
+    u_v1 = @view u[1:5]
+    du_v1 = @view du[1:5]
+    Graham_Hamiltonian!(du_v1, u_v1, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
+ 
+     # Apply Hamiltonian to M and all its derivatives
+    for i = 1:length(grad_list)
+        du_v = @view du[5 * i + 1:5 * (i + 1)]
+        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        Graham_Hamiltonian!(du_v, u_v, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
+ 
+        if isa(grad_list[i], grad_B1) || isa(grad_list[i], grad_T2s)
+            add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
+        end
     end
 end

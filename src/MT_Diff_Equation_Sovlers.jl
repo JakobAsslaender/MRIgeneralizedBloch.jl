@@ -42,8 +42,8 @@ function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
         u0[3:5:end] .*= cos(B1 * ω1[1] * TRF[1])
 
         # calculate saturation of RF pulse
-        sol = solve(DDEProblem(gBloch_Hamiltonian_ApproxFun!, u0[1:5], h, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, T2s, 0.0, 4, ga)), alg)
-        u0[4] = sol[end][4]
+        sol = solve(DDEProblem(gBloch_Hamiltonian_ApproxFun_InversionPulse!, u0, h, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, T2s, 0.0, ga, dg_oT2_a, grad_list)), alg)
+        u0[4:5:end] = sol[end][4:5:end]
 
         for i in eachindex(grad_list)
             if isa(grad_list[i], grad_B1)
@@ -51,9 +51,6 @@ function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
                 u0[5i + 2] += u00[2] * sin(B1 * ω1[1] * TRF[1] / 2) * cos(B1 * ω1[1] * TRF[1] / 2) * ω1[1] * TRF[1]
                 u0[5i + 3] -= u00[3] * sin(B1 * ω1[1] * TRF[1]) * ω1[1] * TRF[1]
             end
-
-            sol = solve(DDEProblem(gBloch_Hamiltonian_ApproxFun!, u0[5i + 1:5i + 5], h, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, T2s, 0.0, 4, ga)), alg)
-            u0[5i + 4] = sol[end][4]
         end
 
         # free precession
@@ -129,8 +126,8 @@ function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
         u0[3:5:end] .*= cos(B1 * ω1[1] * TRF[1])
 
         # calculate saturation of RF pulse
-        sol = solve(ODEProblem(Graham_Hamiltonian!, u0[1:5], (0.0, TRF[2]), ((-1)^(1 + ic) * ω1[1], B1, ω0, TRF[1], m0s, 0.0, 0.0, T2s, 0.0)), Vern6(), save_everystep=false)  
-        u0[4] = sol[end][4]
+        sol = solve(ODEProblem(Graham_Hamiltonian_InversionPulse!, u0, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, TRF[1], m0s, 0.0, 0.0, T2s, 0.0, grad_list)), Vern6(), save_everystep=false)
+        u0[4:5:end] = sol[end][4:5:end]
 
         for i in eachindex(grad_list)
             if isa(grad_list[i], grad_B1)
@@ -138,9 +135,6 @@ function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
                 u0[5i + 2] += u00[2] * sin(B1 * ω1[1] * TRF[1] / 2) * cos(B1 * ω1[1] * TRF[1] / 2) * ω1[1] * TRF[1]
                 u0[5i + 3] -= u00[3] * sin(B1 * ω1[1] * TRF[1]) * ω1[1] * TRF[1]
             end
-
-            sol = solve(ODEProblem(Graham_Hamiltonian!, u0[5i + 1:5i + 5], (0.0, TRF[2]), ((-1)^(1 + ic) * ω1[1], B1, ω0, TRF[1], m0s, 0.0, 0.0, T2s, 0.0)), Vern6(), save_everystep=false)  
-            u0[5i + 4] = sol[end][4]
         end
 
         # free precession
@@ -235,8 +229,8 @@ function PreCompute_Saturation_Graham(TRF_min, TRF_max, T2s_min, T2s_max)
     x = Fun(identity, (TRF_min / T2s_max)..(TRF_max / T2s_min))
     f_PSD_a = f_PSD(x)
     df_PSD_a = f_PSD_a'
-    println("gonna be fast...")
-    Rrf(ω1, TRF, B1, T2s) = f_PSD_a(TRF / T2s) * B1^2 * ω1^2 * T2s
+    
+    Rrf(TRF, ω1, B1, T2s) = f_PSD_a(TRF / T2s) * B1^2 * ω1^2 * T2s
     
     function Rrf_dB1(TRF, ω1, B1, T2s)
         _f_PSD_a = f_PSD_a(TRF / T2s)
@@ -286,9 +280,9 @@ function LinearApprox_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2
         u0[3:5:end] .*= cos(B1 * ω1[1] * TRF[1])
 
         # calculate saturation of RF pulse
-        _dRrf = Rrf_T[1](TRF[1], ω1[1], B1, T2s)
-        sol = solve(ODEProblem(Linear_Hamiltonian!, u0[1:5], (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, 0.0, _dRrf)), alg, save_everystep=false)
-        u0[4] = sol[end][4]
+        _dRrf = Rrf_T[3](TRF[1], ω1[1], B1, T2s)
+        sol = solve(ODEProblem(Linear_Hamiltonian_InversionPulse!, u0, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, 0.0, _dRrf, grad_list)), alg, save_everystep=false)
+        u0[4:5:end] = sol[end][4:5:end]
 
         for i in eachindex(grad_list)
             if isa(grad_list[i], grad_B1)
@@ -296,10 +290,6 @@ function LinearApprox_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2
                 u0[5i + 2] += u00[2] * sin(B1 * ω1[1] * TRF[1] / 2) * cos(B1 * ω1[1] * TRF[1] / 2) * ω1[1] * TRF[1]
                 u0[5i + 3] -= u00[3] * sin(B1 * ω1[1] * TRF[1]) * ω1[1] * TRF[1]
             end
-
-            _dRrf = Rrf_T[1](TRF[1], ω1[1], B1, T2s)
-            sol = solve(ODEProblem(Linear_Hamiltonian!, u0[5i + 1:5i + 5], (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, 0.0, _dRrf)), alg, save_everystep=false)
-            u0[5i + 4] = sol[end][4]
         end
 
         # free precession
