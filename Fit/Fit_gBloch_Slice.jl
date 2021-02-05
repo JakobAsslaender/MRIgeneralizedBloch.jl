@@ -49,7 +49,7 @@ T2s = 10e-6
 function model(t,p) 
     println("paramters = ", p)
     M0 = p[1] + 1im * p[2] 
-    @time m = M0 .* Graham_calculate_signal(ω1s, ω0, TR, TRF, p[3], p[4], p[5], p[6], T2s, 2)
+    @time m = M0 .* Graham_calculate_signal(ω1s, TRF, TR, ω0, B1, p[3], p[4], p[5], p[6], T2s, 2)
     m = u' * m;
     m = [real(m); imag(m)]
     return m
@@ -57,7 +57,7 @@ end
 
 function jacobian_model(t,p)
     M0 = p[1] + 1im * p[2] 
-    @time J = transpose(Graham_calculate_signal_gradients(ω1s, ω0, TR, TRF, p[3], p[4], p[5], p[6], T2s, grad_list, 2))
+    @time J = transpose(Graham_calculate_signal_gradients(ω1s, TRF, TR, ω0, B1, p[3], p[4], p[5], p[6], T2s, grad_list, 2))
     J[:,2:end] .*= M0
     J = u' * J;
 
