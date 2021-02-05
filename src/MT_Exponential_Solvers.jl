@@ -139,7 +139,7 @@ function Inversion_Pulse_Propagator(ωy, T, B1, Rrf, _, dRrfdB1, grad_type::grad
     return u
 end
 
-function MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+function MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
     
     # calculate saturation rate
     _Rrf = similar(ω1)
@@ -164,18 +164,37 @@ function MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, ω0, B1, m0s, R1
     u_fp = Vector{Matrix{Float64}}(undef, length(ω1))
     u_pl = similar(u_fp)
 
-    nM = size(M,1) ÷ (length(grad_list) + 1) # 1 component for signal, 4 components for magnetization (xf, yf, zf, zs)
+    sweep_phase += π
+    if isa(grad_list[1], Array)
+        u_rot = @SMatrix [cos(sweep_phase) -sin(sweep_phase) 0 0 0;
+                          sin(sweep_phase)  cos(sweep_phase) 0 0 0;
+                                0         0  1 0 0;
+                                0         0  0 1 0;
+                                0         0  0 0 1]
+    else
+        u_rot = @SMatrix [cos(sweep_phase) -sin(sweep_phase) 0 0 0 0 0 0 0;
+                          sin(sweep_phase)  cos(sweep_phase) 0 0 0 0 0 0 0;
+                                0         0  1 0 0 0 0 0 0;
+                                0         0  0 1 0 0 0 0 0;
+                                0         0  0 0 cos(sweep_phase) -sin(sweep_phase) 0 0 0;
+                                0         0  0 0 sin(sweep_phase)  cos(sweep_phase) 0 0 0;
+                                0         0  0 0 0               0  1 0 0;
+                                0         0  0 0 0               0  0 1 0;
+                                0         0  0 0 0               0  0 0 1]
+    end
+
+    nM = size(M, 1) ÷ (length(grad_list) + 1) # 1 component for signal, 4 components for magnetization (xf, yf, zf, zs)
     for ig in eachindex(grad_list)
         Calculate_Propagators!(u_pl, u_fp, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, _Rrf, _dRrfdT2s, _dRrfdB1, grad_list[ig])
 
-        y0 = Anti_periodic_boundary_conditions(u_pl, u_fp)
+        y0 = Anti_periodic_boundary_conditions(u_pl, u_fp, u_rot)
 
         # pick first set of rows for the main magnetization and second one for the derivatives
         if length(grad_list) == 1
-            Propagate_magnetization!(M, u_pl, u_fp, y0)
+            Propagate_magnetization!(M, u_pl, u_fp, u_rot, y0)
         else
-            Mig = @view M[[1:nM;ig*nM+1:(ig+1)*nM],:] 
-            Propagate_magnetization!(Mig, u_pl, u_fp, y0)
+            Mig = @view M[[1:nM;ig * nM + 1:(ig + 1) * nM],:] 
+            Propagate_magnetization!(Mig, u_pl, u_fp, u_rot, y0)
         end
     end
     return nothing
@@ -186,7 +205,7 @@ function Calculate_Propagators!(u_pl, u_fp, ω1, TRF, TR, ω0, B1, m0s, R1, R2f,
     u_fp[1] = exp(Linear_Hamiltonian_Matrix(0.0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, 0.0, 0.0, 0.0, grad))
 
     for ip = 2:length(u_pl)
-        H = Linear_Hamiltonian_Matrix((-1)^ip * ω1[ip], B1, ω0, TRF[ip], m0s, R1, R2f, Rx, _Rrf[ip], _dRrfdT2s[ip], _dRrfdB1[ip], grad)
+        H = Linear_Hamiltonian_Matrix(ω1[ip], B1, ω0, TRF[ip], m0s, R1, R2f, Rx, _Rrf[ip], _dRrfdT2s[ip], _dRrfdB1[ip], grad)
         u_pl[ip] = exp(H)
         H = Linear_Hamiltonian_Matrix(0.0, B1, ω0, (TR - TRF[ip]) / 2, m0s, R1, R2f, Rx, 0.0, 0.0, 0.0, grad)
         u_fp[ip] = exp(H)
@@ -194,10 +213,10 @@ function Calculate_Propagators!(u_pl, u_fp, ω1, TRF, TR, ω0, B1, m0s, R1, R2f,
     return nothing
 end
 
-function Anti_periodic_boundary_conditions(u_pl, u_fp)
-    A = u_fp[1] * u_pl[1] * u_fp[1]
+function Anti_periodic_boundary_conditions(u_pl, u_fp, u_rot)
+    A = u_fp[1] * u_pl[1] * u_rot * u_fp[1]
     for i = 2:length(u_pl)
-        A = u_fp[i] * u_pl[i] * u_fp[i] * A
+        A = u_fp[i] * u_pl[i] * u_rot * u_fp[i] * A
     end
 
     F = eigen(A)
@@ -206,65 +225,110 @@ function Anti_periodic_boundary_conditions(u_pl, u_fp)
     return y0
 end
 
-function Propagate_magnetization!(M::AbstractArray{T,2}, u_pl, u_fp, y0) where T <: Real
+function Propagate_magnetization!(M::AbstractArray{T,2}, u_pl, u_fp, u_rot, y0) where T <: Real
     for i = 1:length(u_pl)
         y0 = u_fp[i] * y0
+        y0 = u_rot   * y0
         y0 = u_pl[i] * y0
         y0 = u_fp[i] * y0
-        M[:,i] = y0[1:end-1]
+        M[:,i] = y0[1:end - 1]
     end
-    M[1:4:end,1:2:end] .*= -1
-    M[2:4:end,1:2:end] .*= -1
     return M
 end
 
-function Propagate_magnetization!(S::AbstractArray{T,1}, u_pl, u_fp, y0) where T <: Complex
+function Propagate_magnetization!(S::AbstractArray{T,1}, u_pl, u_fp, u_rot, y0) where T <: Complex
     for i = 1:length(u_pl)
         y0 = u_fp[i] * y0
+        y0 = u_rot   * y0
         y0 = u_pl[i] * y0
         y0 = u_fp[i] * y0
         S[i] = y0[1] + 1im * y0[2]
     end
-    S[1:2:end] .*= -1
     return nothing
 end
 
-function Propagate_magnetization!(S::AbstractArray{T,2}, u_pl, u_fp, y0) where T <: Complex
+function Propagate_magnetization!(S::AbstractArray{T,2}, u_pl, u_fp, u_rot, y0) where T <: Complex
     for i = 1:length(u_pl)
         y0 = u_fp[i] * y0
+        y0 = u_rot   * y0
         y0 = u_pl[i] * y0
         y0 = u_fp[i] * y0
         S[1,i] = y0[1] + 1im * y0[2]
         S[2,i] = y0[5] + 1im * y0[6]
     end
-    S[:,1:2:end] .*= -1
     return nothing
 end
 
 # Version w/o gradients
-function MatrixApprox_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Rrf_T)
+function MatrixApprox_calculate_magnetization(ω1, TRF, TR::Number, sweep_phase::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, Rrf_T::Tuple{Any,Any,Any})
     M = similar(ω1, 4, length(ω1))
-    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [[]], Rrf_T)
+    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0, B1, m0s, R1, R2f, Rx, T2s, [[]], Rrf_T)
     return M
+end
+function MatrixApprox_calculate_magnetization(ω1, TRF, TR::Number, sweep_phase::AbstractArray{T,1}, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, Rrf_T::Tuple{Any,Any,Any}) where T <: Number
+    M = similar(ω1, 4, length(sweep_phase)*length(ω1))
+    for i in eachindex(sweep_phase)
+        Mi = @view M[:, (i-1)*length(ω1)+1 : i*length(ω1)]
+        MatrixApprox_calculate_magnetization!(Mi, ω1, TRF, TR, sweep_phase[i], ω0, B1, m0s, R1, R2f, Rx, T2s, [[]], Rrf_T)
+    end
+    return M
+end
+function MatrixApprox_calculate_magnetization(ω1, TRF, TR::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, Rrf_T::Tuple{Any,Any,Any})
+    return MatrixApprox_calculate_magnetization(ω1, TRF, TR, 0, ω0, B1, m0s, R1, R2f, Rx, T2s, Rrf_T)
 end
 
+
 # Version with gradients
-function MatrixApprox_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+function MatrixApprox_calculate_magnetization(ω1, TRF, TR::Number, sweep_phase::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, grad_list::Array{Any,1}, Rrf_T::Tuple{Any,Any,Any})
     M = similar(ω1, 4 + 4 * length(grad_list), length(ω1))
-    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
     return M
 end
+function MatrixApprox_calculate_magnetization(ω1, TRF, TR::Number, sweep_phase::AbstractArray{T,1}, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, grad_list::Array{Any,1}, Rrf_T::Tuple{Any,Any,Any}) where T <: Number
+    M = similar(ω1, 4 + 4 * length(grad_list), length(sweep_phase)*length(ω1))
+    for i in eachindex(sweep_phase)
+        Mi = @view M[:, (i-1)*length(ω1)+1 : i*length(ω1)]
+        MatrixApprox_calculate_magnetization!(Mi, ω1, TRF, TR, sweep_phase[i], ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+    end
+    return M
+end
+function MatrixApprox_calculate_magnetization(ω1, TRF, TR::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, grad_list::Array{Any,1}, Rrf_T::Tuple{Any,Any,Any})
+    return MatrixApprox_calculate_magnetization(ω1, TRF, TR, 0, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+end
+
 
 # Version w/o gradients
-function MatrixApprox_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Rrf_T)
+function MatrixApprox_calculate_signal(ω1, TRF, TR::Number, sweep_phase::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, Rrf_T::Tuple{Any,Any,Any})
     M = similar(ω1, ComplexF64)
-    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [[]], Rrf_T)
+    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0, B1, m0s, R1, R2f, Rx, T2s, [[]], Rrf_T)
     return M
+end
+function MatrixApprox_calculate_signal(ω1, TRF, TR::Number, sweep_phase::AbstractArray{T,1}, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, Rrf_T::Tuple{Any,Any,Any}) where T <: Number
+    M = similar(ω1, ComplexF64, length(sweep_phase)*length(ω1))
+    for i in eachindex(sweep_phase)
+        Mi = @view M[(i-1)*length(ω1)+1 : i*length(ω1)]
+        MatrixApprox_calculate_magnetization!(Mi, ω1, TRF, TR, sweep_phase[i], ω0, B1, m0s, R1, R2f, Rx, T2s, [[]], Rrf_T)
+    end
+    return M
+end
+function MatrixApprox_calculate_signal(ω1, TRF, TR::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, Rrf_T::Tuple{Any,Any,Any})
+    return MatrixApprox_calculate_signal(ω1, TRF, TR, 0, ω0, B1, m0s, R1, R2f, Rx, T2s, Rrf_T)
 end
 
 # Version with gradients
-function MatrixApprox_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+function MatrixApprox_calculate_signal(ω1, TRF, TR::Number, sweep_phase::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, grad_list::Array{Any,1}, Rrf_T::Tuple{Any,Any,Any})
     M = similar(ω1, ComplexF64, 1 + length(grad_list), length(ω1))
-    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+    MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
     return M
+end
+function MatrixApprox_calculate_signal(ω1, TRF, TR::Number, sweep_phase::AbstractArray{T,1}, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, grad_list::Array{Any,1}, Rrf_T::Tuple{Any,Any,Any}) where T <: Number
+    M = similar(ω1, ComplexF64, 1 + length(grad_list), length(sweep_phase)*length(ω1))
+    for i in eachindex(sweep_phase)
+        Mi = @view M[:, (i-1)*length(ω1)+1 : i*length(ω1)]
+        MatrixApprox_calculate_magnetization!(Mi, ω1, TRF, TR, sweep_phase[i], ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
+    end
+    return M
+end
+function MatrixApprox_calculate_signal(ω1, TRF, TR::Number, ω0::Number, B1::Number, m0s::Number, R1::Number, R2f::Number, Rx::Number, T2s::Number, grad_list::Array{Any,1}, Rrf_T::Tuple{Any,Any,Any})
+    return MatrixApprox_calculate_signal(ω1, TRF, TR, 0, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
 end
