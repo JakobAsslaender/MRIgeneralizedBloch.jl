@@ -193,18 +193,24 @@ function PreCompute_Saturation_gBloch(TRF_min, TRF_max, T2s_min, T2s_max, ω1_mi
     S = Chebyshev((TRF_min / T2s_max)..(TRF_max / T2s_min)) * Chebyshev((B1_min * ω1_min * T2s_min)..(B1_max * ω1_max * T2s_max))
     _points = points(S, 10^3) 
     fDDE(xy) = solve(DDEProblem(gBloch_Hamiltonian_ApproxFun!, [1.0], h, (0.0, xy[1]), (xy[2], 1.0, g_SLa)), MethodOfSteps(DP8()))[end][1]
-    fapprox = Fun(S, transform(S, fDDE.(_points)))
+    f_p = similar(_points, Float64)
+    Threads.@threads for i in eachindex(f_p)
+        f_p[i] = fDDE(_points[i])
+    end    
+    fapprox = Fun(S, transform(S, f_p))
+
     dfd1 = Derivative(S, [1,0]) * fapprox
     dfd2 = Derivative(S, [0,1]) * fapprox
 
     function Rrf(TRF, ω1, B1, T2s)
-        return -log(fapprox([TRF / T2s, B1 * ω1 * T2s])) / TRF
+        _fapprox = fapprox([TRF / T2s, B1 * ω1 * T2s])
+        return -log(Complex(_fapprox)) / TRF
     end
 
     function Rrf_dB1(TRF, ω1, B1, T2s)
         _fapprox = fapprox([TRF / T2s, B1 * ω1 * T2s])
         _dfd2 = dfd2(TRF / T2s, B1 * ω1 * T2s)
-        _Rrf = -log(_fapprox) / TRF
+        _Rrf = -log(Complex(_fapprox)) / TRF
         _dRrfdB1 = - _dfd2 * ω1 * T2s / (TRF * _fapprox)
         return (_Rrf, _dRrfdB1)
     end
@@ -213,7 +219,7 @@ function PreCompute_Saturation_gBloch(TRF_min, TRF_max, T2s_min, T2s_max, ω1_mi
         _fapprox = fapprox([TRF / T2s, B1 * ω1 * T2s])
         _dfd1 = dfd1(TRF / T2s, B1 * ω1 * T2s)
         _dfd2 = dfd2(TRF / T2s, B1 * ω1 * T2s)
-        _Rrf = -log(_fapprox) / TRF
+        _Rrf = -log(Complex(_fapprox)) / TRF
         _dRrfdT2s = (_dfd1 * TRF / T2s^2 - _dfd2 * B1 * ω1) / (TRF * _fapprox)
         _dRrfdB1 = - _dfd2 * ω1 * T2s / (TRF * _fapprox)
         return (_Rrf, _dRrfdB1, _dRrfdT2s)

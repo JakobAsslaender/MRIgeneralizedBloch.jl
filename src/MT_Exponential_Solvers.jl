@@ -104,7 +104,7 @@ function Inversion_Pulse_Propagator(ωy, T, B1, Rrf, _, _, grad_type::Array)
     u[1,1] = sin(B1 * ωy * T / 2)^2
     u[2,2] = -sin(B1 * ωy * T / 2)^2
     u[3,3] = cos(B1 * ωy * T)
-    u[4,4] = exp(- Rrf * T)
+    u[4,4] = real(exp(- Rrf * T))
     u[end,end] = 1.0
     return u
 end
@@ -114,7 +114,7 @@ function Inversion_Pulse_Propagator(ωy, T, B1, Rrf, _, _, grad_type::Any)
     u[1,1] = sin(B1 * ωy * T / 2)^2
     u[2,2] = -sin(B1 * ωy * T / 2)^2
     u[3,3] = cos(B1 * ωy * T)
-    u[4,4] = exp(- Rrf * T)
+    u[4,4] = real(exp(- Rrf * T))
     u[5,5] = u[1,1]
     u[6,6] = u[2,2]
     u[7,7] = u[3,3]
@@ -125,7 +125,7 @@ end
 
 function Inversion_Pulse_Propagator(ωy, T, B1, Rrf, dRrfdT2s, _, grad_type::grad_T2s)
     u = Inversion_Pulse_Propagator(ωy, T, B1, Rrf, 0, 0, 0)
-    u[8,4] = - dRrfdT2s * T * exp(-Rrf * T)
+    u[8,4] = - dRrfdT2s * T * real(exp(-Rrf * T))
     return u
 end
 
@@ -135,14 +135,14 @@ function Inversion_Pulse_Propagator(ωy, T, B1, Rrf, _, dRrfdB1, grad_type::grad
     u[5,1] =  sin(B1 * ωy * T / 2) * cos(B1 * ωy * T / 2) * ωy * T
     u[6,2] = -sin(B1 * ωy * T / 2) * cos(B1 * ωy * T / 2) * ωy * T
     u[7,3] = -sin(B1 * ωy * T) * ωy * T
-    u[8,4] = - dRrfdB1 * T * exp(-Rrf * T)
+    u[8,4] = - dRrfdB1 * T * real(exp(-Rrf * T))
     return u
 end
 
 function MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Rrf_T)
     
     # calculate saturation rate
-    _Rrf = similar(ω1)
+    _Rrf = similar(ω1, Complex)
     _dRrfdT2s = similar(ω1)
     _dRrfdB1 = similar(ω1)
 
@@ -205,8 +205,12 @@ function Calculate_Propagators!(u_pl, u_fp, ω1, TRF, TR, ω0, B1, m0s, R1, R2f,
     u_fp[1] = exp(Linear_Hamiltonian_Matrix(0.0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, 0.0, 0.0, 0.0, grad))
 
     for ip = 2:length(u_pl)
-        H = Linear_Hamiltonian_Matrix(ω1[ip], B1, ω0, TRF[ip], m0s, R1, R2f, Rx, _Rrf[ip], _dRrfdT2s[ip], _dRrfdB1[ip], grad)
-        u_pl[ip] = exp(H)
+        if abs(imag(_Rrf[ip])) > eps()
+            H = Linear_Hamiltonian_Matrix(ω1[ip], B1, ω0, TRF[ip], m0s, R1, R2f, Rx, _Rrf[ip], _dRrfdT2s[ip], _dRrfdB1[ip], grad)
+        else
+            H = Linear_Hamiltonian_Matrix(ω1[ip], B1, ω0, TRF[ip], m0s, R1, R2f, Rx, real(_Rrf[ip]), _dRrfdT2s[ip], _dRrfdB1[ip], grad)
+        end
+        u_pl[ip] = real.(exp(H))
         H = Linear_Hamiltonian_Matrix(0.0, B1, ω0, (TR - TRF[ip]) / 2, m0s, R1, R2f, Rx, 0.0, 0.0, 0.0, grad)
         u_fp[ip] = exp(H)
     end
