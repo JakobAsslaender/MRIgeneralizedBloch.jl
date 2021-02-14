@@ -20,6 +20,7 @@ export PreCompute_Saturation_Graham
 
 export MatrixApprox_calculate_magnetization
 export MatrixApprox_calculate_signal
+export Calculate_Saturation_rate
 
 export gBloch_Hamiltonian!
 export gBloch_Hamiltonian_Gradient!
@@ -39,14 +40,14 @@ export grad_T2s
 export grad_ω0
 export grad_B1
 
-
-struct grad_m0s end
-struct grad_R1 end
-struct grad_R2f end
-struct grad_Rx end
-struct grad_T2s end
-struct grad_ω0 end
-struct grad_B1 end
+abstract type grad_param end
+struct grad_m0s <: grad_param end
+struct grad_R1 <: grad_param end
+struct grad_R2f <: grad_param end
+struct grad_Rx <: grad_param end
+struct grad_T2s <: grad_param end
+struct grad_ω0 <: grad_param end
+struct grad_B1 <: grad_param end
 
 include("MT_Hamiltonians.jl")
 include("MT_Diff_Equation_Sovlers.jl")
