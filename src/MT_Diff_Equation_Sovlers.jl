@@ -204,13 +204,13 @@ function PreCompute_Saturation_gBloch(TRF_min, TRF_max, T2s_min, T2s_max, ω1_mi
 
     function Rrf(TRF, ω1, B1, T2s)
         _fapprox = fapprox([TRF / T2s, B1 * ω1 * T2s])
-        return -log(Complex(_fapprox)) / TRF
+        return -log(_fapprox) / TRF
     end
 
     function Rrf_dB1(TRF, ω1, B1, T2s)
         _fapprox = fapprox([TRF / T2s, B1 * ω1 * T2s])
         _dfd2 = dfd2(TRF / T2s, B1 * ω1 * T2s)
-        _Rrf = -log(Complex(_fapprox)) / TRF
+        _Rrf = -log(_fapprox) / TRF
         _dRrfdB1 = - _dfd2 * ω1 * T2s / (TRF * _fapprox)
         return (_Rrf, _dRrfdB1)
     end
@@ -219,7 +219,7 @@ function PreCompute_Saturation_gBloch(TRF_min, TRF_max, T2s_min, T2s_max, ω1_mi
         _fapprox = fapprox([TRF / T2s, B1 * ω1 * T2s])
         _dfd1 = dfd1(TRF / T2s, B1 * ω1 * T2s)
         _dfd2 = dfd2(TRF / T2s, B1 * ω1 * T2s)
-        _Rrf = -log(Complex(_fapprox)) / TRF
+        _Rrf = -log(_fapprox) / TRF
         _dRrfdT2s = (_dfd1 * TRF / T2s^2 - _dfd2 * B1 * ω1) / (TRF * _fapprox)
         _dRrfdB1 = - _dfd2 * ω1 * T2s / (TRF * _fapprox)
         return (_Rrf, _dRrfdB1, _dRrfdT2s)
