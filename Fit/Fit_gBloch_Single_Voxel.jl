@@ -97,34 +97,3 @@ println("Rx  = ", param[6], "/s")
 # println("T2s = ", param[7]*1e6, "μs")
 println("ω0  = ", param[7], "rad/s")
 println("B1/B1nom  = ", param[8])
-
-##
-Rrf_gB = PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minimum(ω1), maximum(ω1), pmin[end], pmax[end])
-Rrf_Gr = PreCompute_Saturation_Graham(minimum(TRF), maximum(TRF), T2s, T2s)
-
-p = [-1.0,  0.1, 0.1,    1,  15,  15, 300.0, 0.9];
-# p = [-1.0,  0.1, 0.1,    1,  15,  15, 0.0, 1.0];
-
-##
-JG = Graham_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2)
-JL = LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_Gr)
-JM = MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_Gr)
-
-##
-JG = gBloch_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2)
-JL = LinearApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, 2, Rrf_gB)
-JM = MatrixApprox_calculate_signal(ω1, TRF, TR, p[7], p[8], p[3], p[4], p[5], p[6], T2s, grad_list, Rrf_gB)
-
-##
-i = 1
-plot(real(JG[i,:]))
-plot!(imag(JG[i,:]))
-plot!(real(JL[i,:]))
-plot!(imag(JL[i,:]))
-plot!(real(JM[i,:]))
-plot!(imag(JM[i,:]))
-
-##
-matwrite(expanduser("~/mygs/asslaj01/tmp.mat"), Dict(
-            "JG" => JG,
-        ));
