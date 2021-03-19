@@ -3,12 +3,12 @@ using QuadGK
 using DifferentialEquations
 using ApproxFun
 using BenchmarkTools
-using Profile
 using Plots
 plotlyjs(ticks=:native)
 theme(:lime);
 
 using MT_generalizedBloch
+using MT_generalizedBloch: gBloch_Hamiltonian!, gBloch_Hamiltonian_ApproxFun!, FreePrecession_Hamiltonian!
 
 ## set parameters
 ω1 = π / 500e-6

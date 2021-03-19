@@ -1,6 +1,4 @@
 ##
-import Cubature
-import HCubature
 using QuadGK
 using DifferentialEquations
 using BenchmarkTools
@@ -19,7 +17,6 @@ plot(τ, g.(τ))
 ##
 x = Fun(identity, 0..100)
 ga = g(x)
-# @benchmark g_a.(τ)
 plot!(τ, ga.(τ))
 
 ## ApproxFun for derivative (still has to be multiplied with T2s)
@@ -46,17 +43,17 @@ N = Inf
 
 ## plot full vs ApproxFun result
 u0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-gBloch_sol_Full = solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, N)), alg)
+gBloch_sol_Full = solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, N)), alg)
 
-gBloch_sol_Approx = solve(DDEProblem(gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, ga)), alg)
+gBloch_sol_Approx = solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, ga)), alg)
 
 plot(gBloch_sol_Full)
 plot!(gBloch_sol_Approx)
 
 ## cf. benchmarks
-@benchmark solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 4, N)), alg)
-@benchmark solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 4, 10.0)), alg)
-@benchmark solve(DDEProblem(gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 4, ga)), alg)
+@benchmark solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 4, N)), alg)
+@benchmark solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 4, 10.0)), alg)
+@benchmark solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, ω0, m0s, R1, R2f, T2s, Rx, 4, ga)), alg)
 
 ## Gradients: plot full vs ApproxFun result
 u0 = zeros(30, 1)
@@ -64,10 +61,10 @@ u0[1] = 0.5 * (1 - m0s)
 u0[3] = 0.5 * (1 - m0s)
 u0[4] = m0s
 u0[5] = 1.0
-gBloch_sol_grad = solve(DDEProblem(gBloch_Hamiltonian_Gradient!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 10.0)), alg)
+gBloch_sol_grad = solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian_Gradient!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 10.0)), alg)
 
 grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s()]
-gBloch_sol_Approx = solve(DDEProblem(gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
+gBloch_sol_Approx = solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
 
 ##
 t = 0:1e-5:TRF
@@ -101,6 +98,6 @@ plot!(dzfa, label="zf a")
 plot!(dzsa, label="zs a")
 
 ## cf. benchmarks
-@benchmark solve(DDEProblem(gBloch_Hamiltonian_Gradient!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 10.0)), alg)
+@benchmark solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian_Gradient!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 10.0)), alg)
 
-@benchmark solve(DDEProblem(gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
+@benchmark solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian_ApproxFun!, u0, h, (0.0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)

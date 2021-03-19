@@ -22,16 +22,6 @@ export MatrixApprox_calculate_magnetization
 export MatrixApprox_calculate_signal
 export Calculate_Saturation_rate
 
-export gBloch_Hamiltonian!
-export gBloch_Hamiltonian_Gradient!
-export gBloch_Hamiltonian_ApproxFun!
-export gBloch_Hamiltonian_Gradient_ApproxFun!
-export FreePrecession_Hamiltonian!
-export Linear_Hamiltonian!
-export Linear_Hamiltonian_InversionPulse!
-export Graham_Hamiltonian!
-export Sled_Hamiltonian!
-
 export grad_m0s
 export grad_R1
 export grad_R2f

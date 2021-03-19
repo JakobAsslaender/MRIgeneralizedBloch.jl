@@ -8,6 +8,7 @@ plotlyjs(ticks=:native)
 theme(:lime);
 
 using MT_generalizedBloch
+using MT_generalizedBloch: Graham_Hamiltonian!, FreePrecession_Hamiltonian!
 
 ## set parameters
 ω1 = π / 500e-6
