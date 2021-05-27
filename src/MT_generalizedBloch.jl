@@ -7,6 +7,7 @@ import Cubature
 using SpecialFunctions
 using StaticArrays
 using LinearAlgebra
+using NLsolve
 
 export gBloch_calculate_magnetization
 export gBloch_calculate_signal
