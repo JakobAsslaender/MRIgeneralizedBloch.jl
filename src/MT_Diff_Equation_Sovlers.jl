@@ -177,12 +177,11 @@ function Graham_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, g
     return s
 end
 
-function PreCompute_Saturation_gBloch(TRF_min, TRF_max, T2s_min, T2s_max, ω1_min, ω1_max, B1_min, B1_max)
+function PreCompute_Saturation_gBloch(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)
 
     # approximate saturation
     G(τ) = quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0.0, sqrt(1 / 3), 1.0)[1]
-    x = Fun(identity, 0..(TRF_max / T2s_min))
-    G_a = G(x)
+    G_a = Fun(G, 0..(TRF_max / T2s_min))
     h(p, t) = [1.0]
 
     function Hamiltonian_1D!(du, u, h, p::NTuple{3,Any}, t)
@@ -192,59 +191,49 @@ function PreCompute_Saturation_gBloch(TRF_min, TRF_max, T2s_min, T2s_max, ω1_mi
     # Linear_Hamiltonian_2D(ωy, T, R2s) = @SMatrix [-R2s * T  ωy * T;
     #                                                -ωy * T       0]
 
-    function calc_R2sLinarized(xy)
-        τ = xy[1]
-        α = xy[2]
-
-        z = solve(DDEProblem(Hamiltonian_1D!, [1.0], h, (0.0, xy[1]), (xy[2], 1.0, G_a)), MethodOfSteps(DP8()))[end][1]
-        # model = (TRF, R2s) -> [(exp(Linear_Hamiltonian_2D(xy[2], TRF[1], R2s[1])) * [0,1])[end]]
-        # fit = curve_fit(model, [xy[1]], [z], [1.0], show_trace=false, x_tol=1e-15, g_tol=1e-15; autodiff=:forwarddiff)
-        # return fit.param[1]
-
-        function f!(F, ρ)
-            s = sqrt(Complex((ρ[1]*τ)^2 - 4 * (τ*α)^2))
-            x = exp(-ρ[1]*τ/2) * (cosh(s/2) + (ρ[1]*τ * sinh(s/2)) / s)
+    function calc_R2sLinarized(τ, α)
+        z = solve(DDEProblem(Hamiltonian_1D!, [1.0], h, (0, τ), (α/τ, 1, G_a)), MethodOfSteps(DP8()))[end][1]
+    
+        function f!(F, ρv)
+            ρ = ρv[1]
+            s = sqrt(Complex((ρ*τ)^2 - (2α)^2))
+            x = exp(-ρ*τ/2) * (cosh(s/2) + ρ*τ/s * sinh(s/2))
             F[1] = real(x) - z
         end
-        function j!(J, ρ)
-            s = sqrt(Complex((ρ[1]*τ)^2 - 4 * (τ*α)^2))
-            J[1] = (2 * exp(-ρ[1]*τ/2) * α^2 * (s * cosh(s/2) - 2 * sinh(s/2) )) / s^3
+        function j!(J, ρv)
+            ρ = ρv[1]
+            s = sqrt(Complex((ρ*τ)^2 - (2α)^2))
+            J[1] = 2τ * α^2 * exp(-ρ*τ/2) * (s * cosh(s/2) - 2sinh(s/2)) / s^3
         end
-
+    
         sol = nlsolve(f!, j!, [1.0])
         return sol.zero[1]
     end
                                                 
-    S = Chebyshev((TRF_min / T2s_max)..(TRF_max / T2s_min)) * Chebyshev((B1_min * ω1_min * T2s_min)..(B1_max * ω1_max * T2s_max))
-    _points = points(S, 2 * 10^3) 
+    S = Chebyshev((TRF_min / T2s_max)..(TRF_max / T2s_min)) * Chebyshev((B1_min * α_min)..(B1_max * α_max))
+    fapprox = Fun(calc_R2sLinarized,S,2^12)
     
-    f_p = similar(_points, Float64)
-    Threads.@threads for i in eachindex(f_p)
-        f_p[i] = calc_R2sLinarized(_points[i])
-    end    
-    fapprox = Fun(S, transform(S, f_p))
-
     dfd1 = Derivative(S, [1,0]) * fapprox
     dfd2 = Derivative(S, [0,1]) * fapprox
 
     function R2sLinarized(TRF, ω1, B1, T2s)
-        return fapprox([TRF / T2s, B1 * ω1 * T2s]) / T2s
+        return fapprox(TRF / T2s, B1 * ω1 * TRF) / T2s
     end
 
     function R2sLinarized_dB1(TRF, ω1, B1, T2s)
-        _R2sLinarized = fapprox([TRF / T2s, B1 * ω1 * T2s]) / T2s
-        _dR2sLinarizeddB1 = dfd2(TRF / T2s, B1 * ω1 * T2s) * ω1
+        _R2sLinarized = fapprox(TRF / T2s, B1 * ω1 * TRF) / T2s
+        _dR2sLinarizeddB1 = dfd2(TRF / T2s, B1 * ω1 * TRF) * ω1 * TRF / T2s
         return (_R2sLinarized, _dR2sLinarizeddB1)
     end
 
     function R2sLinarized_dB1_dT2s(TRF, ω1, B1, T2s)
-        _fapprox = fapprox([TRF / T2s, B1 * ω1 * T2s])
-        _dfd1 = dfd1(TRF / T2s, B1 * ω1 * T2s)
-        _dfd2 = dfd2(TRF / T2s, B1 * ω1 * T2s)
+        _fapprox = fapprox(TRF / T2s, B1 * ω1 * TRF)
+        _dfd1 = dfd1(TRF / T2s, B1 * ω1 * TRF)
+        _dfd2 = dfd2(TRF / T2s, B1 * ω1 * TRF)
 
         _R2sLinarized = _fapprox / T2s
-        _dR2sLinarizeddB1 = _dfd2 * ω1
-        _R2sLinarizeddT2s = - _dfd1 * TRF / T2s^3 + _dfd2 * B1 * ω1 / T2s - _fapprox / T2s^2
+        _dR2sLinarizeddB1 = _dfd2 * ω1 * TRF / T2s
+        _R2sLinarizeddT2s = - _dfd1 * TRF / T2s^3 - _fapprox / T2s^2
         return (_R2sLinarized, _dR2sLinarizeddB1, _R2sLinarizeddT2s)
     end
 
