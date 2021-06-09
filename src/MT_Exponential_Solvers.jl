@@ -12,7 +12,7 @@ function Linear_Hamiltonian_Matrix(ωy, B1, ωz, T, m0s, R1, R2f, Rx, R2s)
 end
 
 function Linear_Hamiltonian_Matrix(ωy, B1, ωz, T, m0s, R1, R2f, Rx, R2s, _, _, _)
-    return Linear_Hamiltonian_Matrix(ωy, B1, ωz, T, m0s, R1, R2f, Rx, R2s, undef, undef, undef)
+    return Linear_Hamiltonian_Matrix(ωy, B1, ωz, T, m0s, R1, R2f, Rx, R2s)
 end
 
 function Linear_Hamiltonian_Matrix(ωy, B1, ωz, T, m0s, R1, R2f, Rx, R2s, _, _, grad_type::grad_m0s)
@@ -200,7 +200,7 @@ function Inversion_Pulse_Propagator(ωy, T, B1, R2s, _, dR2sdB1, grad_type::grad
 
     dHsdB1 = @SMatrix [-dR2sdB1  ωy;
                             -ωy   0]
-    dU = exp(H * T) * dHsdB1 * T
+    dU = exp(Hs * T) * dHsdB1 * T
 
     u = @SMatrix [
         sin(B1 * ωy * T / 2)^2  0 0 0 0 0 0 0 0 0 0;
@@ -242,15 +242,17 @@ function MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0
 
     sweep_phase += π
     
-    u_rot = @SMatrix [cos(sweep_phase) -sin(sweep_phase) 0 0 0 0 0 0 0;
-                      sin(sweep_phase)  cos(sweep_phase) 0 0 0 0 0 0 0;
-                      0 0 1 0 0 0 0 0 0;
-                      0 0 0 1 0 0 0 0 0;
-                      0 0 0 0 cos(sweep_phase) -sin(sweep_phase) 0 0 0;
-                      0 0 0 0 sin(sweep_phase)  cos(sweep_phase) 0 0 0;
-                      0 0 0 0 0 0 1 0 0;
-                      0 0 0 0 0 0 0 1 0;
-                      0 0 0 0 0 0 0 0 1]
+    u_rot = @SMatrix [cos(sweep_phase) -sin(sweep_phase) 0 0 0 0                 0                0 0 0 0;
+                      sin(sweep_phase)  cos(sweep_phase) 0 0 0 0                 0                0 0 0 0;
+                      0                 0                1 0 0 0                 0                0 0 0 0;
+                      0                 0                0 1 0 0                 0                0 0 0 0;
+                      0                 0                0 0 1 0                 0                0 0 0 0;
+                      0                 0                0 0 0 cos(sweep_phase) -sin(sweep_phase) 0 0 0 0;
+                      0                 0                0 0 0 sin(sweep_phase)  cos(sweep_phase) 0 0 0 0;
+                      0                 0                0 0 0 0                 0                1 0 0 0;
+                      0                 0                0 0 0 0                 0                0 1 0 0;
+                      0                 0                0 0 0 0                 0                0 0 1 0;
+                      0                 0                0 0 0 0                 0                0 0 0 1]
 
     nM = size(M, 1) ÷ (length(grad_list) + 1) # 1 component for signal, 5 components for magnetization (xf, yf, zf, xs, zs)
     for i in eachindex(grad_list)
