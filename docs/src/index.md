@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = MRIgeneralizeBloch
+CurrentModule = MRIgeneralizedBloch
 ```
 
-# MRIgeneralizeBloch
+# MRIgeneralizedBloch
 
-Documentation for [MRIgeneralizeBloch](https://github.com/JakobAsslaender/MRIgeneralizeBloch.jl).
+Documentation for [MRIgeneralizedBloch](https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [MRIgeneralizeBloch]
+Modules = [MRIgeneralizedBloch]
 ```

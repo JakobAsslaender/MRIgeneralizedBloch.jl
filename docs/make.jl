@@ -1,16 +1,16 @@
-using MRIgeneralizeBloch
+using MRIgeneralizedBloch
 using Documenter
 
-DocMeta.setdocmeta!(MRIgeneralizeBloch, :DocTestSetup, :(using MRIgeneralizeBloch); recursive=true)
+DocMeta.setdocmeta!(MRIgeneralizedBloch, :DocTestSetup, :(using MRIgeneralizedBloch); recursive=true)
 
 makedocs(;
-    modules=[MRIgeneralizeBloch],
+    modules=[MRIgeneralizedBloch],
     authors="Jakob Asslaender <jakob.asslaender@nyumc.org> and contributors",
-    repo="https://github.com/JakobAsslaender/MRIgeneralizeBloch.jl/blob/{commit}{path}#{line}",
-    sitename="MRIgeneralizeBloch.jl",
+    repo="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/{commit}{path}#{line}",
+    sitename="MRIgeneralizedBloch.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://JakobAsslaender.github.io/MRIgeneralizeBloch.jl",
+        canonical="https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl",
         assets=String[],
     ),
     pages=[
@@ -19,5 +19,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JakobAsslaender/MRIgeneralizeBloch.jl",
+    repo="github.com/JakobAsslaender/MRIgeneralizedBloch.jl",
 )
