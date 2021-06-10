@@ -12,13 +12,13 @@ T2s = 10e-6
 Rx = 30.0
 TR = 3.5e-3
 
-control = matread(expanduser("examples/control_MT_v3p2_TR3p5ms_discretized.mat"))["control"]
+control = matread(expanduser("../examples/control_MT_v3p2_TR3p5ms_discretized.mat"))["control"]
 TRF = [500e-6; control[1:end - 1,2]]
 α = [π; control[1:end - 1,1] .+ control[2:end,1]]
 ω1 = α ./ TRF
 
-print("Time for the R2sl precompuation:")
-@btime R2s_T = PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
+print("Time for the R2sl pre-computation:")
+R2s_T = @time PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
 
 ## ##################################################################
 # magnetization functions
