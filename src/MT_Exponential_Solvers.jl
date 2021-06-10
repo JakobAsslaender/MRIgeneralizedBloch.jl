@@ -176,7 +176,10 @@ function Inversion_Pulse_Propagator(ωy, T, B1, R2s, dR2sdT2s, _, grad_type::gra
 
     dHsdT2s = @SMatrix [-dR2sdT2s   0;
                                 0   0]
-    dU = exp(H * T) * dHsdT2s * T
+    
+    # Higham's Complex Step Approximation:
+    h = 1im * eps()
+    dU = real.(exp((Hs + h * dHsdT2s) * T) ./ h)
 
     U = @SMatrix [
         sin(B1 * ωy * T / 2)^2    0 0 0 0 0 0 0 0 0 0;
@@ -200,7 +203,10 @@ function Inversion_Pulse_Propagator(ωy, T, B1, R2s, _, dR2sdB1, grad_type::grad
 
     dHsdB1 = @SMatrix [-dR2sdB1  ωy;
                             -ωy   0]
-    dU = exp(Hs * T) * dHsdB1 * T
+                            
+    # Higham's Complex Step Approximation:
+    h = 1im * eps()
+    dU = real.(exp((Hs + h * dHsdB1) * T) ./ h)
 
     u = @SMatrix [
         sin(B1 * ωy * T / 2)^2  0 0 0 0 0 0 0 0 0 0;
@@ -266,14 +272,13 @@ function MatrixApprox_calculate_magnetization!(M, ω1, TRF, TR, sweep_phase, ω0
 end
 
 function Calculate_Saturation_rate(ω1, TRF, B1, T2s, R2s_T, grad_list)
-    # calculate saturation rate
     _R2s = similar(ω1)
     _dR2sdT2s = similar(ω1)
     _dR2sdB1 = similar(ω1)
 
     if any(isa.(grad_list, grad_T2s))
         for i = 1:length(ω1)
-            _R2s[i], _dR2sdB1[i], _dR2sdT2s[i] = R2s_T[3](TRF[i], ω1[i], B1, T2s)
+            _R2s[i], _dR2sdT2s[i], _dR2sdB1[i] = R2s_T[3](TRF[i], ω1[i], B1, T2s)
         end
     elseif any(isa.(grad_list, grad_B1))
         for i = 1:length(ω1)
@@ -290,12 +295,12 @@ end
 function Anti_periodic_boundary_conditions(ω1, B1, ω0, TRF, TR, m0s, R1, R2f, Rx, _R2s, _dR2sdT2s, _dR2sdB1, grad, u_rot)
     
     # put inversion pulse at the end (this defines y0 as the magnetization at the first TE after the inversion pulse)
-    u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, TR / 2, m0s, R1, R2f, Rx,   0,   0,   0, grad))
+    u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, _R2s[1], _dR2sdT2s[1], _dR2sdB1[1], grad))
     u_pl = Inversion_Pulse_Propagator(ω1[1], TRF[1], B1, _R2s[1], _dR2sdT2s[1], _dR2sdB1[1], grad)
     A = u_fp * u_pl * u_rot * u_fp
     
     for i = length(ω1):-1:2
-        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx,   0,   0,   0, grad))
+        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
         u_pl = exp(Linear_Hamiltonian_Matrix(ω1[i], B1, ω0, TRF[i], m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
         A = A * u_fp * u_pl * u_rot * u_fp
     end
@@ -309,7 +314,7 @@ end
 function Propagate_magnetization!(M::AbstractArray{T,2}, ω1, B1, ω0, TRF, TR, m0s, R1, R2f, Rx, _R2s, _dR2sdT2s, _dR2sdB1, u_rot, y0, grad) where T <: Real
     M[:,1] = @view y0[1:end - 1]
     for i = 2:length(ω1)
-        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx,   0,   0,   0, grad))
+        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
         u_pl = exp(Linear_Hamiltonian_Matrix(ω1[i], B1, ω0, TRF[i], m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
 
         y0 = u_fp * (u_pl * (u_rot * (u_fp * y0)))
@@ -321,7 +326,7 @@ end
 function Propagate_magnetization!(S::AbstractArray{T,1}, ω1, B1, ω0, TRF, TR, m0s, R1, R2f, Rx, _R2s, _dR2sdT2s, _dR2sdB1, u_rot, y0, grad) where T <: Complex
     S[1] = y0[1] + 1im * y0[2]
     for i = 2:length(ω1)
-        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx,   0,   0,   0, grad))
+        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
         u_pl = exp(Linear_Hamiltonian_Matrix(ω1[i], B1, ω0, TRF[i], m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
 
         y0 = u_fp * (u_pl * (u_rot * (u_fp * y0)))
@@ -334,7 +339,7 @@ function Propagate_magnetization!(S::AbstractArray{T,2}, ω1, B1, ω0, TRF, TR, 
     S[1,1] = y0[1] + 1im * y0[2]
     S[2,1] = y0[6] + 1im * y0[7]
     for i = 2:length(ω1)
-        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx,   0,   0,   0, grad))
+        u_fp = exp(Linear_Hamiltonian_Matrix(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
         u_pl = exp(Linear_Hamiltonian_Matrix(ω1[i], B1, ω0, TRF[i], m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
 
         y0 = u_fp * (u_pl * (u_rot * (u_fp * y0)))

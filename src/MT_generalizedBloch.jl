@@ -16,6 +16,12 @@ export LinearApprox_calculate_signal
 export Graham_calculate_magnetization
 export Graham_calculate_signal
 
+export Greens_Lorentzian
+export Greens_Gaussian
+export Greens_superLorentzian
+export dG_o_dT2s_x_T2s_superLorentzian
+export interpolate_Greens_Function
+
 export PreCompute_Saturation_gBloch
 export PreCompute_Saturation_Graham
 
@@ -43,5 +49,6 @@ struct grad_B1 <: grad_param end
 include("MT_Hamiltonians.jl")
 include("MT_Diff_Equation_Sovlers.jl")
 include("MT_Exponential_Solvers.jl")
+include("Greens_functions.jl")
 
 end

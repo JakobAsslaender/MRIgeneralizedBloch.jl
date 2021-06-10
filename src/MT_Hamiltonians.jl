@@ -105,7 +105,7 @@ function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,
 end
 
 
-function gBloch_Hamiltonian!(du, u, h, p::NTuple{10,Any}, t)
+function gBloch_Hamiltonian_superLorentzian!(du, u, h, p::NTuple{10,Any}, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, zs_idx, N = p
 
     gt = (t, T2s, ct) -> exp(- (t / T2s)^2 * (3 * ct^2 - 1)^2 / 8)
@@ -133,13 +133,13 @@ function gBloch_Hamiltonian!(du, u, h, p::NTuple{10,Any}, t)
     du[5] = 0.0
 end
 
-function gBloch_Hamiltonian!(du, u, h, p::NTuple{9,Any}, t)
+function gBloch_Hamiltonian_superLorentzian!(du, u, h, p::NTuple{9,Any}, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, N = p
-    gBloch_Hamiltonian!(du, u, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, N), t)
+    gBloch_Hamiltonian_superLorentzian!(du, u, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, N), t)
 end
 
-# TODO: Implement with modular gradients and convert to gBloch_Hamiltonian! using multiple dispatch
-function gBloch_Hamiltonian_Gradient!(du, u, h, p, t)
+# TODO: Implement with modular gradients and convert to gBloch_Hamiltonian_superLorentzian! using multiple dispatch
+function gBloch_Hamiltonian_superLorentzian_Gradient!(du, u, h, p, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, N = p
 
     # start integral for T2s gradient 
@@ -161,7 +161,7 @@ function gBloch_Hamiltonian_Gradient!(du, u, h, p, t)
     for i = 1:5:26
         @inbounds du_v = @view du[i:(i + 4)]
         @inbounds u_v = @view u[i:(i + 4)]
-        gBloch_Hamiltonian!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (i + 3), N), t)
+        gBloch_Hamiltonian_superLorentzian!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (i + 3), N), t)
     end
 
     # dM / dm0s
@@ -193,7 +193,7 @@ function gBloch_Hamiltonian_Gradient!(du, u, h, p, t)
     du[30] = 0.0
 end
 
-function gBloch_Hamiltonian_ApproxFun!(du, u, h, p::NTuple{10,Any}, t)
+function gBloch_Hamiltonian!(du, u, h, p::NTuple{10,Any}, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, zs_idx, g = p
 
     du[1] = - R2f * u[1] - ωz  * u[2] + B1 * ωy * u[3]
@@ -202,42 +202,42 @@ function gBloch_Hamiltonian_ApproxFun!(du, u, h, p::NTuple{10,Any}, t)
     du[4] = -B1^2 * ωy^2 * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx), eps(), t)[1] + Rx * m0s  * u[3] - (R1 + Rx * (1 - m0s)) * u[4] + m0s * R1 * u[5]
 end
 
-function gBloch_Hamiltonian_ApproxFun!(du, u, h, p::NTuple{9,Any}, t)
+function gBloch_Hamiltonian!(du, u, h, p::NTuple{9,Any}, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g = p
-    gBloch_Hamiltonian_ApproxFun!(du, u, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, g), t)
+    gBloch_Hamiltonian!(du, u, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, g), t)
 end
 
-function gBloch_Hamiltonian_ApproxFun!(du, u, h, p::NTuple{11,Any}, t)
+function gBloch_Hamiltonian!(du, u, h, p::NTuple{11,Any}, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2, grad_list = p
     
     # Apply Hamiltonian to M
     u_v1 = @view u[1:5]
     du_v1 = @view du[1:5]
-    gBloch_Hamiltonian_ApproxFun!(du_v1, u_v1, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, g), t)
+    gBloch_Hamiltonian!(du_v1, u_v1, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, g), t)
 
     # Apply Hamiltonian to all derivatives and add partial derivatives
     for i = 1:length(grad_list)
         du_v = @view du[5 * i + 1:5 * (i + 1)]
         u_v  = @view u[5 * i + 1:5 * (i + 1)]
-        gBloch_Hamiltonian_ApproxFun!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
+        gBloch_Hamiltonian!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
 
         add_partial_derivative!(du_v, u_v1, x -> h(p, x; idxs=4), (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2), t, grad_list[i])
     end
 end
 
-function gBloch_Hamiltonian_ApproxFun_InversionPulse!(du, u, h, p::NTuple{11,Any}, t)
+function gBloch_Hamiltonian_InversionPulse!(du, u, h, p::NTuple{11,Any}, t)
     ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2, grad_list = p
     
     # Apply Hamiltonian to M
     u_v1 = @view u[1:5]
     du_v1 = @view du[1:5]
-    gBloch_Hamiltonian_ApproxFun!(du_v1, u_v1, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, g), t)
+    gBloch_Hamiltonian!(du_v1, u_v1, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, 4, g), t)
 
     # Apply Hamiltonian to all derivatives and add partial derivatives
     for i = 1:length(grad_list)
         du_v = @view du[5 * i + 1:5 * (i + 1)]
         u_v  = @view u[5 * i + 1:5 * (i + 1)]
-        gBloch_Hamiltonian_ApproxFun!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
+        gBloch_Hamiltonian!(du_v, u_v, h, (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
 
         if isa(grad_list[i], grad_T2s) || isa(grad_list[i], grad_B1)
             add_partial_derivative!(du_v, u_v1, x -> h(p, x; idxs=4), (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, g, dg_oT2), t, grad_list[i])
@@ -322,7 +322,7 @@ function Linear_Hamiltonian_InversionPulse!(du, u, p::NTuple{9,Any}, t)
     end
 end
 
-function Graham_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
+function Graham_Hamiltonian_superLorentzian!(du, u, p::NTuple{9,Any}, t)
     ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx = p
 
     f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0)[1]
@@ -331,46 +331,37 @@ function Graham_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
     Linear_Hamiltonian!(du, u, (ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf), t)
 end
 
-function Sled_Hamiltonian!(du, u, p::NTuple{9,Any}, t)
-    ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx = p
-
-    f_Sinc = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * erf(τ / 4 / sqrt(2) * abs(1 - 3 * ct^2)), 0.0, 1.0)[1]
-    Rrf = f_Sinc(TRF / T2s) * B1^2 * ωy^2 * T2s
-
-    Linear_Hamiltonian!(du, u, (ωy, B1, ωz, m0s, R1, R2f, Rx, Rrf), t)
-end
-
-function Graham_Hamiltonian!(du, u, p::NTuple{10,Any}, t)
+function Graham_Hamiltonian_superLorentzian!(du, u, p::NTuple{10,Any}, t)
     ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
     
      # Apply Hamiltonian to M
     u_v1 = @view u[1:5]
     du_v1 = @view du[1:5]
-    Graham_Hamiltonian!(du_v1, u_v1, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
+    Graham_Hamiltonian_superLorentzian!(du_v1, u_v1, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
  
      # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
         du_v = @view du[5 * i + 1:5 * (i + 1)]
         u_v  = @view u[5 * i + 1:5 * (i + 1)]
-        Graham_Hamiltonian!(du_v, u_v, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
+        Graham_Hamiltonian_superLorentzian!(du_v, u_v, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
  
         add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
     end
 end
 
-function Graham_Hamiltonian_InversionPulse!(du, u, p::NTuple{10,Any}, t)
+function Graham_Hamiltonian_superLorentzian_InversionPulse!(du, u, p::NTuple{10,Any}, t)
     ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
     
      # Apply Hamiltonian to M
     u_v1 = @view u[1:5]
     du_v1 = @view du[1:5]
-    Graham_Hamiltonian!(du_v1, u_v1, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
+    Graham_Hamiltonian_superLorentzian!(du_v1, u_v1, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
  
      # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
         du_v = @view du[5 * i + 1:5 * (i + 1)]
         u_v  = @view u[5 * i + 1:5 * (i + 1)]
-        Graham_Hamiltonian!(du_v, u_v, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
+        Graham_Hamiltonian_superLorentzian!(du_v, u_v, (ωy, B1, ωz, TRF, m0s, R1, R2f, T2s, Rx), t)
  
         if isa(grad_list[i], grad_B1) || isa(grad_list[i], grad_T2s)
             add_partial_derivative!(du_v, u_v1, [], (ωy, B1, ωz, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
