@@ -1,6 +1,6 @@
 using BenchmarkTools
 using MAT
-using MT_generalizedBloch
+using MRIgeneralizedBloch
 
 ## set parameters
 ω0 = 0.0

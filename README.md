@@ -1,1 +1,1 @@
-# MT_generalizedBloch
+# MRIgeneralizedBloch

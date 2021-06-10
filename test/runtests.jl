@@ -1,4 +1,4 @@
-using MT_generalizedBloch
+using MRIgeneralizedBloch
 using Test
 
 @testset "Greens_Interpolation" begin

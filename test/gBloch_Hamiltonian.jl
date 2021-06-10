@@ -1,5 +1,5 @@
 ##
-using MT_generalizedBloch
+using MRIgeneralizedBloch
 using DifferentialEquations
 using StaticArrays
 using Test
@@ -31,7 +31,7 @@ alg = MethodOfSteps(DP8())
 u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), p),
+    DDEProblem(MRIgeneralizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), p),
     alg,
 )
 

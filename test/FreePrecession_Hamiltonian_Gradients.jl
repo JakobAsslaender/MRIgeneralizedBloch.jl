@@ -1,7 +1,7 @@
 using DifferentialEquations
 using Test
-using MT_generalizedBloch
-using MT_generalizedBloch: gBloch_Hamiltonian_superLorentzian!, FreePrecession_Hamiltonian!, gBloch_Hamiltonian!
+using MRIgeneralizedBloch
+using MRIgeneralizedBloch: gBloch_Hamiltonian_superLorentzian!, FreePrecession_Hamiltonian!, gBloch_Hamiltonian!
 
 ##
 max_error = 5e-2

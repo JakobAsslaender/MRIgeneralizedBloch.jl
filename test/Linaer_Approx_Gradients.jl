@@ -1,7 +1,7 @@
 using DifferentialEquations
 using Test
-using MT_generalizedBloch
-using MT_generalizedBloch: Linear_Hamiltonian_Matrix, Inversion_Pulse_Propagator
+using MRIgeneralizedBloch
+using MRIgeneralizedBloch: Linear_Hamiltonian_Matrix, Inversion_Pulse_Propagator
 
 ## 
 max_error = 1e-5

@@ -1,7 +1,7 @@
 using DifferentialEquations
 using BenchmarkTools
-using MT_generalizedBloch
-using MT_generalizedBloch: gBloch_Hamiltonian!, Linear_Hamiltonian_Matrix
+using MRIgeneralizedBloch
+using MRIgeneralizedBloch: gBloch_Hamiltonian!, Linear_Hamiltonian_Matrix
 using Test
 
 ## set variables
@@ -41,7 +41,7 @@ end
 
 ## benchmark the different solvers (excecute one line at a time to provoke individual results to be printed)
 print("Time to solve the full gene. Bloch IDE for 100us π-pulse:")
-@btime solve(DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian!, u0_5D, h, (0.0, TRF), (ω1[end], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))
+@btime solve(DDEProblem(MRIgeneralizedBloch.gBloch_Hamiltonian!, u0_5D, h, (0.0, TRF), (ω1[end], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))
 
 print("Time to solve the linear approximation for 100us π-pulse:")
-@btime exp(MT_generalizedBloch.Linear_Hamiltonian_Matrix(ω1[end-1], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, ω1[end-1], 1, T2s))) * u0_6D
+@btime exp(MRIgeneralizedBloch.Linear_Hamiltonian_Matrix(ω1[end-1], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, ω1[end-1], 1, T2s))) * u0_6D

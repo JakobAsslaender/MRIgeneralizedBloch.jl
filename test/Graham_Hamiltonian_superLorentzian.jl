@@ -1,5 +1,5 @@
 ##
-using MT_generalizedBloch
+using MRIgeneralizedBloch
 using DifferentialEquations
 using StaticArrays
 using Test
@@ -30,7 +30,7 @@ alg = Vern6()
 u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    ODEProblem(MT_generalizedBloch.Graham_Hamiltonian_superLorentzian!, u0, (0.0, TRF), p),
+    ODEProblem(MRIgeneralizedBloch.Graham_Hamiltonian_superLorentzian!, u0, (0.0, TRF), p),
     alg,
 )
 
@@ -42,7 +42,7 @@ h(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, Greens_superLorentzian)
 alg = MethodOfSteps(DP8())
 sol = solve(
-    DDEProblem(MT_generalizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), p),
+    DDEProblem(MRIgeneralizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), p),
     alg,
 )
 

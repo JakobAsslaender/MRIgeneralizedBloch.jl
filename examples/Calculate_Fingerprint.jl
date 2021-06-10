@@ -1,4 +1,4 @@
-using MT_generalizedBloch
+using MRIgeneralizedBloch
 using MAT
 using Plots
 plotlyjs(ticks=:native)

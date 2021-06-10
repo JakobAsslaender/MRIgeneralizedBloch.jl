@@ -1,5 +1,5 @@
 using BenchmarkTools
-using MT_generalizedBloch
+using MRIgeneralizedBloch
 using Test
 
 ##

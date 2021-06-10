@@ -1,4 +1,4 @@
-module MT_generalizedBloch
+module MRIgeneralizedBloch
 
 using QuadGK
 using DifferentialEquations
