@@ -49,7 +49,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
-[[MyPkg]]
+[[MRIgeneralizeBloch]]
 path = ".."
 uuid = "03175319-64ca-4b21-b805-e98b34a5f897"
 version = "0.1.0"

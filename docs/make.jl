@@ -1,16 +1,16 @@
-using MyPkg
+using MRIgeneralizeBloch
 using Documenter
 
-DocMeta.setdocmeta!(MyPkg, :DocTestSetup, :(using MyPkg); recursive=true)
+DocMeta.setdocmeta!(MRIgeneralizeBloch, :DocTestSetup, :(using MRIgeneralizeBloch); recursive=true)
 
 makedocs(;
-    modules=[MyPkg],
+    modules=[MRIgeneralizeBloch],
     authors="Jakob Asslaender <jakob.asslaender@nyumc.org> and contributors",
-    repo="https://github.com/JakobAsslaender/MyPkg.jl/blob/{commit}{path}#{line}",
-    sitename="MyPkg.jl",
+    repo="https://github.com/JakobAsslaender/MRIgeneralizeBloch.jl/blob/{commit}{path}#{line}",
+    sitename="MRIgeneralizeBloch.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://JakobAsslaender.github.io/MyPkg.jl",
+        canonical="https://JakobAsslaender.github.io/MRIgeneralizeBloch.jl",
         assets=String[],
     ),
     pages=[
@@ -19,5 +19,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JakobAsslaender/MyPkg.jl",
+    repo="github.com/JakobAsslaender/MRIgeneralizeBloch.jl",
 )

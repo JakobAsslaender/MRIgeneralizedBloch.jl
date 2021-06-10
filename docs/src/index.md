@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = MyPkg
+CurrentModule = MRIgeneralizeBloch
 ```
 
-# MyPkg
+# MRIgeneralizeBloch
 
-Documentation for [MyPkg](https://github.com/JakobAsslaender/MyPkg.jl).
+Documentation for [MRIgeneralizeBloch](https://github.com/JakobAsslaender/MRIgeneralizeBloch.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [MyPkg]
+Modules = [MRIgeneralizeBloch]
 ```
