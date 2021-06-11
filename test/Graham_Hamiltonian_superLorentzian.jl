@@ -26,7 +26,7 @@ mf = (1 - m0s) * rand()
 
 ## Solve Graham's solution
 p = (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx)
-alg = Vern6()
+alg = Tsit5()
 u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(

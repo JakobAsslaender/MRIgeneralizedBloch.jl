@@ -1,6 +1,7 @@
+using MRIgeneralizedBloch
 using BenchmarkTools
 using MAT
-using MRIgeneralizedBloch
+using Test
 
 ## set parameters
 ω0 = 0.0
@@ -17,7 +18,7 @@ TRF = [500e-6; control[1:end - 1,2]]
 α = [π; control[1:end - 1,1] .+ control[2:end,1]]
 ω1 = α ./ TRF
 
-print("Time for the R2sl pre-computation:")
+print("Time for the R2sl pre-computation: ")
 R2s_T = @time PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
 
 ## ##################################################################
@@ -45,13 +46,13 @@ m_Graham = Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, R
 # signal functions
 #####################################################################
 print("Time to solve the full IDE:            ")
-@btime s_gBloch = gBloch_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
+s_gBloch = @btime gBloch_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
 
 print("Time to solve Graham's approximation:  ")
-@btime s_Graham = Graham_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
+s_Graham = @btime Graham_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
 
 print("Time to solve the linear approximation:")
-@btime s_linapp = MatrixApprox_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T)
+s_linapp = @btime MatrixApprox_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T)
 
 @test real(s_gBloch) ≈ real(s_linapp) rtol = 1e-3
 @test imag(s_gBloch) ≈ imag(s_linapp) atol = 1e9

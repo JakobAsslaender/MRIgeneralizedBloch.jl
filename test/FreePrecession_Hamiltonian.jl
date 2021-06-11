@@ -25,7 +25,7 @@ mf = (1 - m0s) * rand()
 
 ## Solve generalized Bloch-McConnell with Lorentzian lineshape
 p = (ω0, m0s, R1, R2f, Rx)
-alg = Vern6()
+alg = Tsit5()
 u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
