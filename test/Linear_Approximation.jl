@@ -18,7 +18,9 @@ Rx = 70 # 1/s
 ## pre-calcualtions
 G = interpolate_Greens_Function(Greens_superLorentzian, 0, maximum(TRF) / T2s)
 h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
-(R2s, _, _) = PreCompute_Saturation_gBloch(100e-6, 1e-3, 5e-6, 15e-6, minimum(α), maximum(α), 1-eps(), 1+eps())
+
+print("Time to pre-compute saturation: ")
+(R2s, _, _) = @time PreCompute_Saturation_gBloch(100e-6, 1e-3, 5e-6, 15e-6, minimum(α), maximum(α), 1-eps(), 1+eps())
 
 ## init
 u0_5D = [0,0,m0f,  m0s,1]

@@ -8,7 +8,9 @@ using Test
 
 ##
 Gfull = Greens_superLorentzian
-Ginte = interpolate_Greens_Function(Greens_superLorentzian, τmin, τmax)
+
+print("Time to pre-calculate the interpolation:")
+Ginte = @btime interpolate_Greens_Function(Greens_superLorentzian, τmin, τmax)
 
 ##
 for i = 1:100
