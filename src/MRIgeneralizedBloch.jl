@@ -9,25 +9,25 @@ using StaticArrays
 using LinearAlgebra
 using NLsolve
 
-export gBloch_calculate_magnetization
-export gBloch_calculate_signal
+export calculatemagnetization_gbloch_ide
+export calculatesignal_gbloch_ide
 export LinearApprox_calculate_magnetization
 export LinearApprox_calculate_signal
-export Graham_calculate_magnetization
-export Graham_calculate_signal
+export calculatemagnetization_graham_ode
+export calculatesignal_graham_ode
 
-export Greens_Lorentzian
-export Greens_Gaussian
-export Greens_superLorentzian
-export dG_o_dT2s_x_T2s_superLorentzian
-export interpolate_Greens_Function
+export greens_lorentzian
+export greens_gaussian
+export greens_superlorentzian
+export dG_o_dT2s_x_T2s_superlorentzian
+export interpolate_greens_function
 
-export PreCompute_Saturation_gBloch
+export precompute_R2sl
 export PreCompute_Saturation_Graham
 
 export MatrixApprox_calculate_magnetization
 export MatrixApprox_calculate_signal
-export Calculate_Saturation_rate
+export evaluate_R2sl_vector
 
 export grad_m0s
 export grad_R1

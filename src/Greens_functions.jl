@@ -1,37 +1,37 @@
-function Greens_Lorentzian(τ)
+function greens_lorentzian(τ)
     exp(-τ)
 end
-function Greens_Lorentzian(τ, R2)
-    Greens_Lorentzian(R2 * τ)
+function greens_lorentzian(τ, R2)
+    greens_lorentzian(R2 * τ)
 end
-function Greens_Lorentzian(t, τ, R2)
-    Greens_Lorentzian(R2 * (t-τ))
+function greens_lorentzian(t, τ, R2)
+    greens_lorentzian(R2 * (t-τ))
 end
 
-function Greens_Gaussian(τ)
+function greens_gaussian(τ)
     exp(-τ^2 / 2)
 end
-function Greens_Gaussian(τ, R2)
-    Greens_Gaussian(R2 * τ)
+function greens_gaussian(τ, R2)
+    greens_gaussian(R2 * τ)
 end
-function Greens_Gaussian(t, τ, R2)
-    Greens_Gaussian(R2 * (t-τ))
+function greens_gaussian(t, τ, R2)
+    greens_gaussian(R2 * (t-τ))
 end
 
-function Greens_superLorentzian(τ)
+function greens_superlorentzian(τ)
     quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0.0, 1.0)[1]
 end
 
-function dG_o_dT2s_x_T2s_superLorentzian(τ)
+function dG_o_dT2s_x_T2s_superlorentzian(τ)
     quadgk(ct -> exp(-τ^2 * (3 * ct^2 - 1)^2 / 8) * (τ^2 * (3 * ct^2 - 1)^2 / 4), 0.0, 1.0)[1]
 end
-function dG_o_dT2s_x_T2s_superLorentzian(τ, R2)
-    dG_o_dT2s_x_T2s_superLorentzian(R2 * τ)
+function dG_o_dT2s_x_T2s_superlorentzian(τ, R2)
+    dG_o_dT2s_x_T2s_superlorentzian(R2 * τ)
 end
-function dG_o_dT2s_x_T2s_superLorentzian(t, τ, R2)
-    dG_o_dT2s_x_T2s_superLorentzian(R2 * (t-τ))
+function dG_o_dT2s_x_T2s_superlorentzian(t, τ, R2)
+    dG_o_dT2s_x_T2s_superlorentzian(R2 * (t-τ))
 end
 
-function interpolate_Greens_Function(f, τmin, τmax)
+function interpolate_greens_function(f, τmin, τmax)
     Fun(f, τmin..τmax)
 end

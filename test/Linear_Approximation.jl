@@ -1,7 +1,7 @@
 using DifferentialEquations
 using BenchmarkTools
 using MRIgeneralizedBloch
-using MRIgeneralizedBloch: gBloch_Hamiltonian!, Linear_Hamiltonian_Matrix
+using MRIgeneralizedBloch: apply_hamiltonian_gbloch!, hamiltonian_linear
 using Test
 
 ## set variables
@@ -16,11 +16,11 @@ T2s = 10e-6 # s
 Rx = 70 # 1/s
 
 ## pre-calcualtions
-G = interpolate_Greens_Function(Greens_superLorentzian, 0, maximum(TRF) / T2s)
+G = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF) / T2s)
 h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 print("Time to pre-compute saturation: ")
-(R2s, _, _) = @time PreCompute_Saturation_gBloch(100e-6, 1e-3, 5e-6, 15e-6, minimum(α), maximum(α), 1-eps(), 1+eps())
+(R2s, _, _) = @time precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, minimum(α), maximum(α), 1-eps(), 1+eps())
 
 ## init
 u0_5D = [0,0,m0f,  m0s,1]
@@ -30,8 +30,8 @@ u0_6D = [0,0,m0f,0,m0s,1]
 M_full = zeros(length(ω1), 4)
 M_appx = similar(M_full)
 Threads.@threads for i in eachindex(ω1)
-    M_full[i,:] = solve(DDEProblem(gBloch_Hamiltonian!, u0_5D, h, (0.0, TRF), (ω1[i], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))[end][1:4]
-    u = exp(Linear_Hamiltonian_Matrix(ω1[i], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, ω1[i], 1, T2s))) * u0_6D
+    M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, h, (0.0, TRF), (ω1[i], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))[end][1:4]
+    u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, ω1[i], 1, T2s))) * u0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
 
@@ -43,7 +43,7 @@ end
 
 ## benchmark the different solvers (excecute one line at a time to provoke individual results to be printed)
 print("Time to solve the full gene. Bloch IDE for 100us π-pulse:")
-@btime solve(DDEProblem(MRIgeneralizedBloch.gBloch_Hamiltonian!, u0_5D, h, (0.0, TRF), (ω1[end], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))
+@btime solve(DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0_5D, h, (0.0, TRF), (ω1[end], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))
 
 print("Time to solve the linear approximation for 100us π-pulse:")
-@btime exp(MRIgeneralizedBloch.Linear_Hamiltonian_Matrix(ω1[end-1], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, ω1[end-1], 1, T2s))) * u0_6D
+@btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, ω1[end-1], 1, T2s))) * u0_6D

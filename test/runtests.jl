@@ -5,19 +5,19 @@ using Test
     include("Greens_Interpolation.jl")
 end
 
-@testset "gBloch_Hamiltonian!" begin
+@testset "apply_hamiltonian_gbloch!" begin
     for i = 1:10 # test different random initializations
         include("gBloch_Hamiltonian.jl")
     end
 end
 
-@testset "FreePrecession_Hamiltonian!" begin
+@testset "apply_hamiltonian_freeprecession!" begin
     for i = 1:10 # test different random initializations
         include("FreePrecession_Hamiltonian.jl")
     end
 end
 
-@testset "Graham_Hamiltonian_superLorentzian!" begin
+@testset "apply_hamiltonian_graham_superlorentzian!" begin
     for i = 1:10 # test different random initializations
         include("Graham_Hamiltonian_superLorentzian.jl")
     end
@@ -27,11 +27,11 @@ end
     include("Linear_Approximation.jl")
 end
 
-@testset "gBloch_Hamiltonian! gradients" begin
+@testset "apply_hamiltonian_gbloch! gradients" begin
     include("gBloch_Hamiltonian_Gradients.jl")
 end
 
-@testset "FreePrecession_Hamiltonian! gradients" begin
+@testset "apply_hamiltonian_freeprecession! gradients" begin
     include("FreePrecession_Hamiltonian_Gradients.jl")
 end
 
@@ -39,7 +39,7 @@ end
     include("Linaer_Approx_Gradients.jl")
 end
 
-@testset "Graham_Hamiltonian_superLorentzian! gradients" begin
+@testset "apply_hamiltonian_graham_superlorentzian! gradients" begin
     include("Graham_Hamiltonian_Gradients.jl")
 end
 

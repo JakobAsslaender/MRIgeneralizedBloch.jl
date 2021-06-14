@@ -1,5 +1,5 @@
 ##
-function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
+function calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
 
     # Define g(τ) and its derivative as ApproxFuns
     g = (τ) -> quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0.0, 1.0)[1]
@@ -23,16 +23,16 @@ function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
     u0[5] = 1.0
 
     # prep pulse 
-    sol = solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)  
+    sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)  
     u0 = sol[end]
     
     T_FP = (TR - TRF[2]) / 2 - TRF[1] / 2
-    sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
+    sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
     u0 = sol[end]
     
     for ic = 0:(Niter - 1)
         # free precession for TRF/2
-        sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, TRF[1] / 2), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
+        sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, TRF[1] / 2), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5())
         u0 = sol[end]
         
         # inversion pulse with crusher gradients (assumed to be instantanious)
@@ -42,7 +42,7 @@ function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
         u0[3:5:end] .*= cos(B1 * ω1[1] * TRF[1])
 
         # calculate saturation of RF pulse
-        sol = solve(DDEProblem(gBloch_Hamiltonian_InversionPulse!, u0, h, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, T2s, 0.0, ga, dg_oT2_a, grad_list)), alg)
+        sol = solve(DDEProblem(apply_hamiltonian_gbloch_inversion!, u0, h, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, T2s, 0.0, ga, dg_oT2_a, grad_list)), alg)
         u0[4:5:end] = sol[end][4:5:end]
 
         for i in eachindex(grad_list)
@@ -56,14 +56,14 @@ function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
         # free precession
         T_FP = TR - TRF[2] / 2
         TE = TR / 2
-        sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
+        sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
         s[:,1] = sol[2]
         s[1:5:end,1] .*= (-1)^(1 + ic)
         s[2:5:end,1] .*= (-1)^(1 + ic)
         u0 = sol[end]
 
         for ip = 2:length(TRF)
-            sol = solve(DDEProblem(gBloch_Hamiltonian!, u0, h, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
+            sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
             u0 = sol[end]
     
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2
@@ -71,7 +71,7 @@ function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
             #     T_FP -= TRF[ip + 1] / 2
             # end
             TE = TR / 2 - TRF[ip] / 2
-            sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
+            sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
             if sol.t[2] / TE - 1 > 1e-10
                 throw(DimensionMismatch("sol.t[2] is not equal to TE"))
             end
@@ -84,19 +84,19 @@ function gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
     return s
 end
 
-function gBloch_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Niter)
-    s = gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], Niter)
+function calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Niter)
+    s = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], Niter)
     s = s[1,:] + 1im * s[2,:]
     return s
 end
 
-function gBloch_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
-    s = gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
+function calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
+    s = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
     s = s[1:5:end,:] + 1im * s[2:5:end,:]
     return s
 end
 
-function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
+function calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
     # initialization and memory allocation 
     N_s = 5 * (1 + length(grad_list))
     s = zeros(N_s, length(TRF))
@@ -106,16 +106,16 @@ function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
     u0[5] = 1.0
 
     # prep pulse 
-    sol = solve(ODEProblem(Graham_Hamiltonian_superLorentzian!, u0, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, TRF[2], m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5(), save_everystep=false)    
+    sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, u0, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, TRF[2], m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5(), save_everystep=false)    
     u0 = sol[end]
     
     T_FP = TR / 2 - TRF[2] / 2 - TRF[1] / 2
-    sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false)
+    sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false)
     u0 = sol[end]
     
     for ic = 0:(Niter - 1)
         # free precession for TRF/2
-        sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, TRF[1] / 2), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false)
+        sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, TRF[1] / 2), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false)
         u0 = sol[end]
 
         # inversion pulse with crusher gradients (assumed to be instantanious)
@@ -139,19 +139,19 @@ function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
         # free precession
         T_FP = TR - TRF[2] / 2
         TE = TR / 2
-        sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
+        sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
         s[:,1] = sol[2]
         s[1:5:end,1] .*= (-1)^(1 + ic)
         s[2:5:end,1] .*= (-1)^(1 + ic)
         u0 = sol[end]
 
         for ip = 2:length(TRF)
-            sol = solve(ODEProblem(Graham_Hamiltonian_superLorentzian!, u0, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, TRF[ip], m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5(), save_everystep=false)
+            sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, u0, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, TRF[ip], m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5(), save_everystep=false)
             u0 = sol[end]
     
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2
             TE = TR / 2 - TRF[ip] / 2
-            sol = solve(ODEProblem(FreePrecession_Hamiltonian!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
+            sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
             if sol.t[2] / TE - 1 > 1e-10
                 throw(DimensionMismatch("sol.t[2] is not equal to TE"))
             end
@@ -164,14 +164,14 @@ function Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx,
     return s
 end
 
-function Graham_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Niter)
-    s = Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], Niter)
+function calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Niter)
+    s = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], Niter)
     s = s[1,:] + 1im * s[2,:]
     return s
 end
 
-function Graham_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
-    s = Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
+function calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
+    s = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
     s = s[1:5:end,:] + 1im * s[2:5:end,:]
     return s
 end

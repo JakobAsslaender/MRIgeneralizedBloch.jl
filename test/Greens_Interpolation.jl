@@ -7,10 +7,10 @@ using Test
 τmax = 100
 
 ##
-Gfull = Greens_superLorentzian
+Gfull = greens_superlorentzian
 
 print("Time to pre-calculate the interpolation:")
-Ginte = @btime interpolate_Greens_Function(Greens_superLorentzian, τmin, τmax)
+Ginte = @btime interpolate_greens_function(greens_superlorentzian, τmin, τmax)
 
 ##
 for i = 1:100

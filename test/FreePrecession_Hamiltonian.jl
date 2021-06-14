@@ -29,7 +29,7 @@ alg = Tsit5()
 u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    ODEProblem(MRIgeneralizedBloch.FreePrecession_Hamiltonian!, u0, (0.0, TFP), p),
+    ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_freeprecession!, u0, (0.0, TFP), p),
     alg,
 )
 

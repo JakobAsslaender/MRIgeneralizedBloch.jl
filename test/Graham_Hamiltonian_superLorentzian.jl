@@ -30,7 +30,7 @@ alg = Tsit5()
 u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    ODEProblem(MRIgeneralizedBloch.Graham_Hamiltonian_superLorentzian!, u0, (0.0, TRF), p),
+    ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_graham_superlorentzian!, u0, (0.0, TRF), p),
     alg,
 )
 
@@ -39,10 +39,10 @@ u_Graham = sol[end]
 ## Solve generalized Bloch-McConnell with super-Lorentzian lineshape
 h(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
-p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, Greens_superLorentzian)
+p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, greens_superlorentzian)
 alg = MethodOfSteps(DP8())
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.gBloch_Hamiltonian!, u0, h, (0.0, TRF), p),
+    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0, h, (0.0, TRF), p),
     alg,
 )
 

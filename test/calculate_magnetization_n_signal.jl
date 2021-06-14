@@ -19,12 +19,12 @@ TRF = [500e-6; control[1:end - 1,2]]
 ω1 = α ./ TRF
 
 print("Time for the R2sl pre-computation: ")
-R2s_T = @time PreCompute_Saturation_gBloch(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
+R2s_T = @time precompute_R2sl(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
 
 ## ##################################################################
 # magnetization functions
 #####################################################################
-m_gBloch = gBloch_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
+m_gBloch = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
 
 ## test linear approximation 
 m_linapp = MatrixApprox_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T)
@@ -35,7 +35,7 @@ m_linapp = MatrixApprox_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, 
 @test m_gBloch[4,:] ≈ m_linapp[5,:] rtol = 1e-3
 
 ## test Graham's solution
-m_Graham = Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
+m_Graham = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
 
 @test m_gBloch[1,:] ≈ m_Graham[1,:] rtol = 1e-2
 @test m_gBloch[2,:] ≈ m_Graham[2,:] rtol = 1e-2
@@ -46,10 +46,10 @@ m_Graham = Graham_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, R
 # signal functions
 #####################################################################
 print("Time to solve the full IDE:            ")
-s_gBloch = @btime gBloch_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
+s_gBloch = @btime calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
 
 print("Time to solve Graham's approximation:  ")
-s_Graham = @btime Graham_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
+s_Graham = @btime calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
 
 print("Time to solve the linear approximation:")
 s_linapp = @btime MatrixApprox_calculate_signal(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T)
