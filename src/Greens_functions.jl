@@ -21,12 +21,6 @@ end
 function Greens_superLorentzian(τ)
     quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0.0, 1.0)[1]
 end
-function Greens_superLorentzian(τ, R2)
-    Greens_superLorentzian(R2 * τ)
-end
-function Greens_superLorentzian(t, τ, R2)
-    Greens_superLorentzian(R2 * (t-τ))
-end
 
 function dG_o_dT2s_x_T2s_superLorentzian(τ)
     quadgk(ct -> exp(-τ^2 * (3 * ct^2 - 1)^2 / 8) * (τ^2 * (3 * ct^2 - 1)^2 / 4), 0.0, 1.0)[1]

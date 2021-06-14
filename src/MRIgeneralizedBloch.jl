@@ -46,9 +46,11 @@ struct grad_T2s <: grad_param end
 struct grad_ω0 <: grad_param end
 struct grad_B1 <: grad_param end
 
-include("MT_Hamiltonians.jl")
-include("MT_Diff_Equation_Sovlers.jl")
-include("MT_Exponential_Solvers.jl")
+include("DiffEq_Hamiltonians.jl")
+include("Linearized_R2s.jl")
+include("MatrixExp_Solvers.jl")
+include("DiffEq_Sovlers.jl")
 include("Greens_functions.jl")
+include("MatrixExp_Hamiltonians.jl")
 
 end
