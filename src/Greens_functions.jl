@@ -34,4 +34,6 @@ end
 
 function interpolate_greens_function(f, τmin, τmax)
     Fun(f, τmin..τmax)
+    # x = τmin : 0.001 : τmax
+    # return CubicSplineInterpolation(x, f.(x))
 end

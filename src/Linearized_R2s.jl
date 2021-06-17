@@ -27,13 +27,15 @@ function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_
         sol = nlsolve(f!, j!, [1.0])
         return sol.zero[1]
     end
-                                                
-    S = Chebyshev((TRF_min / T2s_max)..(TRF_max / T2s_min)) * Chebyshev((B1_min * α_min)..(B1_max * α_max))
-    fapprox = Fun(calculate_R2sl,S,2^12)
-    
-    dfd1 = Derivative(S, [1,0]) * fapprox
-    dfd2 = Derivative(S, [0,1]) * fapprox
 
+    τv = range(TRF_min/T2s_max, TRF_max/T2s_min; length=2^6)
+    αv = range(B1_min * α_min, B1_max * α_max; length=2^6)
+    A = [calculate_R2sl(τ, α) for τ in τv, α in αv]
+    fapprox = CubicSplineInterpolation((τv, αv), A)
+
+    dfd1(τ, α) = Interpolations.gradient(fapprox, τ, α)[1]
+    dfd2(τ, α) = Interpolations.gradient(fapprox, τ, α)[2]
+                                            
     function R2sl(TRF, ω1, B1, T2s)
         return fapprox(TRF / T2s, B1 * ω1 * TRF) / T2s
     end

@@ -2,6 +2,7 @@ module MRIgeneralizedBloch
 
 using QuadGK
 using DifferentialEquations
+using Interpolations
 using ApproxFun
 import Cubature
 using SpecialFunctions

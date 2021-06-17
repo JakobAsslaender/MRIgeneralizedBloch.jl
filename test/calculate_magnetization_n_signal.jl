@@ -13,22 +13,30 @@ T2s = 10e-6
 Rx = 30.0
 TR = 3.5e-3
 
+grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]
+
 control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../examples/control_MT_v3p2_TR3p5ms_discretized.mat")))["control"]
 
 TRF = [500e-6; control[1:end - 1,2]]
 α = [π; control[1:end - 1,1] .+ control[2:end,1]]
 ω1 = α ./ TRF
 
+## Pre-compute and evalute R2sf
 print("Time for the R2sl pre-computation: ")
 R2s_T = @time precompute_R2sl(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
 
+print("Time to evaluate the interpolated R2sl w/o gradients: ")
+R2s_vec = @btime evaluate_R2sl_vector($ω1, $TRF, $B1, $T2s, $R2s_T, $[])
+
+print("Time to evaluate the interpolated R2sl with gradients: ")
+R2s_vec = @btime evaluate_R2sl_vector($ω1, $TRF, $B1, $T2s, $R2s_T, $grad_list)
 
 ## ##################################################################
 # magnetization functions
 #####################################################################
 m_gBloch = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
 
-## test Graham's solution
+# test Graham's solution
 m_Graham = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
 
 @test m_gBloch[:,1] ≈ m_Graham[:,1] rtol = 1e-2
@@ -36,7 +44,7 @@ m_Graham = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f
 @test m_gBloch[:,3] ≈ m_Graham[:,3] rtol = 1e-2
 @test m_gBloch[:,4] ≈ m_Graham[:,4] rtol = 1e-2
 
-## test linear approximation 
+# test linear approximation 
 m_linapp = calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T; output=:realmagnetization)
 m_linapp = [m_linapp[i][j] for i=1:size(m_linapp,1), j=1:5]
 
@@ -51,18 +59,18 @@ m_linapp = [m_linapp[i][j] for i=1:size(m_linapp,1), j=1:5]
 #####################################################################
 println("w/o gradients:")
 print("Time to solve the full IDE:            ")
-s_gBloch = @btime calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
+s_gBloch = @btime calculatesignal_gbloch_ide($ω1, $TRF, $TR, $ω0, $B1, $m0s, $R1, $R2f, $Rx, $T2s, 2)
 
 # test Graham's solution
 print("Time to solve Graham's approximation:  ")
-s_Graham = @btime calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
+s_Graham = @btime calculatesignal_graham_ode($ω1, $TRF, $TR, $ω0, $B1, $m0s, $R1, $R2f, $Rx, $T2s, 2)
 
 @test real(s_gBloch) ≈ real(s_Graham) rtol = 1e-2
 @test imag(s_gBloch) ≈ imag(s_Graham) atol = 1e-9
 
 # test linear approximation
 print("Time to solve the linear approximation:")
-s_linapp = @btime vec(calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T))
+s_linapp = @btime vec(calculatesignal_linearapprox($ω1, $TRF, $TR, $ω0, $B1, $m0s, $R1, $R2f, $Rx, $T2s, $R2s_T))
 
 @test real(s_gBloch) ≈ real(s_linapp) rtol = 1e-3
 @test imag(s_gBloch) ≈ imag(s_linapp) atol = 1e-9
@@ -72,8 +80,6 @@ s_linapp = @btime vec(calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R
 # signal functions with gradients
 #####################################################################
 println("with all (8) gradients:")
-grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]
-
 print("Time to solve the full IDE:            ")
 s_gBloch_grad = @time calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, 2)
 
