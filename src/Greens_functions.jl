@@ -19,7 +19,7 @@ function greens_gaussian(t, τ, R2)
 end
 
 function greens_superlorentzian(τ)
-    quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0.0, 1.0)[1]
+    quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0, 1)[1]
 end
 
 function dG_o_dT2s_x_T2s_superlorentzian(τ)

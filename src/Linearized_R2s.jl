@@ -1,8 +1,7 @@
 function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)
 
     # approximate saturation
-    G(τ) = quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0.0, sqrt(1 / 3), 1.0)[1]
-    G_a = Fun(G, 0..(TRF_max / T2s_min))
+    G = interpolate_greens_function(greens_superlorentzian, 0, TRF_max / T2s_min)
     h(p, t) = [1.0]
 
     function hamiltonian_1D!(du, u, h, p::NTuple{3,Any}, t)
@@ -11,7 +10,7 @@ function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_
     end
 
     function calculate_R2sl(τ, α)
-        z = solve(DDEProblem(hamiltonian_1D!, [1.0], h, (0, τ), (α/τ, 1, G_a)), MethodOfSteps(DP8()))[end][1]
+        z = solve(DDEProblem(hamiltonian_1D!, [1.0], h, (0, τ), (α/τ, 1, G)), MethodOfSteps(DP8()))[end][1]
     
         function f!(F, ρv)
             ρ = ρv[1]

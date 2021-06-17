@@ -1,15 +1,12 @@
 ##
 function calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
 
-    # Define g(τ) and its derivative as ApproxFuns
-    g = (τ) -> quadgk(ct -> exp(- τ^2 * (3 * ct^2 - 1)^2 / 8), 0.0, 1.0)[1]
-    x = Fun(identity, 0..(maximum(TRF) / T2s))
-    ga = g(x)
+    # Define G(τ) and its derivative as ApproxFuns
+    G = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF) / T2s)
     if any(isa.(grad_list, grad_T2s))
-        dg_oT2 = (τ) -> quadgk(ct -> exp(- τ^2 * (3.0 * ct^2 - 1)^2 / 8.0) * (τ^2 * (3.0 * ct^2 - 1)^2 / 4.0), 0.0, 1.0)[1]
-        dg_oT2_a = dg_oT2(x)
+        dG_oT2 = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, maximum(TRF) / T2s)
     else
-        dg_oT2_a = []
+        dG_oT2 = []
     end
 
     # initialization and memory allocation
@@ -23,7 +20,7 @@ function calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, 
     u0[5] = 1.0
 
     # prep pulse 
-    sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)  
+    sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_oT2, grad_list)), alg)  
     u0 = sol[end]
     
     T_FP = (TR - TRF[2]) / 2 - TRF[1] / 2
@@ -42,7 +39,7 @@ function calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, 
         u0[3:5:end] .*= cos(B1 * ω1[1] * TRF[1])
 
         # calculate saturation of RF pulse
-        sol = solve(DDEProblem(apply_hamiltonian_gbloch_inversion!, u0, h, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, T2s, 0.0, ga, dg_oT2_a, grad_list)), alg)
+        sol = solve(DDEProblem(apply_hamiltonian_gbloch_inversion!, u0, h, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0.0, 0.0, T2s, 0.0, G, dG_oT2, grad_list)), alg)
         u0[4:5:end] = sol[end][4:5:end]
 
         for i in eachindex(grad_list)
@@ -63,13 +60,10 @@ function calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, 
         u0 = sol[end]
 
         for ip = 2:length(TRF)
-            sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1, R2f, T2s, Rx, ga, dg_oT2_a, grad_list)), alg)
+            sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_oT2, grad_list)), alg)
             u0 = sol[end]
     
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2
-            # if ip < length(TRF)
-            #     T_FP -= TRF[ip + 1] / 2
-            # end
             TE = TR / 2 - TRF[ip] / 2
             sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0.0, T_FP), (ω0, m0s, R1, R2f, Rx, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
             if sol.t[2] / TE - 1 > 1e-10

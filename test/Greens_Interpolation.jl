@@ -21,7 +21,7 @@ end
 ## benchmark
 τ = τmin + (τmax - τmin) * rand()
 print("Time to evaluate the original     super-Lorenzian Green's function:")
-@btime Gfull(τ)
+@btime Gfull($τ)
 
 print("Time to evaluate the interpolated super-Lorenzian Green's function:")
-@btime Ginte(τ)
+@btime Ginte($τ)
