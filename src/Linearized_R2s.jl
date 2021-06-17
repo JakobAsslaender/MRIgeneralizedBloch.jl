@@ -30,34 +30,21 @@ function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_
 
     τv = range(TRF_min/T2s_max, TRF_max/T2s_min; length=2^6)
     αv = range(B1_min * α_min, B1_max * α_max; length=2^6)
-    A = [calculate_R2sl(τ, α) for τ in τv, α in αv]
-    fapprox = CubicSplineInterpolation((τv, αv), A)
+    # A = [calculate_R2sl(τ, α) for τ in τv, α in αv]
+    A = Matrix{Float64}(undef, length(τv), length(αv))
+    Threads.@threads for i in CartesianIndices(A)
+        A[i] = calculate_R2sl(τv[i[1]], αv[i[2]])
+    end
 
-    dfd1(τ, α) = Interpolations.gradient(fapprox, τ, α)[1]
-    dfd2(τ, α) = Interpolations.gradient(fapprox, τ, α)[2]
+    f = CubicSplineInterpolation((τv, αv), A)
+    dfdτ(τ, α) = Interpolations.gradient(f, τ, α)[1]
+    dfdα(τ, α) = Interpolations.gradient(f, τ, α)[2]
                                             
-    function R2sl(TRF, ω1, B1, T2s)
-        return fapprox(TRF / T2s, B1 * ω1 * TRF) / T2s
-    end
+    R2sl(TRF, ω1, B1, T2s) = f(TRF/T2s, B1*ω1*TRF) / T2s
+    dR2sldB1(TRF, ω1, B1, T2s) = dfdα(TRF/T2s, B1*ω1*TRF) * ω1 * TRF / T2s
+    R2sldT2s(TRF, ω1, B1, T2s) = -dfdτ(TRF / T2s, B1 * ω1 * TRF) * TRF / T2s^3 - f(TRF / T2s, B1 * ω1 * TRF) / T2s^2
 
-    function R2sl_dB1(TRF, ω1, B1, T2s)
-        _R2sl = fapprox(TRF / T2s, B1 * ω1 * TRF) / T2s
-        _dR2sldB1 = dfd2(TRF / T2s, B1 * ω1 * TRF) * ω1 * TRF / T2s
-        return (_R2sl, _dR2sldB1)
-    end
-
-    function R2sl_dB1_dT2s(TRF, ω1, B1, T2s)
-        _fapprox = fapprox(TRF / T2s, B1 * ω1 * TRF)
-        _dfd1 = dfd1(TRF / T2s, B1 * ω1 * TRF)
-        _dfd2 = dfd2(TRF / T2s, B1 * ω1 * TRF)
-
-        _R2sl = _fapprox / T2s
-        _dR2sldB1 = _dfd2 * ω1 * TRF / T2s
-        _R2sldT2s = - _dfd1 * TRF / T2s^3 - _fapprox / T2s^2
-        return (_R2sl, _R2sldT2s, _dR2sldB1)
-    end
-
-    return (R2sl, R2sl_dB1, R2sl_dB1_dT2s)
+    return (R2sl, R2sldT2s, dR2sldB1)
 end
 
 
@@ -66,17 +53,17 @@ function evaluate_R2sl_vector(ω1, TRF, B1, T2s, R2s_T, grad_list)
     _dR2sdT2s = similar(ω1)
     _dR2sdB1 = similar(ω1)
 
+    for i = 1:length(ω1)
+        _R2s[i] = R2s_T[1](TRF[i], ω1[i], B1, T2s)
+    end
     if any(isa.(grad_list, grad_T2s))
         for i = 1:length(ω1)
-            _R2s[i], _dR2sdT2s[i], _dR2sdB1[i] = R2s_T[3](TRF[i], ω1[i], B1, T2s)
+            _dR2sdT2s[i] = R2s_T[2](TRF[i], ω1[i], B1, T2s)
         end
-    elseif any(isa.(grad_list, grad_B1))
+    end
+    if any(isa.(grad_list, grad_B1))
         for i = 1:length(ω1)
-            _R2s[i], _dR2sdB1[i] = R2s_T[2](TRF[i], ω1[i], B1, T2s)
-        end
-    else
-        for i = 1:length(ω1)
-            _R2s[i] = R2s_T[1](TRF[i], ω1[i], B1, T2s)
+            _dR2sdB1[i] = R2s_T[3](TRF[i], ω1[i], B1, T2s)
         end
     end
     return (_R2s, _dR2sdT2s, _dR2sdB1)
