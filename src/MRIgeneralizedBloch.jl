@@ -23,11 +23,8 @@ export dG_o_dT2s_x_T2s_superlorentzian
 export interpolate_greens_function
 
 export precompute_R2sl
-export PreCompute_Saturation_Graham
-
-export MatrixApprox_calculate_magnetization
-export MatrixApprox_calculate_signal
 export evaluate_R2sl_vector
+export calculatesignal_linearapprox
 
 export grad_m0s
 export grad_R1

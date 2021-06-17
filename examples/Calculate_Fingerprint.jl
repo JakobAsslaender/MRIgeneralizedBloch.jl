@@ -29,7 +29,8 @@ plot!(TR * 1:length(TRF), m_gBloch[4,:] ./ m0s, label="zs / m0s")
 ## Linear approximation 
 R2s_T = precompute_R2sl(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
 
-m_linapp = MatrixApprox_calculate_magnetization(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T)
+m_linapp = calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T; output=:realmagnetization)
+m_linapp = [m_linapp[i][j] for j=1:5, i=1:size(m_linapp,1)]
 
 plot!(TR * 1:length(TRF), m_linapp[1,:] ./ (1 - m0s), label="L: xf / m0f", legend=:topleft)
 plot!(TR * 1:length(TRF), m_linapp[2,:] ./ (1 - m0s), label="L: yf / m0f")
