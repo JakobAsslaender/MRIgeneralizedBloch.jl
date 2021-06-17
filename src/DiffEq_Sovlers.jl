@@ -81,19 +81,17 @@ function calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, 
             u0 = sol[end]
         end
     end
-    return s
+    return transpose(s)
 end
 
 function calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Niter)
     s = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], Niter)
-    s = s[1,:] + 1im * s[2,:]
-    return s
+    return s[:,1] + 1im * s[:,2]
 end
 
 function calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
     s = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
-    s = s[1:5:end,:] + 1im * s[2:5:end,:]
-    return s
+    return s[:, 1:5:end] + 1im * s[:, 2:5:end]
 end
 
 function calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
@@ -161,17 +159,15 @@ function calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, 
             u0 = sol[end]
         end
     end
-    return s
+    return transpose(s)
 end
 
 function calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, Niter)
     s = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], Niter)
-    s = s[1,:] + 1im * s[2,:]
-    return s
+    return s[:,1] + 1im * s[:,2]
 end
 
 function calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
     s = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, Niter)
-    s = s[1:5:end,:] + 1im * s[2:5:end,:]
-    return s
+    return s[:,1:5:end] + 1im * s[:,2:5:end]
 end

@@ -31,19 +31,19 @@ m_gBloch = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f
 ## test Graham's solution
 m_Graham = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
 
-@test m_gBloch[1,:] ≈ m_Graham[1,:] rtol = 1e-2
-@test m_gBloch[2,:] ≈ m_Graham[2,:] rtol = 1e-2
-@test m_gBloch[3,:] ≈ m_Graham[3,:] rtol = 1e-2
-@test m_gBloch[4,:] ≈ m_Graham[4,:] rtol = 1e-2
+@test m_gBloch[:,1] ≈ m_Graham[:,1] rtol = 1e-2
+@test m_gBloch[:,2] ≈ m_Graham[:,2] rtol = 1e-2
+@test m_gBloch[:,3] ≈ m_Graham[:,3] rtol = 1e-2
+@test m_gBloch[:,4] ≈ m_Graham[:,4] rtol = 1e-2
 
 ## test linear approximation 
 m_linapp = calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T; output=:realmagnetization)
-m_linapp = [m_linapp[i][j] for j=1:5, i=1:size(m_linapp,1)]
+m_linapp = [m_linapp[i][j] for i=1:size(m_linapp,1), j=1:5]
 
-@test m_gBloch[1,:] ≈ m_linapp[1,:] rtol = 1e-3
-@test m_gBloch[2,:] ≈ m_linapp[2,:] atol = 1e-9
-@test m_gBloch[3,:] ≈ m_linapp[3,:] rtol = 1e-3
-@test m_gBloch[4,:] ≈ m_linapp[5,:] rtol = 1e-3
+@test m_gBloch[:,1] ≈ m_linapp[:,1] rtol = 1e-3
+@test m_gBloch[:,2] ≈ m_linapp[:,2] atol = 1e-9
+@test m_gBloch[:,3] ≈ m_linapp[:,3] rtol = 1e-3
+@test m_gBloch[:,4] ≈ m_linapp[:,5] rtol = 1e-3
 
 
 ## ##################################################################
@@ -81,27 +81,25 @@ s_gBloch_grad = @time calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1,
 print("Time to solve Graham's approximation:  ")
 s_Graham_grad = @time calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, grad_list, 2)
 
-@test s_gBloch_grad[1,:] ≈ s_Graham_grad[1,:] rtol = 1e-1
-@test s_gBloch_grad[2,:] ≈ s_Graham_grad[2,:] rtol = 1e-1
-@test s_gBloch_grad[3,:] ≈ s_Graham_grad[3,:] rtol = 1e-1
-@test s_gBloch_grad[4,:] ≈ s_Graham_grad[4,:] rtol = 1e-1
-@test s_gBloch_grad[5,:] ≈ s_Graham_grad[5,:] rtol = 1e-1
-@test s_gBloch_grad[6,:] ≈ s_Graham_grad[6,:] rtol = 1e-1
-@test s_gBloch_grad[7,:] ≈ s_Graham_grad[7,:] rtol = 1e-1
-@test s_gBloch_grad[8,:] ≈ s_Graham_grad[8,:] rtol = 1e-1
+@test s_gBloch_grad[:,1] ≈ s_Graham_grad[:,1] rtol = 1e-1
+@test s_gBloch_grad[:,2] ≈ s_Graham_grad[:,2] rtol = 1e-1
+@test s_gBloch_grad[:,3] ≈ s_Graham_grad[:,3] rtol = 1e-1
+@test s_gBloch_grad[:,4] ≈ s_Graham_grad[:,4] rtol = 1e-1
+@test s_gBloch_grad[:,5] ≈ s_Graham_grad[:,5] rtol = 1e-1
+@test s_gBloch_grad[:,6] ≈ s_Graham_grad[:,6] rtol = 1e-1
+@test s_gBloch_grad[:,7] ≈ s_Graham_grad[:,7] rtol = 1e-1
+@test s_gBloch_grad[:,8] ≈ s_Graham_grad[:,8] rtol = 1e-1
 
 # test linear approximation
 print("Time to solve the linear approximation:")
 s_linapp_grad = @time calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T; grad_list=grad_list)
 s_linapp_grad = dropdims(s_linapp_grad, dims=2)
 
-@test s_gBloch_grad[1,:] ≈ s_linapp_grad[:,1] rtol = 1e-3
-@test s_gBloch_grad[2,:] ≈ s_linapp_grad[:,2] rtol = 1e-3
-@test s_gBloch_grad[3,:] ≈ s_linapp_grad[:,3] rtol = 1e-3
-@test s_gBloch_grad[4,:] ≈ s_linapp_grad[:,4] rtol = 1e-3
-@test s_gBloch_grad[5,:] ≈ s_linapp_grad[:,5] rtol = 1e-3
-@test s_gBloch_grad[6,:] ≈ s_linapp_grad[:,6] rtol = 1e-2
-@test s_gBloch_grad[7,:] ≈ s_linapp_grad[:,7] rtol = 1e-3
-@test s_gBloch_grad[8,:] ≈ s_linapp_grad[:,8] rtol = 1e-3
-
-# TODO: transpose IDE/ODE solver results
+@test s_gBloch_grad[:,1] ≈ s_linapp_grad[:,1] rtol = 1e-3
+@test s_gBloch_grad[:,2] ≈ s_linapp_grad[:,2] rtol = 1e-3
+@test s_gBloch_grad[:,3] ≈ s_linapp_grad[:,3] rtol = 1e-3
+@test s_gBloch_grad[:,4] ≈ s_linapp_grad[:,4] rtol = 1e-3
+@test s_gBloch_grad[:,5] ≈ s_linapp_grad[:,5] rtol = 1e-3
+@test s_gBloch_grad[:,6] ≈ s_linapp_grad[:,6] rtol = 1e-2
+@test s_gBloch_grad[:,7] ≈ s_linapp_grad[:,7] rtol = 1e-3
+@test s_gBloch_grad[:,8] ≈ s_linapp_grad[:,8] rtol = 1e-3

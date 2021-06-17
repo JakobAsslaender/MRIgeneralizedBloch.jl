@@ -46,13 +46,10 @@ function calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, R
             # this implements the π - spoiler - TR - α[2]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
             u_ip = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad)
             m = u_ip * _m0
-            println(m)
             u_fp = exp(hamiltonian_linear(0, B1, ω0, TR, m0s, R1, R2f, Rx, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad))
             m = u_fp * m
-            println(m)
             u_pr = exp(hamiltonian_linear(ω1[2]/2, B1, ω0, TRF[2], m0s, R1, R2f, Rx, R2s_vec[1][2], R2s_vec[2][2], R2s_vec[3][2], grad)) # R2sl is actually wrong for the prep pulse
             m = u_pr * m
-            println(m)
         end
 
         Mij = @view S[:, i, jj[j]]
@@ -93,7 +90,6 @@ end
 function propagate_magnetization_linear!(S, ω1, B1, ω0, TRF, TR, m0s, R1, R2f, Rx, _R2s, _dR2sdT2s, _dR2sdB1, sweep_phase, m, grad=undef)
 
     u_rot = z_rotation_propagator(sweep_phase, grad)
-    println(m)
     ms_setindex!(S, m, 1, grad)
     for i = 2:length(ω1)
         u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1, R2f, Rx, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
