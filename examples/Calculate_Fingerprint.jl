@@ -23,16 +23,16 @@ TRF = [500e-6; control[1:end - 1,2]]
 # calculate and plot magnetization vectors (xf,yf,zf,zs)
 ###############################################################
 ## IDE solution (no Gradients)
-m_gBloch = calculatemagnetization_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
+m_gBloch = calculatemagnetization_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
 plot( TR * 1:length(TRF), m_gBloch[:,1] ./ (1 - m0s), label="xf / m0f", legend=:topleft)
 plot!(TR * 1:length(TRF), m_gBloch[:,2] ./ (1 - m0s), label="yf / m0f")
 plot!(TR * 1:length(TRF), m_gBloch[:,3] ./ (1 - m0s), label="zf / m0f")
 plot!(TR * 1:length(TRF), m_gBloch[:,4] ./ m0s, label="zs / m0s")
 
 ## Linear approximation 
-R2s_T = precompute_R2sl(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
+R2slT = precompute_R2sl(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
 
-m_linapp = calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T; output=:realmagnetization)
+m_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT; output=:realmagnetization)
 m_linapp = [m_linapp[i][j] for i=1:size(m_linapp,1),j=1:5]
 
 plot!(TR * 1:length(TRF), m_linapp[:,1] ./ (1 - m0s), label="L: xf / m0f", legend=:topleft)
@@ -54,7 +54,7 @@ plot!(TR * 1:length(TRF), m_Graham[:,4] ./ m0s, label="G: zs / m0s")
 ##
 s_gBloch = calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
 s_Graham = calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
-s_linapp = vec(calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T))
+s_linapp = vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT))
 
 
 plot( TR * 1:length(TRF), real(s_gBloch), label="gBloch re(s)", legend=:topleft)

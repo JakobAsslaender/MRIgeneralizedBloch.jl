@@ -223,10 +223,9 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_typ
     return U
 end
 
-function z_rotation_propagator(sweep_phase, _)
-    sweep_phase += π
-    u_rot = @SMatrix [cos(sweep_phase) -sin(sweep_phase) 0 0 0 0;
-                      sin(sweep_phase)  cos(sweep_phase) 0 0 0 0;
+function z_rotation_propagator(rfphase_increment, _)
+    u_rot = @SMatrix [cos(rfphase_increment) -sin(rfphase_increment) 0 0 0 0;
+                      sin(rfphase_increment)  cos(rfphase_increment) 0 0 0 0;
                                      0                0  1 0 0 0;
                                      0                0  0 1 0 0;
                                      0                0  0 0 1 0;
@@ -234,15 +233,14 @@ function z_rotation_propagator(sweep_phase, _)
     return u_rot
 end
 
-function z_rotation_propagator(sweep_phase, grad::grad_param)
-    sweep_phase += π
-    u_rot = @SMatrix [cos(sweep_phase) -sin(sweep_phase) 0 0 0 0                 0                0 0 0 0;
-                      sin(sweep_phase)  cos(sweep_phase) 0 0 0 0                 0                0 0 0 0;
+function z_rotation_propagator(rfphase_increment, grad::grad_param)
+    u_rot = @SMatrix [cos(rfphase_increment) -sin(rfphase_increment) 0 0 0 0                 0                0 0 0 0;
+                      sin(rfphase_increment)  cos(rfphase_increment) 0 0 0 0                 0                0 0 0 0;
                       0                 0                1 0 0 0                 0                0 0 0 0;
                       0                 0                0 1 0 0                 0                0 0 0 0;
                       0                 0                0 0 1 0                 0                0 0 0 0;
-                      0                 0                0 0 0 cos(sweep_phase) -sin(sweep_phase) 0 0 0 0;
-                      0                 0                0 0 0 sin(sweep_phase)  cos(sweep_phase) 0 0 0 0;
+                      0                 0                0 0 0 cos(rfphase_increment) -sin(rfphase_increment) 0 0 0 0;
+                      0                 0                0 0 0 sin(rfphase_increment)  cos(rfphase_increment) 0 0 0 0;
                       0                 0                0 0 0 0                 0                1 0 0 0;
                       0                 0                0 0 0 0                 0                0 1 0 0;
                       0                 0                0 0 0 0                 0                0 0 1 0;

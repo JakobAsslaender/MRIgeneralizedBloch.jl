@@ -40,30 +40,30 @@ function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_
     dfdτ(τ, α) = Interpolations.gradient(f, τ, α)[1]
     dfdα(τ, α) = Interpolations.gradient(f, τ, α)[2]
                                             
-    R2sl(TRF, ω1, B1, T2s) = f(TRF/T2s, B1*ω1*TRF) / T2s
-    dR2sldB1(TRF, ω1, B1, T2s) = dfdα(TRF/T2s, B1*ω1*TRF) * ω1 * TRF / T2s
-    R2sldT2s(TRF, ω1, B1, T2s) = -dfdτ(TRF / T2s, B1 * ω1 * TRF) * TRF / T2s^3 - f(TRF / T2s, B1 * ω1 * TRF) / T2s^2
+    R2sl(TRF, α, B1, T2s) = f(TRF/T2s, B1*α) / T2s
+    dR2sldB1(TRF, α, B1, T2s) = dfdα(TRF/T2s, B1*α) * α / T2s
+    R2sldT2s(TRF, α, B1, T2s) = -dfdτ(TRF/T2s, B1*α) * TRF / T2s^3 - f(TRF/T2s, B1*α) / T2s^2
 
     return (R2sl, R2sldT2s, dR2sldB1)
 end
 
 
-function evaluate_R2sl_vector(ω1, TRF, B1, T2s, R2s_T, grad_list)
-    _R2s = similar(ω1)
-    _dR2sdT2s = similar(ω1)
-    _dR2sdB1 = similar(ω1)
+function evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
+    _R2s = similar(α)
+    _dR2sdT2s = similar(α)
+    _dR2sdB1 = similar(α)
 
-    for i = 1:length(ω1)
-        _R2s[i] = R2s_T[1](TRF[i], ω1[i], B1, T2s)
+    for i = 1:length(α)
+        _R2s[i] = R2slT[1](TRF[i], α[i], B1, T2s)
     end
     if any(isa.(grad_list, grad_T2s))
-        for i = 1:length(ω1)
-            _dR2sdT2s[i] = R2s_T[2](TRF[i], ω1[i], B1, T2s)
+        for i = 1:length(α)
+            _dR2sdT2s[i] = R2slT[2](TRF[i], α[i], B1, T2s)
         end
     end
     if any(isa.(grad_list, grad_B1))
-        for i = 1:length(ω1)
-            _dR2sdB1[i] = R2s_T[3](TRF[i], ω1[i], B1, T2s)
+        for i = 1:length(α)
+            _dR2sdB1[i] = R2slT[3](TRF[i], α[i], B1, T2s)
         end
     end
     return (_R2s, _dR2sdT2s, _dR2sdB1)

@@ -23,13 +23,13 @@ TRF = [500e-6; control[1:end - 1,2]]
 
 ## Pre-compute and evalute R2sf
 print("Time for the R2sl pre-computation: ")
-R2s_T = @time precompute_R2sl(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
+R2slT = @time precompute_R2sl(minimum(TRF), maximum(TRF), T2s, T2s, minimum(α), maximum(α), B1, B1)
 
 print("Time to evaluate the interpolated R2sl w/o gradients: ")
-R2s_vec = @btime evaluate_R2sl_vector($ω1, $TRF, $B1, $T2s, $R2s_T, $[])
+R2s_vec = @btime evaluate_R2sl_vector($α, $TRF, $B1, $T2s, $R2slT, $[])
 
 print("Time to evaluate the interpolated R2sl with gradients: ")
-R2s_vec = @btime evaluate_R2sl_vector($ω1, $TRF, $B1, $T2s, $R2s_T, $grad_list)
+R2s_vec = @btime evaluate_R2sl_vector($α, $TRF, $B1, $T2s, $R2slT, $grad_list)
 
 ## ##################################################################
 # magnetization functions
@@ -45,7 +45,7 @@ m_Graham = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f
 @test m_gBloch[:,4] ≈ m_Graham[:,4] rtol = 1e-2
 
 # test linear approximation 
-m_linapp = calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T; output=:realmagnetization)
+m_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT; output=:realmagnetization)
 m_linapp = [m_linapp[i][j] for i=1:size(m_linapp,1), j=1:5]
 
 @test m_gBloch[:,1] ≈ m_linapp[:,1] rtol = 1e-3
@@ -70,7 +70,7 @@ s_Graham = @btime calculatesignal_graham_ode($ω1, $TRF, $TR, $ω0, $B1, $m0s, $
 
 # test linear approximation
 print("Time to solve the linear approximation:")
-s_linapp = @btime vec(calculatesignal_linearapprox($ω1, $TRF, $TR, $ω0, $B1, $m0s, $R1, $R2f, $Rx, $T2s, $R2s_T))
+s_linapp = @btime vec(calculatesignal_linearapprox($α, $TRF, $TR, $ω0, $B1, $m0s, $R1, $R2f, $Rx, $T2s, $R2slT))
 
 @test real(s_gBloch) ≈ real(s_linapp) rtol = 1e-3
 @test imag(s_gBloch) ≈ imag(s_linapp) atol = 1e-9
@@ -98,7 +98,7 @@ s_Graham_grad = @time calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1,
 
 # test linear approximation
 print("Time to solve the linear approximation:")
-s_linapp_grad = @time calculatesignal_linearapprox(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2s_T; grad_list=grad_list)
+s_linapp_grad = @time calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT; grad_list=grad_list)
 s_linapp_grad = dropdims(s_linapp_grad, dims=2)
 
 @test s_gBloch_grad[:,1] ≈ s_linapp_grad[:,1] rtol = 1e-3

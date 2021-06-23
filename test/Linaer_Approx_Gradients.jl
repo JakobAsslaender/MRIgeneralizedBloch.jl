@@ -23,9 +23,9 @@ N = Inf
 G = interpolate_greens_function(greens_superlorentzian, 0, 100)
 (R2sl, dR2sldT2s, dR2sldB1) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, minimum(α), maximum(α), 0.7, 1.3)
 
-_R2sl = R2sl(TRF, ω1, B1, T2s)
-_dR2sldT2s = dR2sldT2s(TRF, ω1, B1, T2s)
-_dR2sldB1 = dR2sldB1(TRF, ω1, B1, T2s)
+_R2sl = R2sl(TRF, α, B1, T2s)
+_dR2sldT2s = dR2sldT2s(TRF, α, B1, T2s)
+_dR2sldB1 = dR2sldB1(TRF, α, B1, T2s)
 
 ## baseline IDE solution
 m0  = [0.5 * (1 - m0s), 0, 0.5 * (1 - m0s), 0, m0s, 1]
@@ -76,7 +76,7 @@ mfd = (md - m) / dRx
 dT2s = 1e-14
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1, R2f, Rx, _R2sl, _dR2sldT2s, _dR2sldB1, grad_T2s())) * m0g
 
-_dR2sl = R2sl(TRF, ω1, B1, (T2s+dT2s))
+_dR2sl = R2sl(TRF, α, B1, (T2s+dT2s))
 md = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1, R2f, Rx, _dR2sl)) * m0
 
 mfd = (md - m) / dT2s
@@ -97,7 +97,7 @@ mfd = (md - m) / dω0
 dB1 = 1e-6
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1, R2f, Rx, _R2sl, _dR2sldT2s, _dR2sldB1, grad_B1())) * m0g
 
-_dR2sl = R2sl(TRF, ω1, (B1 + dB1), T2s)
+_dR2sl = R2sl(TRF, α, (B1 + dB1), T2s)
 md = exp(hamiltonian_linear(ω1, (B1 + dB1), ω0, TRF, m0s, R1, R2f, Rx, _dR2sl)) * m0
 
 mfd = (md - m) / dB1
@@ -122,7 +122,7 @@ mfd = (md - m) / dm0s
 dT2s = 1e-14
 mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_T2s()) * m0g
 
-_dR2sl = R2sl(TRF, ω1, B1, (T2s+dT2s))
+_dR2sl = R2sl(TRF, α, B1, (T2s+dT2s))
 md = propagator_linear_inversion_pulse(ω1, TRF, B1, _dR2sl, undef, undef, undef) * m0
 
 mfd = (md - m) / dT2s
@@ -133,7 +133,7 @@ mfd = (md - m) / dT2s
 dB1 = 1e-9
 mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_B1()) * m0g
 
-_dR2sl = R2sl(TRF, ω1, (B1 + dB1), T2s)
+_dR2sl = R2sl(TRF, α, (B1 + dB1), T2s)
 md = propagator_linear_inversion_pulse(ω1, TRF, (B1 + dB1), _dR2sl, undef, undef, undef) * m0
 
 mfd = (md - m) / dB1
