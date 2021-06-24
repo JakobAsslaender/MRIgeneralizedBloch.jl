@@ -19,7 +19,7 @@ The simulation assumes a sequence of rectangluar RF-pulses with varying flip ang
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
 - `T2s::Number`: Transversal relaxationt time of the semi-solid pool in seconds
-- `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`R2slT = precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)`](@ref)
+- `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
 
 Optional:
 - `grad_list=[undef]`: Vector to indicate which gradients should be calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]`
@@ -29,24 +29,31 @@ Optional:
 
 # Examples
 ```jldoctest
-julia> R2slT = precompute_R2sl(4e-4, 6e-4, 5e-6, 15e-6, 0, π, 0.9, 1.1)
+julia> R2slT = precompute_R2sl(4e-4, 6e-4, 5e-6, 15e-6, 0, π, 0.9, 1.1);
+
 julia> calculatesignal_linearapprox(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6, R2slT)
 100×1×1 Array{ComplexF64, 3}:
 [:, :, 1] =
-  -0.02534278046134143 - 1.1657214894673882e-18im
- 0.0037475248549574164 - 1.825021011176331e-18im
- -0.019683390708350405 + 2.1509529413373192e-18im
-  0.007162011566093619 - 4.295833571478285e-18im
- -0.014489517679344742 + 4.871679207402933e-18im
-   0.01030580498329153 - 6.2590926765006255e-18im
- -0.009686634863202431 + 7.083189789909728e-18im
-                       ⋮
-  0.052802809122073115 + 4.810057252461073e-18im
-   0.05353272287002075 + 1.5599593653670845e-18im
-  0.053005929405285306 + 4.7049693496877725e-18im
-   0.05368103548081175 + 1.6823538748270391e-18im
-   0.05319535891146329 + 4.606807863919338e-18im
-  0.053819780969856054 + 1.7966463334957175e-18im
+   -0.02534278046134143 - 1.1657214894673882e-18im
+  0.0037475248549574164 - 1.825021011176331e-18im
+  -0.019683390708350405 + 2.1509529413373192e-18im
+   0.007162011566093619 - 4.295833571478285e-18im
+  -0.014489517679344742 + 4.871679207402933e-18im
+    0.01030580498329153 - 6.2590926765006255e-18im
+  -0.009686634863202431 + 7.083189789909728e-18im
+    0.01322536234967782 - 7.787884542858368e-18im
+ -0.0052280868231253256 + 8.859672743771182e-18im
+   0.015948493046190136 - 8.946695943023691e-18im
+                        ⋮
+   0.053204727143268064 + 1.2888244377481163e-18im
+    0.05258500575198744 + 4.922485912552594e-18im
+    0.05337418702543365 + 1.4289581481402186e-18im
+   0.052802809122073115 + 4.810057252461073e-18im
+    0.05353272287002075 + 1.5599593653670845e-18im
+   0.053005929405285306 + 4.7049693496877725e-18im
+    0.05368103548081175 + 1.6823538748270391e-18im
+    0.05319535891146329 + 4.606807863919338e-18im
+   0.053819780969856054 + 1.7966463334957175e-18im
 ```
 """
 function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal)

@@ -25,19 +25,30 @@ Optional:
 
 # Examples
 ```jldoctest
-julia> α = π
-julia> T = 500e-6
-julia> ω1 = α/T
-julia> B1 = 1
-julia> ω0 = 0
-julia> m0s = 0.1
-julia> R1 = 1
-julia> R2f = 15
-julia> Rx = 30
-julia> R2s = 1e5
-julia> m0 = [0, 0, 1-m0s, 0, m0s, 1]
-julia> (xf, yf, zf, xs, zs, _) = exp(MRIgeneralizedBloch.hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s)) * m0
-6-element SVector{6, Float64} with indices SOneTo(6):
+julia> α = π;
+
+julia> T = 500e-6;
+
+julia> ω1 = α/T;
+
+julia> B1 = 1;
+
+julia> ω0 = 0;
+
+julia> m0s = 0.1;
+
+julia> R1 = 1;
+
+julia> R2f = 15;
+
+julia> Rx = 30;
+
+julia> R2s = 1e5;
+
+julia> m0 = [0, 0, 1-m0s, 0, m0s, 1];
+
+julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s)) * m0
+6-element StaticArrays.SVector{6, Float64} with indices SOneTo(6):
   0.0010646925712316103
   0.0
  -0.8957848933541458

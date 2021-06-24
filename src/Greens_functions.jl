@@ -5,9 +5,12 @@ Evaluate the Green's function corresponding to a Lorentzian linshape at `κ = (t
 
 # Examples
 ```jldoctest
-julia> t = 100e-6
-julia> τ = 0
-julia> T2s = 10e-6
+julia> t = 100e-6;
+
+julia> τ = 0;
+
+julia> T2s = 10e-6;
+
 julia> greens_lorentzian((t-τ)/T2s)
 4.5399929762484854e-5
 ```
@@ -25,9 +28,12 @@ The multiplication is added so that the function merely depends on `κ = (t-τ)/
 
 # Examples
 ```jldoctest
-julia> t = 100e-6
-julia> τ = 0
-julia> T2s = 10e-6
+julia> t = 100e-6;
+
+julia> τ = 0;
+
+julia> T2s = 10e-6;
+
 julia> dGdT2s = dG_o_dT2s_x_T2s_lorentzian((t-τ)/T2s)/T2s
 45.39992976248485
 ```
@@ -43,9 +49,12 @@ Evaluate the Green's function corresponding to a Gaussian linshape at `κ = (t-�
 
 # Examples
 ```jldoctest
-julia> t = 100e-6
-julia> τ = 0
-julia> T2s = 10e-6
+julia> t = 100e-6;
+
+julia> τ = 0;
+
+julia> T2s = 10e-6;
+
 julia> greens_gaussian((t-τ)/T2s)
 1.9287498479639178e-22
 ```
@@ -63,9 +72,12 @@ The multiplication is added so that the function merely depends on `κ = (t-τ)/
 
 # Examples
 ```jldoctest
-julia> t = 100e-6
-julia> τ = 0
-julia> T2s = 10e-6
+julia> t = 100e-6;
+
+julia> τ = 0;
+
+julia> T2s = 10e-6;
+
 julia> dGdT2s = dG_o_dT2s_x_T2s_gaussian((t-τ)/T2s)/T2s
 1.9287498479639177e-15
 ```
@@ -81,9 +93,12 @@ Evaluate the Green's function corresponding to a super-Lorentzian linshape at `�
 
 # Examples
 ```jldoctest
-julia> t = 100e-6
-julia> τ = 0
-julia> T2s = 10e-6
+julia> t = 100e-6;
+
+julia> τ = 0;
+
+julia> T2s = 10e-6;
+
 julia> greens_superlorentzian((t-τ)/T2s)
 0.14712468680944446
 ```
@@ -101,9 +116,12 @@ The multiplication is added so that the function merely depends on `κ = (t-τ)/
 
 # Examples
 ```jldoctest
-julia> t = 100e-6
-julia> τ = 0
-julia> T2s = 10e-6
+julia> t = 100e-6;
+
+julia> τ = 0;
+
+julia> T2s = 10e-6;
+
 julia> dGdT2s = dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s
 15253.095033670796
 ```
@@ -122,13 +140,17 @@ The interpolation uses the ApproxFun.jl package that incorporates Chebyshev poly
 
 # Examples
 ```jldoctest
-julia> t = 100e-6
-julia> τ = 0
-julia> T2s = 10e-6
+julia> t = 100e-6;
+
+julia> τ = 0;
+
+julia> T2s = 10e-6;
+
 julia> greens_superlorentzian((t-τ)/T2s)
 0.14712468680944446
 
-julia> Gint = interpolate_greens_function(greens_superlorentzian, 0, 20)
+julia> Gint = interpolate_greens_function(greens_superlorentzian, 0, 20);
+
 julia> Gint((t-τ)/T2s)
 0.14712468680944452
 ```

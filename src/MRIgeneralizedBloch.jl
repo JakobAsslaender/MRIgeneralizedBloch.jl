@@ -16,6 +16,7 @@ export LinearApprox_calculate_signal
 export calculatesignal_graham_ode
 
 export apply_hamiltonian_gbloch!
+export hamiltonian_linear
 
 export greens_lorentzian
 export greens_gaussian

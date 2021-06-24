@@ -1,5 +1,5 @@
 """
-    precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)
+    precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max[; greens=greens_superlorentzian])
 
 Pre-compute and interpolate the linearized `R2sl(TRF, α, B1, T2s)` and its derivatives `dR2sldB1(TRF, α, B1, T2s)` and `R2sldT2s(TRF, α, B1, T2s)` in the range specified by the arguments.
 
@@ -20,11 +20,9 @@ Optional:
 
 # Examples
 ```jldoctest
-julia> (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3)
-MRIgeneralizedBloch.var"#R2sl#126"{Interpolations.Extrapolation [...]
+julia> (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3);
 
-julia> (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3; greens=greens_gaussian)
-(MRIgeneralizedBloch.var"#R2sl#81"{Interpolations.Extrapolation [...]
+julia> (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3; greens=greens_gaussian);
 ```
 """
 function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max; greens=greens_superlorentzian)
