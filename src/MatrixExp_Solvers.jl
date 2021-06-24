@@ -4,33 +4,49 @@
 """
     calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT[; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal])
 
-Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model. 
+Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Loretzian lineshape. 
 
-The simulation assumes a sequence of rectangluar RF-pulses, with varying flip angle α and RF-pulse duration TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. 
+The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. 
 
 # Arguemnts
-- `α::Vector{<:Number}`: Array of flip angles
-- `TRF::Vector{<:Number}`: Array of the RF-pulse durations
+- `α::Vector{<:Number}`: Array of flip angles in radians
+- `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
 - `TR::Number`: Repetition time in seconds
 - `ω0::Number`: Off-resonance frequency in rad/s 
 - `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
-- `m0s::Number`: Fractional size of the semi solid pool; should be in range of 0 and 1
-- `R1::Number`: Apparent longitudinal relaxation of the free and semi-solid pool in 1/seconds
+- `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
+- `R1::Number`: Apparent longitudinal relaxation rate of the free and semi-solid pool in 1/seconds
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
-- `T2s::Number`: Transversal relaxationt time of the semi-solid pool
-- `R2slT::NTuple{3, Function}`: Tuple of three functions R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). See also: [`precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)`](@ref)
+- `T2s::Number`: Transversal relaxationt time of the semi-solid pool in seconds
+- `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`R2slT = precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)`](@ref)
 
 Optional:
-- `grad_list=[undef]`: Vector of gradients to be calcuated, which are chosen with a specific data struct whose function is merely to hook into Julia's multiple dispatch. Choose any subset of: grad_list=[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()], or use the default grad_list=[undef] to calculate the signal/magnetization without any gradients
-- `rfphase_increment=[π]::Vector{<:Number}`: Increment of the RF phase between consequtive pulses. The default value π, together with ω0=0 corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array. 
-- `m0=:antiperiodic`: With the default keyword :antiperiodic, the signal and their derivatives are calcualted assuming m(0) = m(T), where T is the duration of the RF-train. With the keyword :thermal, the magnetization m(0) is initialized with thermal equilibrium [xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s], followed by a α[1]/2 - TR/2 prep pulse; and with the keyword :IR, this initalization is followed an inversion pulse of duration TRF[1], (choose ω[1]=π/TRF[1]) and a α[2]/2 - TR/2 prep pulse.
-- `output=:complexsignal`: The defaul keywords triggers the function to output a complex-valued signal (xf + 1im yf); the keyword :realmagnetization triggers an output of the entire vector [xf, yf, zf, xs, zf]
+- `grad_list=[undef]`: Vector to indicate which gradients should be calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]`
+- `rfphase_increment=[π]::Vector{<:Number}`: Increment of the RF phase between consequtive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array. 
+- `m0=:antiperiodic`: With the default keyword `:antiperiodic`, the signal and their derivatives are calcualted assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initalization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
+- `output=:complexsignal`: The defaul keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
 
 # Examples
 ```jldoctest
 julia> R2slT = precompute_R2sl(4e-4, 6e-4, 5e-6, 15e-6, 0, π, 0.9, 1.1)
 julia> calculatesignal_linearapprox(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6, R2slT)
+100×1×1 Array{ComplexF64, 3}:
+[:, :, 1] =
+  -0.02534278046134143 - 1.1657214894673882e-18im
+ 0.0037475248549574164 - 1.825021011176331e-18im
+ -0.019683390708350405 + 2.1509529413373192e-18im
+  0.007162011566093619 - 4.295833571478285e-18im
+ -0.014489517679344742 + 4.871679207402933e-18im
+   0.01030580498329153 - 6.2590926765006255e-18im
+ -0.009686634863202431 + 7.083189789909728e-18im
+                       ⋮
+  0.052802809122073115 + 4.810057252461073e-18im
+   0.05353272287002075 + 1.5599593653670845e-18im
+  0.053005929405285306 + 4.7049693496877725e-18im
+   0.05368103548081175 + 1.6823538748270391e-18im
+   0.05319535891146329 + 4.606807863919338e-18im
+  0.053819780969856054 + 1.7966463334957175e-18im
 ```
 """
 function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal)

@@ -19,11 +19,11 @@ TRF = [500e-6; control[1:end - 1,2]]
 α = [π; control[1:end - 1,1] .+ control[2:end,1]]
 ω1 = α ./ TRF
 
-###############################################################
+## ############################################################
 # calculate and plot magnetization vectors (xf,yf,zf,zs)
 ###############################################################
-## IDE solution (no Gradients)
-m_gBloch = calculatemagnetization_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
+# IDE solution (no Gradients)
+m_gBloch = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s;output=:realmagnetization)
 plot( TR * 1:length(TRF), m_gBloch[:,1] ./ (1 - m0s), label="xf / m0f", legend=:topleft)
 plot!(TR * 1:length(TRF), m_gBloch[:,2] ./ (1 - m0s), label="yf / m0f")
 plot!(TR * 1:length(TRF), m_gBloch[:,3] ./ (1 - m0s), label="zf / m0f")
@@ -42,18 +42,17 @@ plot!(TR * 1:length(TRF), m_linapp[:,5] ./ m0s, label="L: zs / m0s")
 
 
 ## Graham's solution
-m_Graham = calculatemagnetization_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, [], 2)
+m_Graham = calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s; output=:realmagnetization)
 plot!(TR * 1:length(TRF), m_Graham[:,1] ./ (1 - m0s), label="G: xf / m0f")
 plot!(TR * 1:length(TRF), m_Graham[:,2] ./ (1 - m0s), label="G: yf / m0f")
 plot!(TR * 1:length(TRF), m_Graham[:,3] ./ (1 - m0s), label="G: zf / m0f")
 plot!(TR * 1:length(TRF), m_Graham[:,4] ./ m0s, label="G: zs / m0s")
 
-###############################################################
+## ############################################################
 # calculate and plot signal vectors (xf + 1im * yf)
 ###############################################################
-##
-s_gBloch = calculatesignal_gbloch_ide(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
-s_Graham = calculatesignal_graham_ode(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, 2)
+s_gBloch = vec(calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s))
+s_Graham = vec(calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s))
 s_linapp = vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT))
 
 

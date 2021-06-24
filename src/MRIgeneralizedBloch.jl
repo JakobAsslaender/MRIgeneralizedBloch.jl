@@ -10,16 +10,18 @@ using StaticArrays
 using LinearAlgebra
 using NLsolve
 
-export calculatemagnetization_gbloch_ide
 export calculatesignal_gbloch_ide
 export LinearApprox_calculate_magnetization
 export LinearApprox_calculate_signal
-export calculatemagnetization_graham_ode
 export calculatesignal_graham_ode
+
+export apply_hamiltonian_gbloch!
 
 export greens_lorentzian
 export greens_gaussian
 export greens_superlorentzian
+export dG_o_dT2s_x_T2s_lorentzian
+export dG_o_dT2s_x_T2s_gaussian
 export dG_o_dT2s_x_T2s_superlorentzian
 export interpolate_greens_function
 

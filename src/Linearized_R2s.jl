@@ -1,7 +1,40 @@
-function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)
+"""
+    precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max)
 
-    # approximate saturation
-    G = interpolate_greens_function(greens_superlorentzian, 0, TRF_max / T2s_min)
+Pre-compute and interpolate the linearized `R2sl(TRF, α, B1, T2s)` and its derivatives `dR2sldB1(TRF, α, B1, T2s)` and `R2sldT2s(TRF, α, B1, T2s)` in the range specified by the arguments.
+
+The function solves the generalized Bloch equations of an isolated semi-solid pool for values in the specified range, calulates the linearized R2sl that minimizes the error of `zs` at the end of the RF-pulse, and interpolates between the different samples. 
+
+# Arguemnts
+- `TRF_min::Number`: lower bound of the RF-pulse duration range in seconds
+- `TRF_max::Number`: upper bound of the RF-pulse duration range in seconds
+- `T2s_min::Number`: lower bound of the `T2s` range in seconds
+- `T2s_max::Number`: upper bound of the `T2s` range in seconds
+- `α_min::Number`: lower bound of the flip angle range in radians
+- `α_max::Number`: upper bound of the flip angle range in radians
+- `B1_min::Number`: lower bound of the B1 range, normalized so that `B1 = 1` corresponds to a perfectly calibrated RF field
+- `B1_max::Number`: upper bound of the B1 range, normalized so that `B1 = 1` corresponds to a perfectly calibrated RF field
+
+Optional:
+- `greens=greens_superlorentzian`: Greens function in the form `G(κ) = G((t-τ)/T2s)`. This package supplies the three Greens functions `greens=greens_superlorentzian` (default), `greens=greens_lorentzian`, and `greens=greens_gaussian`
+
+# Examples
+```jldoctest
+julia> (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3)
+MRIgeneralizedBloch.var"#R2sl#126"{Interpolations.Extrapolation [...]
+
+julia> (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3; greens=greens_gaussian)
+(MRIgeneralizedBloch.var"#R2sl#81"{Interpolations.Extrapolation [...]
+```
+"""
+function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max; greens=greens_superlorentzian)
+
+    # interpolate super-Lorentzian Green's function for speed purposes
+    if greens == greens_superlorentzian
+        G = interpolate_greens_function(greens, 0, TRF_max / T2s_min)
+    else
+        G = greens
+    end
     h(p, t) = [1.0]
 
     function hamiltonian_1D!(du, u, h, p::NTuple{3,Any}, t)

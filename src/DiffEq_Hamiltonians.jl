@@ -2,6 +2,93 @@
 # generalized Bloch Hamiltonians that can take any 
 # Green's function as an argument. 
 ###################################################
+"""
+    apply_hamiltonian_gbloch!(du, u, h, p, t)
+
+Apply the generalized Bloch Hamiltonian to `u` and write the resulting derivative wrt. time into `du`.
+
+# Arguemnts
+- `du::Vector{<:Number}`: Array describing to derivative of u wrt. time; this vector has to be of the same size as `u`, but can contain any value, which is replaced by `H * u`
+- `u::Vector{<:Number}`: Array the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
+- `h`: History fuction; can be initialized with `h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
+- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, whith 
+    -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
+    -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
+    -`ω0::Number`: Larmor or off-resonance frequency in rad/s
+    -`m0s::Number`: Fractional semi-solid spin pool size in the range of 0 to 1
+    -`R1::Number`: Apparent longitudinal spin relaxation rate of both pools in 1/seconds
+    -`R2f::Number`: Trasversal spin relaxation rate of the free pool in 1/seconds
+    -`T2s::Number`: Trasversal spin relaxation time of the semi-solid pool in seconds
+    -`Rx::Number`: Exchange rate between the two pools in 1/seconds
+    -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
+    or `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, zs_idx, g)` with
+    - `zs_idx::Integer`: Index to be used history function to be used in the Green's function; Default is 4 (zs), and for derivatives 9, 14, ... are used
+    or `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s, grad_list)` with
+    - `dG_o_dT2s_x_T2s::Function`: Derivative of the Green's function wrt. T2s, multiplied by T2s; of the form `dG_o_dT2s_x_T2s(κ) = dG_o_dT2s_x_T2s((t-τ)/T2s)`
+    - `grad_list::Vector{<:grad_param}`: List of gradients to be calucualted; any subset of `[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `u` and `du`)
+- `t::Number`: Time in seconds
+
+Optional:
+- `pulsetype=:normal`: Use default for a regular RF-pulse; the option `pulsetype=:inversion` should be handled with care as it is only inteded to calculate the saturation of the semi-solid pool and its derivative. 
+
+# Examples
+```jldoctest
+julia> using DifferentialEquations
+julia> α = π/2
+julia> TRF = 100e-6
+julia> ω1 = α/TRF
+julia> B1 = 1
+julia> ω0 = 0
+julia> m0s = 0.1
+julia> R1 = 1
+julia> R2f = 15
+julia> T2s = 10-6
+julia> Rx = 30
+julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s)
+julia> u0 = [0; 0; 1-m0s; m0s; 1]
+julia> h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
+julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0, TRF), (-ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))  
+retcode: Success
+Interpolation: specialized 7th order interpolation
+t: 6-element Vector{Float64}:
+ 0.0
+ 1.220281289257312e-7
+ 8.541969024801185e-7
+ 5.247209543806443e-6
+ 3.160528539176439e-5
+ 0.0001
+u: 6-element Vector{Vector{Float64}}:
+ [0.0, 0.0, 0.9, 0.1, 1.0]
+ [-0.0017251293948764102, 0.0, 0.8999983466235149, 0.0999998162913902, 1.0]
+ [-0.012075484505676836, 0.0, 0.8999189860592292, 0.09999099841258494, 1.0]
+ [-0.07409379835058187, 0.0, 0.8969447197649016, 0.0996605155131504, 1.0]
+ [-0.4285786292638301, 0.0, 0.79136732759974, 0.0879278039163368, 1.0]
+ [-0.8993375887462968, 0.0, 0.0004582695875068321, 3.215359474631474e-6, 1.0]
+
+ julia> using Plots
+ julia> plot(sol, labels=["xf" "yf" "zf" "zs" "1"], xlabel="t (s)", ylabel="m(t)")
+
+julia> dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, TRF / T2s)
+julia> grad_list = [grad_R2f(), grad_m0s()]
+julia> u0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))]
+julia> h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5 + 5*length(grad_list))
+julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0, TRF), (-ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), MethodOfSteps(DP8()))  
+retcode: Success
+Interpolation: specialized 7th order interpolation
+t: 6-element Vector{Float64}:
+ 0.0
+ 1.2202754217257472e-7
+ 8.541927952080231e-7
+ 5.247184313420713e-6
+ 3.1605133422696854e-5
+ 0.0001
+u: 6-element Vector{Vector{Float64}}:
+ [0.0, 0.0, 0.9, 0.1, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+ [...]
+
+ julia> plot(sol)
+```
+"""
 function apply_hamiltonian_gbloch!(du, u, h, p::NTuple{10,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, zs_idx, g = p
 
@@ -18,7 +105,7 @@ function apply_hamiltonian_gbloch!(du, u, h, p::NTuple{9,Any}, t)
 end
 
 function apply_hamiltonian_gbloch!(du, u, h, p::NTuple{11,Any}, t; pulsetype=:normal)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dg_oT2, grad_list = p
+    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s, grad_list = p
     
     # Apply Hamiltonian to M
     u_v1 = @view u[1:5]
@@ -32,7 +119,7 @@ function apply_hamiltonian_gbloch!(du, u, h, p::NTuple{11,Any}, t; pulsetype=:no
         apply_hamiltonian_gbloch!(du_v, u_v, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
 
         if pulsetype==:normal || isa(grad_list[i], grad_T2s) || isa(grad_list[i], grad_B1)
-            add_partial_derivative!(du_v, u_v1, x -> h(p, x; idxs=4), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dg_oT2), t, grad_list[i])
+            add_partial_derivative!(du_v, u_v1, x -> h(p, x; idxs=4), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s), t, grad_list[i])
         end
     end
     return du
@@ -79,7 +166,6 @@ end
 # calculationg th gradient
 ###################################################
 function add_partial_derivative!(du, u, h, p, t, grad_type::grad_m0s)
-    # ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
     _, _, _, _, R1, _, _, Rx, _, _ = p
 
     du[3] -= Rx * u[3] + Rx * u[4] + R1
@@ -88,7 +174,7 @@ function add_partial_derivative!(du, u, h, p, t, grad_type::grad_m0s)
 end
 
 function add_partial_derivative!(du, u, h, p, t, grad_type::grad_R1)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
+    _, _, _, m0s, _, _, _, _, _, _ = p
 
     du[3] += - u[3] + (1 - m0s)
     du[4] += - u[4] + m0s
@@ -102,7 +188,7 @@ function add_partial_derivative!(du, u, h, p, t, grad_type::grad_R2f)
 end
 
 function add_partial_derivative!(du, u, h, p, t, grad_type::grad_Rx)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
+    _, _, _, m0s, _, _, _, _, _, _ = p
 
     du[3] += - m0s * u[3] + (1 - m0s) * u[4]
     du[4] +=   m0s * u[3] - (1 - m0s) * u[4]
@@ -111,9 +197,9 @@ end
 
 # version for gBloch with using ApproxFun
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_T2s)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
+    ω1, B1, _, _, _, _, T2s, _, _, dG_o_dT2s_x_T2s = p
     
-    du[4] -= B1^2 * ω1^2 / T2s * quadgk(x -> dg_oT2((t - x) / T2s) * h(x), 0.0, t)[1]
+    du[4] -= B1^2 * ω1^2 / T2s * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * h(x), 0.0, t)[1]
     return du
 end
 
@@ -124,7 +210,7 @@ end
 
 # version for Graham's model
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, TRF, _ = p
+    ω1, B1, _, _, _, _, T2s, _, TRF, _ = p
     
     df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0)[1]
         
@@ -134,7 +220,7 @@ end
 
 # version for linearized gBloch
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_T2s)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, Rrf_d, _ = p
+    _, _, _, _, _, _, _, _, Rrf_d, _ = p
     
     du[4] -= Rrf_d[3] * u[4]
     return du
@@ -148,7 +234,7 @@ end
 
 # version for gBloch (using ApproxFun)
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Any}, t, grad_type::grad_B1)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dg_oT2 = p
+    ω1, B1, _, _, _, _, T2s, _, g, _ = p
     
     du[1] += ω1 * u[3]
     du[3] -= ω1 * u[1]
@@ -163,7 +249,7 @@ end
 
 # version for Graham
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, TRF, _ = p
+    ω1, B1, _, _, _, _, T2s, _, TRF, _ = p
 
     f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0)[1]
 
@@ -175,7 +261,7 @@ end
 
 # version for linearized gBloch
 function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_B1)
-    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, Rrf_d, _ = p
+    ω1, _, _, _, _, _, _, _, Rrf_d, _ = p
 
     du[1] += ω1 * u[3]
     du[3] -= ω1 * u[1]
