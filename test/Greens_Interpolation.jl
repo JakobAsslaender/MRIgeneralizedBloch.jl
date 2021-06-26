@@ -47,4 +47,4 @@ dGdT2s_fd = (greens_gaussian((t-τ)/(T2s + δT2s)) - greens_gaussian((t-τ)/T2s)
 ## super-Lorentzian
 dGdT2s = dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s
 dGdT2s_fd = (greens_superlorentzian((t-τ)/(T2s + δT2s)) - greens_superlorentzian((t-τ)/T2s)) / δT2s
-@test dGdT2s ≈ dGdT2s_fd rtol = 1e-5
+@test dGdT2s ≈ dGdT2s_fd rtol = 1e-4

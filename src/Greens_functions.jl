@@ -127,7 +127,7 @@ julia> dGdT2s = dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s
 ```
 """
 function dG_o_dT2s_x_T2s_superlorentzian(κ)
-    quadgk(ζ -> exp(-κ^2 * (3ζ^2 - 1)^2 / 8) * (κ^2 * (3ζ^2 - 1)^2 / 4), 0, 1)[1]
+    quadgk(ζ -> exp(-κ^2 * (3ζ^2 - 1)^2 / 8) * (κ^2 * (3ζ^2 - 1)^2 / 4), 0, sqrt(1/3), 1, order = 100)[1]
 end
 
 
