@@ -3,13 +3,13 @@
 # Green's function as an argument. 
 ###################################################
 """
-    apply_hamiltonian_gbloch!(du, u, h, p, t)
+    apply_hamiltonian_gbloch!(∂m∂t, m, h, p, t)
 
-Apply the generalized Bloch Hamiltonian to `u` and write the resulting derivative wrt. time into `du`.
+Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
 
 # Arguemnts
-- `du::Vector{<:Number}`: Array describing to derivative of u wrt. time; this vector has to be of the same size as `u`, but can contain any value, which is replaced by `H * u`
-- `u::Vector{<:Number}`: Array the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
+- `∂m∂t::Vector{<:Number}`: Array describing to derivative of m wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
+- `m::Vector{<:Number}`: Array the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
 - `h`: History fuction; can be initialized with `h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
 - `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, whith 
     -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
@@ -25,7 +25,7 @@ Apply the generalized Bloch Hamiltonian to `u` and write the resulting derivativ
     - `zs_idx::Integer`: Index to be used history function to be used in the Green's function; Default is 4 (zs), and for derivatives 9, 14, ... are used
     or `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s, grad_list)` with
     - `dG_o_dT2s_x_T2s::Function`: Derivative of the Green's function wrt. T2s, multiplied by T2s; of the form `dG_o_dT2s_x_T2s(κ) = dG_o_dT2s_x_T2s((t-τ)/T2s)`
-    - `grad_list::Vector{<:grad_param}`: List of gradients to be calucualted; any subset of `[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `u` and `du`)
+    - `grad_list::Vector{<:grad_param}`: List of gradients to be calucualted; any subset of `[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`)
 - `t::Number`: Time in seconds
 
 Optional:
@@ -51,7 +51,7 @@ julia> R1 = 1;
 
 julia> R2f = 15;
 
-julia> T2s = 10-6;
+julia> T2s = 10e-6;
 
 julia> Rx = 30;
 
@@ -71,7 +71,7 @@ t: 6-element Vector{Float64}:
  5.247209543806443e-6
  3.160528539176439e-5
  0.0001
-u: 6-element Vector{Vector{Float64}}:
+m: 6-element Vector{Vector{Float64}}:
  [0.0, 0.0, 0.9, 0.1, 1.0]
  [0.0017251293948764102, 0.0, 0.8999983466235149, 0.0999998162913902, 1.0]
  [0.012075484505676836, 0.0, 0.8999189860592292, 0.09999099841258494, 1.0]
@@ -96,184 +96,184 @@ julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0, TRF), (ω1, 
 julia> plot(sol);
 ```
 """
-function apply_hamiltonian_gbloch!(du, u, h, p::NTuple{10,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{10,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, zs_idx, g = p
 
-    du[1] = - R2f * u[1] - ω0  * u[2] + B1 * ω1 * u[3]
-    du[2] =   ω0  * u[1] - R2f * u[2]
-    du[3] = - B1 * ω1  * u[1] - (R1 + Rx * m0s) * u[3] + Rx * (1 - m0s) * u[4] + (1 - m0s) * R1 * u[5]
-    du[4] = -B1^2 * ω1^2 * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx), eps(), t)[1] + Rx * m0s  * u[3] - (R1 + Rx * (1 - m0s)) * u[4] + m0s * R1 * u[5]
-    return du
+    ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
+    ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
+    ∂m∂t[3] = - B1 * ω1  * m[1] - (R1 + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1 * m[5]
+    ∂m∂t[4] = -B1^2 * ω1^2 * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx), eps(), t)[1] + Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] + m0s * R1 * m[5]
+    return ∂m∂t
 end
 
-function apply_hamiltonian_gbloch!(du, u, h, p::NTuple{9,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g = p
-    return apply_hamiltonian_gbloch!(du, u, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, g), t)
+    return apply_hamiltonian_gbloch!(∂m∂t, m, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, g), t)
 end
 
-function apply_hamiltonian_gbloch!(du, u, h, p::NTuple{11,Any}, t; pulsetype=:normal)
+function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{11,Any}, t; pulsetype=:normal)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s, grad_list = p
     
     # Apply Hamiltonian to M
-    u_v1 = @view u[1:5]
-    du_v1 = @view du[1:5]
+    u_v1 = @view m[1:5]
+    du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_gbloch!(du_v1, u_v1, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, g), t)
 
     # Apply Hamiltonian to all derivatives and add partial derivatives
     for i = 1:length(grad_list)
-        du_v = @view du[5 * i + 1:5 * (i + 1)]
-        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
+        u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_gbloch!(du_v, u_v, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, (5i + 4), g), t)
 
         if pulsetype==:normal || isa(grad_list[i], grad_T2s) || isa(grad_list[i], grad_B1)
             add_partial_derivative!(du_v, u_v1, x -> h(p, x; idxs=4), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s), t, grad_list[i])
         end
     end
-    return du
+    return ∂m∂t
 end
 
-function apply_hamiltonian_gbloch_inversion!(du, u, h, p::NTuple{11,Any}, t)
-    apply_hamiltonian_gbloch!(du, u, h, p::NTuple{11,Any}, t; pulsetype=:inversion)
+function apply_hamiltonian_gbloch_inversion!(∂m∂t, m, h, p::NTuple{11,Any}, t)
+    apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{11,Any}, t; pulsetype=:inversion)
 end
 
 ###################################################
 # Bloch-McConnel model to simulate free precession
 ###################################################
-function apply_hamiltonian_freeprecession!(du, u, p::NTuple{5,Any}, t)
+function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{5,Any}, t)
     ω0, m0s, R1, R2f, Rx = p
 
-    du[1] = - R2f * u[1] - ω0  * u[2]
-    du[2] =   ω0  * u[1] - R2f * u[2]
-    du[3] = - (R1 + Rx * m0s) * u[3] + Rx * (1 - m0s)  * u[4] + (1 - m0s) * R1 * u[5]
-    du[4] =   Rx * m0s  * u[3] - (R1 + Rx * (1 - m0s)) * u[4] + m0s  * R1 * u[5]
-    return du
+    ∂m∂t[1] = - R2f * m[1] - ω0  * m[2]
+    ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
+    ∂m∂t[3] = - (R1 + Rx * m0s) * m[3] + Rx * (1 - m0s)  * m[4] + (1 - m0s) * R1 * m[5]
+    ∂m∂t[4] =   Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] + m0s  * R1 * m[5]
+    return ∂m∂t
 end
 
-function apply_hamiltonian_freeprecession!(du, u, p::NTuple{6,Any}, t)
+function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{6,Any}, t)
     ω0, m0s, R1, R2f, Rx, grad_list = p
 
     # Apply Hamiltonian to M
-    u_v1 = @view u[1:5]
-    du_v1 = @view du[1:5]
+    u_v1 = @view m[1:5]
+    du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_freeprecession!(du_v1, u_v1, (ω0, m0s, R1, R2f, Rx), t)
 
     # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
-        du_v = @view du[5 * i + 1:5 * (i + 1)]
-        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
+        u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_freeprecession!(du_v, u_v, (ω0, m0s, R1, R2f, Rx), t)
 
         add_partial_derivative!(du_v, u_v1, [], (0.0, 1.0, ω0, m0s, R1, R2f, [], Rx, [], []), t, grad_list[i])
     end
-    return du
+    return ∂m∂t
 end
 
 ###################################################
 # implementatoin of the partial derivates for 
 # calculationg th gradient
 ###################################################
-function add_partial_derivative!(du, u, h, p, t, grad_type::grad_m0s)
+function add_partial_derivative!(∂m∂t, m, h, p, t, grad_type::grad_m0s)
     _, _, _, _, R1, _, _, Rx, _, _ = p
 
-    du[3] -= Rx * u[3] + Rx * u[4] + R1
-    du[4] += Rx * u[3] + Rx * u[4] + R1
-    return du
+    ∂m∂t[3] -= Rx * m[3] + Rx * m[4] + R1
+    ∂m∂t[4] += Rx * m[3] + Rx * m[4] + R1
+    return ∂m∂t
 end
 
-function add_partial_derivative!(du, u, h, p, t, grad_type::grad_R1)
+function add_partial_derivative!(∂m∂t, m, h, p, t, grad_type::grad_R1)
     _, _, _, m0s, _, _, _, _, _, _ = p
 
-    du[3] += - u[3] + (1 - m0s)
-    du[4] += - u[4] + m0s
-    return du
+    ∂m∂t[3] += - m[3] + (1 - m0s)
+    ∂m∂t[4] += - m[4] + m0s
+    return ∂m∂t
 end
 
-function add_partial_derivative!(du, u, h, p, t, grad_type::grad_R2f)
-    du[1] -= u[1]
-    du[2] -= u[2]
-    return du
+function add_partial_derivative!(∂m∂t, m, h, p, t, grad_type::grad_R2f)
+    ∂m∂t[1] -= m[1]
+    ∂m∂t[2] -= m[2]
+    return ∂m∂t
 end
 
-function add_partial_derivative!(du, u, h, p, t, grad_type::grad_Rx)
+function add_partial_derivative!(∂m∂t, m, h, p, t, grad_type::grad_Rx)
     _, _, _, m0s, _, _, _, _, _, _ = p
 
-    du[3] += - m0s * u[3] + (1 - m0s) * u[4]
-    du[4] +=   m0s * u[3] - (1 - m0s) * u[4]
-    return du
+    ∂m∂t[3] += - m0s * m[3] + (1 - m0s) * m[4]
+    ∂m∂t[4] +=   m0s * m[3] - (1 - m0s) * m[4]
+    return ∂m∂t
 end
 
 # version for gBloch with using ApproxFun
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_T2s)
     ω1, B1, _, _, _, _, T2s, _, _, dG_o_dT2s_x_T2s = p
     
-    du[4] -= B1^2 * ω1^2 / T2s * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * h(x), 0.0, t)[1]
-    return du
+    ∂m∂t[4] -= B1^2 * ω1^2 / T2s * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * h(x), 0.0, t)[1]
+    return ∂m∂t
 end
 
 # version for free precession (does nothing)
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Array{Any,1},Array{Any,1}}, t, grad_type::grad_T2s)
-    return du
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Array{Any,1},Array{Any,1}}, t, grad_type::grad_T2s)
+    return ∂m∂t
 end
 
 # version for Graham's model
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
     ω1, B1, _, _, _, _, T2s, _, TRF, _ = p
     
     df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0)[1]
         
-    du[4] -= df_PSD(TRF / T2s) * B1^2 * ω1^2 * u[4]
-    return du
+    ∂m∂t[4] -= df_PSD(TRF / T2s) * B1^2 * ω1^2 * m[4]
+    return ∂m∂t
 end
 
 # version for linearized gBloch
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_T2s)
     _, _, _, _, _, _, _, _, Rrf_d, _ = p
     
-    du[4] -= Rrf_d[3] * u[4]
-    return du
+    ∂m∂t[4] -= Rrf_d[3] * m[4]
+    return ∂m∂t
 end
 
-function add_partial_derivative!(du, u, h, p, t, grad_type::grad_ω0)
-    du[1] -= u[2]
-    du[2] += u[1]
-    return du
+function add_partial_derivative!(∂m∂t, m, h, p, t, grad_type::grad_ω0)
+    ∂m∂t[1] -= m[2]
+    ∂m∂t[2] += m[1]
+    return ∂m∂t
 end
 
 # version for gBloch (using ApproxFun)
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Any}, t, grad_type::grad_B1)
     ω1, B1, _, _, _, _, T2s, _, g, _ = p
     
-    du[1] += ω1 * u[3]
-    du[3] -= ω1 * u[1]
-    du[4] -= 2 * B1 * ω1^2 * quadgk(x -> g((t - x) / T2s) * h(x), eps(), t)[1]
-    return du
+    ∂m∂t[1] += ω1 * m[3]
+    ∂m∂t[3] -= ω1 * m[1]
+    ∂m∂t[4] -= 2 * B1 * ω1^2 * quadgk(x -> g((t - x) / T2s) * h(x), eps(), t)[1]
+    return ∂m∂t
 end
 
 # version for free precession (does nothing)
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Array{Any,1},Array{Any,1}}, t, grad_type::grad_B1)
-    return du
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Array{Any,1},Array{Any,1}}, t, grad_type::grad_B1)
+    return ∂m∂t
 end
 
 # version for Graham
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
     ω1, B1, _, _, _, _, T2s, _, TRF, _ = p
 
     f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0)[1]
 
-    du[1] += ω1 * u[3]
-    du[3] -= ω1 * u[1]
-    du[4] -= f_PSD(TRF / T2s) * 2 * B1 * ω1^2 * T2s * u[4]
-    return du
+    ∂m∂t[1] += ω1 * m[3]
+    ∂m∂t[3] -= ω1 * m[1]
+    ∂m∂t[4] -= f_PSD(TRF / T2s) * 2 * B1 * ω1^2 * T2s * m[4]
+    return ∂m∂t
 end
 
 # version for linearized gBloch
-function add_partial_derivative!(du, u, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_B1)
     ω1, _, _, _, _, _, _, _, Rrf_d, _ = p
 
-    du[1] += ω1 * u[3]
-    du[3] -= ω1 * u[1]
-    du[4] -= Rrf_d[2] * u[4]
-    return du
+    ∂m∂t[1] += ω1 * m[3]
+    ∂m∂t[3] -= ω1 * m[1]
+    ∂m∂t[4] -= Rrf_d[2] * m[4]
+    return ∂m∂t
 end
 
 
@@ -282,7 +282,7 @@ end
 # Green's function is hard coded, which allows to 
 # use special solvers for the double integral
 ###################################################
-function apply_hamiltonian_gbloch_superlorentzian!(du, u, h, p::NTuple{10,Any}, t)
+function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, h, p::NTuple{10,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, zs_idx, N = p
 
     gt = (t, T2s, ct) -> exp(- (t / T2s)^2 * (3 * ct^2 - 1)^2 / 8)
@@ -298,104 +298,104 @@ function apply_hamiltonian_gbloch_superlorentzian!(du, u, h, p::NTuple{10,Any}, 
     if t > (N * T2s)
         dy2 = T2s * sqrt(2π / 3) * Cubature.pcubature(x -> h(p, x[1]; idxs=zs_idx) / (t - x[1]), [0.0], [t - N * T2s])[1]
         
-        du[4] = -B1^2 * ω1^2 * ((dy1) + (dy2))
+        ∂m∂t[4] = -B1^2 * ω1^2 * ((dy1) + (dy2))
     else
-        du[4] = -B1^2 * ω1^2 * (dy1)
+        ∂m∂t[4] = -B1^2 * ω1^2 * (dy1)
     end
 
-    du[1] = - R2f * u[1] - ω0  * u[2] + B1 * ω1 * u[3]
-    du[2] =   ω0  * u[1] - R2f * u[2]
-    du[3] = - B1 * ω1  * u[1] - (R1 + Rx * m0s) * u[3] +       Rx * (1 - m0s)  * u[4] + (1 - m0s) * R1 * u[5]
-    du[4] +=             +       Rx * m0s  * u[3] - (R1 + Rx * (1 - m0s)) * u[4] +      m0s  * R1 * u[5]
-    du[5] = 0.0
-    return du
+    ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
+    ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
+    ∂m∂t[3] = - B1 * ω1  * m[1] - (R1 + Rx * m0s) * m[3] +       Rx * (1 - m0s)  * m[4] + (1 - m0s) * R1 * m[5]
+    ∂m∂t[4] +=             +       Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] +      m0s  * R1 * m[5]
+    ∂m∂t[5] = 0.0
+    return ∂m∂t
 end
 
-function apply_hamiltonian_gbloch_superlorentzian!(du, u, h, p::NTuple{9,Any}, t)
+function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, h, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, N = p
-    return apply_hamiltonian_gbloch_superlorentzian!(du, u, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, N), t)
+    return apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, N), t)
 end
 
 ###################################################
 # Graham's spectral model
 ###################################################
-function apply_hamiltonian_graham_superlorentzian!(du, u, p::NTuple{9,Any}, t)
+function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx = p
 
     f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0)[1]
     Rrf = f_PSD(TRF / T2s) * B1^2 * ω1^2 * T2s
 
-    return apply_hamiltonian_linear!(du, u, (ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf), t)
+    return apply_hamiltonian_linear!(∂m∂t, m, (ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf), t)
 end
 
-function apply_hamiltonian_graham_superlorentzian!(du, u, p::NTuple{10,Any}, t)
+function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
     
      # Apply Hamiltonian to M
-    u_v1 = @view u[1:5]
-    du_v1 = @view du[1:5]
+    u_v1 = @view m[1:5]
+    du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx), t)
  
      # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
-        du_v = @view du[5 * i + 1:5 * (i + 1)]
-        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
+        u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_graham_superlorentzian!(du_v, u_v, (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx), t)
  
         add_partial_derivative!(du_v, u_v1, [], (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
     end
-    return du
+    return ∂m∂t
 end
 
-function Graham_Hamiltonian_superLorentzian_InversionPulse!(du, u, p::NTuple{10,Any}, t)
+function Graham_Hamiltonian_superLorentzian_InversionPulse!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
     
      # Apply Hamiltonian to M
-    u_v1 = @view u[1:5]
-    du_v1 = @view du[1:5]
+    u_v1 = @view m[1:5]
+    du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx), t)
  
      # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
-        du_v = @view du[5 * i + 1:5 * (i + 1)]
-        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
+        u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_graham_superlorentzian!(du_v, u_v, (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx), t)
  
         if isa(grad_list[i], grad_B1) || isa(grad_list[i], grad_T2s)
             add_partial_derivative!(du_v, u_v1, [], (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, TRF, []), t, grad_list[i])
         end
     end
-    return du
+    return ∂m∂t
 end
 
 
-function apply_hamiltonian_linear!(du, u, p::NTuple{8,Any}, t)
+function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{8,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf = p
     
-    apply_hamiltonian_freeprecession!(du, u, (ω0, m0s, R1, R2f, Rx), t)
+    apply_hamiltonian_freeprecession!(∂m∂t, m, (ω0, m0s, R1, R2f, Rx), t)
 
-    du[1] += B1 * ω1 * u[3]
-    du[3] -= B1 * ω1 * u[1]
-    du[4] -= Rrf * u[4]
-    return du
+    ∂m∂t[1] += B1 * ω1 * m[3]
+    ∂m∂t[3] -= B1 * ω1 * m[1]
+    ∂m∂t[4] -= Rrf * m[4]
+    return ∂m∂t
 end
 
-function apply_hamiltonian_linear!(du, u, p::NTuple{9,Any}, t)
+function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf_d, grad_list = p
     Rrf = Rrf_d[1]
     
      # Apply Hamiltonian to M
-    u_v1 = @view u[1:5]
-    du_v1 = @view du[1:5]
+    u_v1 = @view m[1:5]
+    du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_linear!(du_v1, u_v1, (ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf), t)
  
      # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
-        du_v = @view du[5 * i + 1:5 * (i + 1)]
-        u_v  = @view u[5 * i + 1:5 * (i + 1)]
+        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
+        u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_linear!(du_v, u_v, (ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf), t)
  
         add_partial_derivative!(du_v, u_v1, [], (ω1, B1, ω0, m0s, R1, R2f, 0.0, Rx, Rrf_d, []), t, grad_list[i])
     end
-    return du
+    return ∂m∂t
 end

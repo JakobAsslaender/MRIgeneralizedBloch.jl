@@ -104,7 +104,7 @@ julia> greens_superlorentzian((t-τ)/T2s)
 ```
 """
 function greens_superlorentzian(κ)
-    quadgk(ζ -> exp(- κ^2 * (3ζ^2 - 1)^2 / 8), 0, 1)[1]
+    quadgk(ζ -> exp(- κ^2 * (3ζ^2 - 1)^2 / 8), 0, sqrt(1/3), 1, order = 100)[1]
 end
 
 """
