@@ -8,10 +8,10 @@
 Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
 
 # Arguemnts
-- `∂m∂t::Vector{<:Number}`: Array describing to derivative of m wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
-- `m::Vector{<:Number}`: Array the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
+- `∂m∂t::Vector{<:Number}`: Vector describing to derivative of `m` wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
+- `m::Vector{<:Number}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
 - `h`: History fuction; can be initialized with `h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
-- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, whith 
+- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, with 
     -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
     -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
     -`ω0::Number`: Larmor or off-resonance frequency in rad/s
@@ -100,7 +100,6 @@ julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0, TRF), (ω1, 
 
 
 julia> plot(sol);
-
 ```
 """
 function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{10,Any}, t)
@@ -442,14 +441,14 @@ Apply Sled's Hamiltonian to `m` and write the resulting derivative wrt. time int
 Currently, this funciton is only implemented for an isolated semi-solid spin pool.
 
 # Arguemnts
-- `∂m∂t::Vector{<:Number}`: Array describing to derivative of m wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
-- `m::Vector{<:Number}`: Array the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
-- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, whith 
+- `∂m∂t::Vector{<:Number}`: Vector of length 1 describing to derivative of `m` wrt. time; this vector can contain any value, which is replaced by `H * m`
+- `m::Vector{<:Number}`: Vector of length 1 describing the `zs` magnetization
+- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, with 
     -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
     -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
     -`ω0::Number`: Larmor or off-resonance frequency in rad/s
-    -`R1::Number`: Apparent longitudinal spin relaxation rate of both pools in 1/seconds
-    -`T2s::Number`: Trasversal spin relaxation time of the semi-solid pool in seconds
+    -`R1::Number`: Longitudinal spin relaxation rate in 1/seconds
+    -`T2s::Number`: Trasversal spin relaxation time in seconds
     -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
 - `t::Number`: Time in seconds
 

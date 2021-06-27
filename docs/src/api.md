@@ -1,4 +1,5 @@
 ```@meta
+Author = "Jakob Assländer"
 CurrentModule = MRIgeneralizedBloch
 ```
 
@@ -6,5 +7,9 @@ CurrentModule = MRIgeneralizedBloch
 
 Documentation for [MRIgeneralizedBloch.jl](https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl).
 
-```@contents
+```@index
+```
+
+```@autodocs
+Modules = [MRIgeneralizedBloch]
 ```
