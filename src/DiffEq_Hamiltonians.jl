@@ -57,6 +57,7 @@ julia> Rx = 30;
 
 julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 
+
 julia> u0 = [0; 0; 1-m0s; m0s; 1];
 
 julia> h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5);
@@ -71,29 +72,35 @@ t: 6-element Vector{Float64}:
  5.247209543806443e-6
  3.160528539176439e-5
  0.0001
-m: 6-element Vector{Vector{Float64}}:
+u: 6-element Vector{Vector{Float64}}:
  [0.0, 0.0, 0.9, 0.1, 1.0]
- [0.0017251293948764102, 0.0, 0.8999983466235149, 0.0999998162913902, 1.0]
- [0.012075484505676836, 0.0, 0.8999189860592292, 0.09999099841258494, 1.0]
- [0.07409379835058187, 0.0, 0.8969447197649016, 0.0996605155131504, 1.0]
- [0.4285786292638301, 0.0, 0.79136732759974, 0.0879278039163368, 1.0]
- [0.8993375887462968, 0.0, 0.0004582695875068321, 3.215359474631474e-6, 1.0]
+ [0.0017251293948764102, 0.0, 0.8999983466235149, 0.09999981629184612, 1.0]
+ [0.012075484505676847, 0.0, 0.8999189860592341, 0.09999099950691269, 1.0]
+ [0.07409379835118456, 0.0, 0.8969447198086778, 0.09966205538313169, 1.0]
+ [0.4285786528949744, 0.0, 0.7913675966569869, 0.08937976862223226, 1.0]
+ [0.8993472985166031, 0.0, 0.00048694303788232585, 0.0410684174118866, 1.0]
 
 julia> using Plots
 
 julia> plot(sol, labels=["xf" "yf" "zf" "zs" "1"], xlabel="t (s)", ylabel="m(t)");
 
+
 julia> dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, TRF / T2s);
+
 
 julia> grad_list = [grad_R2f(), grad_m0s()];
 
+
 julia> u0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];
+
 
 julia> h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5 + 5*length(grad_list));
 
 julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), MethodOfSteps(DP8()));
 
+
 julia> plot(sol);
+
 ```
 """
 function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{10,Any}, t)
@@ -102,7 +109,11 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{10,Any}, t)
     ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1  * m[1] - (R1 + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1 * m[5]
-    ∂m∂t[4] = -B1^2 * ω1^2 * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx), eps(), t)[1] + Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] + m0s * R1 * m[5]
+
+    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx) * cos(ω0 * x), eps(), t, order=100)[1]
+    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx) * sin(ω0 * x), eps(), t, order=100)[1]
+
+    ∂m∂t[4] = -B1^2 * ω1^2 * (xt + yt) + Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] + m0s * R1 * m[5]
     return ∂m∂t
 end
 
@@ -110,6 +121,17 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g = p
     return apply_hamiltonian_gbloch!(∂m∂t, m, h, (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, 4, g), t)
 end
+
+# Version for an isolated semi-solid pool 
+function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{6,Any}, t)
+    ω1, B1, ω0, R1, T2s, g = p
+    
+    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x)[1] * cos(ω0 * x), 0, t, order=100)[1]
+    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x)[1] * sin(ω0 * x), 0, t, order=100)[1]
+    
+    ∂m∂t[1] = -B1^2 * ω1^2 * (xt + yt) + R1 * (1 - m[1])
+end
+
 
 function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{11,Any}, t; pulsetype=:normal)
     ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s, grad_list = p
@@ -132,8 +154,8 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{11,Any}, t; pulsety
     return ∂m∂t
 end
 
-function apply_hamiltonian_gbloch_inversion!(∂m∂t, m, h, p::NTuple{11,Any}, t)
-    apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{11,Any}, t; pulsetype=:inversion)
+function apply_hamiltonian_gbloch_inversion!(∂m∂t, m, h, p, t)
+    apply_hamiltonian_gbloch!(∂m∂t, m, h, p, t; pulsetype=:inversion)
 end
 
 ###################################################
@@ -164,6 +186,7 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{6,Any}, t)
         apply_hamiltonian_freeprecession!(du_v, u_v, (ω0, m0s, R1, R2f, Rx), t)
 
         add_partial_derivative!(du_v, u_v1, [], (0.0, 1.0, ω0, m0s, R1, R2f, [], Rx, [], []), t, grad_list[i])
+        # TODO: repalce [] with undef
     end
     return ∂m∂t
 end
@@ -202,11 +225,15 @@ function add_partial_derivative!(∂m∂t, m, h, p, t, grad_type::grad_Rx)
     return ∂m∂t
 end
 
-# version for gBloch with using ApproxFun
+# version for gBloch
 function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_T2s)
-    ω1, B1, _, _, _, _, T2s, _, _, dG_o_dT2s_x_T2s = p
-    
-    ∂m∂t[4] -= B1^2 * ω1^2 / T2s * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * h(x), 0.0, t)[1]
+    ω1, B1, ω0, _, _, _, T2s, _, _, dG_o_dT2s_x_T2s = p
+
+
+    yt = cos(ω0 * t) * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * h(x) * cos(ω0 * x), 0, t, order=100)[1]
+    xt = sin(ω0 * t) * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * h(x) * sin(ω0 * x), 0, t, order=100)[1]
+                      
+    ∂m∂t[4] -= B1^2 * ω1^2 * (xt + yt)/T2s
     return ∂m∂t
 end
 
@@ -225,14 +252,24 @@ function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,An
     return ∂m∂t
 end
 
-# version for linearized gBloch
-function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_T2s)
-    _, _, _, _, _, _, _, _, Rrf_d, _ = p
-    
-    ∂m∂t[4] -= Rrf_d[3] * m[4]
+# version for gBloch model
+function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_ω0)
+    ω1, B1, ω0, _, _, _, T2s, _, g, _ = p
+
+    ∂m∂t[1] -= m[2]
+    ∂m∂t[2] += m[1]
+
+    yt = -sin(ω0 * t) * t * quadgk(x -> g((t - x) / T2s) * h(x) * cos(ω0 * x), 0, t, order=100)[1]
+    yt += cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(x) * (-x) * sin(ω0 * x), 0, t, order=100)[1]
+
+    xt = cos(ω0 * t) * t * quadgk(x -> g((t - x) / T2s) * h(x) * sin(ω0 * x), 0, t, order=100)[1]
+    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(x) * x * cos(ω0 * x), 0, t, order=100)[1]
+
+    ∂m∂t[4] -= B1^2 * ω1^2 * (xt + yt)
     return ∂m∂t
 end
 
+# version for free precession & Graham's model
 function add_partial_derivative!(∂m∂t, m, h, p, t, grad_type::grad_ω0)
     ∂m∂t[1] -= m[2]
     ∂m∂t[2] += m[1]
@@ -241,11 +278,15 @@ end
 
 # version for gBloch (using ApproxFun)
 function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Fun,Any}, t, grad_type::grad_B1)
-    ω1, B1, _, _, _, _, T2s, _, g, _ = p
+    ω1, B1, ω0, _, _, _, T2s, _, g, _ = p
     
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
-    ∂m∂t[4] -= 2 * B1 * ω1^2 * quadgk(x -> g((t - x) / T2s) * h(x), eps(), t)[1]
+
+    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(x) * cos(ω0 * x), 0, t, order=100)[1]
+    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(x) * sin(ω0 * x), 0, t, order=100)[1]
+
+    ∂m∂t[4] -= 2 * B1 * ω1^2 * (xt + yt)
     return ∂m∂t
 end
 
@@ -263,16 +304,6 @@ function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,An
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
     ∂m∂t[4] -= f_PSD(TRF / T2s) * 2 * B1 * ω1^2 * T2s * m[4]
-    return ∂m∂t
-end
-
-# version for linearized gBloch
-function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Tuple,Any}, t, grad_type::grad_B1)
-    ω1, _, _, _, _, _, _, _, Rrf_d, _ = p
-
-    ∂m∂t[1] += ω1 * m[3]
-    ∂m∂t[3] -= ω1 * m[1]
-    ∂m∂t[4] -= Rrf_d[2] * m[4]
     return ∂m∂t
 end
 
@@ -331,12 +362,12 @@ end
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
     
-     # Apply Hamiltonian to M
+    # Apply Hamiltonian to M
     u_v1 = @view m[1:5]
     du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx), t)
  
-     # Apply Hamiltonian to M and all its derivatives
+    # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
         du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
         u_v  = @view m[5 * i + 1:5 * (i + 1)]
@@ -350,12 +381,12 @@ end
 function Graham_Hamiltonian_superLorentzian_InversionPulse!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
     
-     # Apply Hamiltonian to M
+    # Apply Hamiltonian to M
     u_v1 = @view m[1:5]
     du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx), t)
  
-     # Apply Hamiltonian to M and all its derivatives
+    # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
         du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
         u_v  = @view m[5 * i + 1:5 * (i + 1)]
@@ -398,4 +429,75 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
         add_partial_derivative!(du_v, u_v1, [], (ω1, B1, ω0, m0s, R1, R2f, 0.0, Rx, Rrf_d, []), t, grad_list[i])
     end
     return ∂m∂t
+end
+
+##################################################################
+# Sled's model
+##################################################################
+"""
+    apply_hamiltonian_sled!(∂m∂t, m, p, t)
+
+Apply Sled's Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
+
+Currently, this funciton is only implemented for an isolated semi-solid spin pool.
+
+# Arguemnts
+- `∂m∂t::Vector{<:Number}`: Array describing to derivative of m wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
+- `m::Vector{<:Number}`: Array the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
+- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, whith 
+    -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
+    -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
+    -`ω0::Number`: Larmor or off-resonance frequency in rad/s
+    -`R1::Number`: Apparent longitudinal spin relaxation rate of both pools in 1/seconds
+    -`T2s::Number`: Trasversal spin relaxation time of the semi-solid pool in seconds
+    -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
+- `t::Number`: Time in seconds
+
+# Examples
+```jldoctest
+julia> using DifferentialEquations
+
+julia> α = π/2;
+
+julia> TRF = 100e-6;
+
+julia> ω1 = α/TRF;
+
+julia> B1 = 1;
+
+julia> ω0 = 0;
+
+julia> R1 = 1;
+
+julia> T2s = 10e-6;
+
+julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
+
+julia> m0 = [1];
+
+julia> sol = solve(ODEProblem(apply_hamiltonian_sled!, m0, (0, TRF), (ω1, 1, ω0, R1, T2s, G)), Tsit5())
+retcode: Success
+Interpolation: specialized 4th order "free" interpolation
+t: 3-element Vector{Float64}:
+ 0.0
+ 7.475658194333419e-5
+ 0.0001
+u: 3-element Vector{Vector{Float64}}:
+ [1.0]
+ [0.6313685535188787]
+ [0.4895191983659207]
+
+julia> using Plots
+
+julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
+
+```
+"""
+function apply_hamiltonian_sled!(d∂m∂t, m, p::NTuple{6,Any}, t)
+    ω1, B1, ω0, R1, T2s, g = p
+
+    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * cos(ω0 * x), 0, t)[1]
+    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * sin(ω0 * x), 0, t)[1]
+    
+    d∂m∂t[1] = -B1^2 * ω1^2 * (xt + yt) * m[1] + R1 * (1 - m[1])
 end

@@ -27,26 +27,26 @@ Optional:
 ```jldoctest
 julia> calculatesignal_gbloch_ide(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6)
 100×1 Matrix{ComplexF64}:
-   -0.0246577624432389 + 0.0im
- 0.0037348678313156953 - 0.0im
- -0.019057736704290798 + 0.0im
-  0.007146413346945974 - 0.0im
- -0.013913423957603942 + 0.0im
-  0.010291046550055142 - 0.0im
- -0.009153866379060188 + 0.0im
-  0.013213045210971332 - 0.0im
- -0.004734258510867749 + 0.0im
-   0.01593906991871259 - 0.0im
+ -0.024657762441422027 + 0.0im
+ 0.0037348678313655435 - 0.0im
+ -0.019057736703007047 + 0.0im
+  0.007146413346758778 - 0.0im
+ -0.013913423956595785 + 0.0im
+  0.010291046549792265 - 0.0im
+ -0.009153866378612775 + 0.0im
+  0.013213045210360654 - 0.0im
+ -0.004734258510785772 + 0.0im
+   0.01593906991792929 - 0.0im
                        ⋮
-   0.05321851164497222 - 0.0im
-   0.05261662008542508 + 0.0im
-  0.053387874455448896 - 0.0im
-   0.05283295983707664 + 0.0im
-  0.053546314400920704 - 0.0im
-   0.05303472239104932 + 0.0im
-    0.0536945326257172 - 0.0im
-   0.05322289237479402 + 0.0im
-   0.05383318552722351 - 0.0im
+   0.05321851165156517 - 0.0im
+   0.05261662009092025 + 0.0im
+  0.053387874462524944 - 0.0im
+  0.052832959843114265 + 0.0im
+   0.05354631440847341 - 0.0im
+  0.053034722397620235 + 0.0im
+   0.05369453263373485 - 0.0im
+   0.05322289238188484 + 0.0im
+   0.05383318553569216 - 0.0im
 
 julia> calculatesignal_gbloch_ide(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6; grad_list=[grad_R1(), grad_T2s()], output=:realmagnetization)
 100×15 transpose(::Matrix{Float64}) with eltype Float64:
@@ -85,13 +85,13 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s;
 
     # initialization and memory allocation
     N_s = 5 * (1 + length(grad_list))
-    h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(N_s)
     alg = MethodOfSteps(DP8())
     s = zeros(N_s, length(TRF))
     u0 = zeros(N_s)
     u0[3] = (1 - m0s)
     u0[4] = m0s
     u0[5] = 1
+    h(p, t; idxs=nothing) = typeof(idxs) <: Number ? u0[idxs] : u0
 
     # prep pulse 
     sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), alg)  

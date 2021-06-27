@@ -10,7 +10,7 @@ using Test
 TRF = 500e-6 + 1000e-6 * rand()
 ω1 = α / TRF
 B1 = 0.7 + 0.6 * rand()
-ω0 = 1000 * rand() - 500
+ω0 = 0 # Graham's spectral model is only implemented for on-resonance pulses
 m0s = 0.2 * rand()
 m0f = 1 - m0s
 R1 = 0.7 + 0.6 * rand()
