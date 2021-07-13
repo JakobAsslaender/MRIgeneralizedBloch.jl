@@ -78,7 +78,7 @@ nothing #hide
 # ```
 # where ``G(t-τ)`` is the Green's function. The Hamiltonian of this ODE is implemented in [`apply_hamiltonian_sled!`](@ref) and can be solve the ODE solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-z_Sled_Lorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)), Tsit5())
+z_Sled_Lorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)))
 nothing #hide
 
 
@@ -89,16 +89,17 @@ nothing #hide
 # ```
 # where we explicitly denote the ``ω_x`` and ``ω_y`` components of the Rabi frequency. The Hamiltonian of the IDE is implemented in [`apply_hamiltonian_gbloch!`](@ref) and we can solve this IDE with the [delay-differential equation (DDE)](https://diffeq.sciml.ai/stable/tutorials/dde_example/) solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-z_gBloch_Lorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)), MethodOfSteps(DP8()))
+z_gBloch_Lorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)))
 nothing #hide
 
 # Now that we have solved all five models, we can plot the solutions for comparison:
 
-p = plot(1e3t, z_Bloch, label="Bloch model", xlabel="t [ms]", ylabel="zs(t)")
-p = plot!(1e3t, zero(similar(t)) .+ z_steady_state_Lorentzian, label="Henkelman's steady-state")
-p = plot!(1e3t, z_Graham_Lorentzian, label="Graham's model")
-p = plot!(1e3t, (hcat(z_Sled_Lorentzian(t).u...)'), label="Sled's model")
-p = plot!(1e3t, (hcat(z_gBloch_Lorentzian(t).u...)'), label="generalized Bloch model")
+p = plot(xlabel="t [ms]", ylabel="zs(t)")
+plot!(p, 1e3t, z_Bloch, label="Bloch model")
+plot!(p, 1e3t, zero(similar(t)) .+ z_steady_state_Lorentzian, label="Henkelman's steady-state")
+plot!(p, 1e3t, z_Graham_Lorentzian, label="Graham's model")
+plot!(p, 1e3t, (hcat(z_Sled_Lorentzian(t).u...)'), label="Sled's model")
+plot!(p, 1e3t, (hcat(z_gBloch_Lorentzian(t).u...)'), label="generalized Bloch model")
 #md Main.HTMLPlot(p) #hide
 
 # Zooming into the plot, reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and suble, but existing differences when comapred to the other models. Choosing a longer T2s amplifies these differences. 
@@ -112,14 +113,15 @@ z_steady_state_Gaussian = R1 / (R1 + π * ω1^2 * g_Gaussian(ω0))
 Rrf = π * ω1^2 * g_Gaussian(ω0)
 z_Graham_Gaussian = @. (Rrf * exp(-t * (R1 + Rrf)) + R1) / (R1 + Rrf)
 
-z_gBloch_Gaussian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_gaussian)), MethodOfSteps(DP8()))
+z_gBloch_Gaussian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_gaussian)))
 
-z_Sled_Gaussian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_gaussian)), Tsit5())
+z_Sled_Gaussian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_gaussian)))
 
-p = plot(1e3t, zero(similar(t)) .+ z_steady_state_Gaussian, label="Henkelman's steady-state")
-p = plot!(1e3t, z_Graham_Gaussian, label="Graham' model")
-p = plot!(1e3t, (hcat(z_Sled_Gaussian(t).u...)'), label="Sled's model")
-p = plot!(1e3t, (hcat(z_gBloch_Gaussian(t).u...)'), label="generalized Bloch model")
+p = plot(xlabel="t [ms]", ylabel="zs(t)")
+plot!(p, 1e3t, zero(similar(t)) .+ z_steady_state_Gaussian, label="Henkelman's steady-state")
+plot!(p, 1e3t, z_Graham_Gaussian, label="Graham' model")
+plot!(p, 1e3t, (hcat(z_Sled_Gaussian(t).u...)'), label="Sled's model")
+plot!(p, 1e3t, (hcat(z_gBloch_Gaussian(t).u...)'), label="generalized Bloch model")
 #md Main.HTMLPlot(p) #hide
 
 # ## super-Lorentzian lineshape
@@ -127,18 +129,20 @@ p = plot!(1e3t, (hcat(z_gBloch_Gaussian(t).u...)'), label="generalized Bloch mod
 
 g_superLorentzian(ω0) = sqrt(2 / π) * T2s * quadgk(ct -> exp(-2 * (T2s * ω0 / abs(3 * ct^2 - 1))^2) / abs(3 * ct^2 - 1), 0.0, sqrt(1 / 3), 1)[1]
 z_steady_state_superLorentzian = R1 / (R1 + π * ω1^2 * g_superLorentzian(ω0))
-plot(1e3t, zero(similar(t)) .+ z_steady_state_superLorentzian, label="Henkelman's steady-state (super-Lorentzian)")
 
 Rrf = π * ω1^2 * g_superLorentzian(ω0)
 z_Graham_superLorentzian = @. (Rrf * exp(-t * (R1 + Rrf)) + R1) / (R1 + Rrf)
-plot!(1e3t, z_Graham_superLorentzian, label="Graham super-Lorentzian")
 
 G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
-z_gBloch_superLorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, G_superLorentzian)), MethodOfSteps(DP8()))
-plot!(1e3t, (hcat(z_gBloch_superLorentzian(t).u...)'), label="gBloch super-Lorentzian")
+z_gBloch_superLorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, G_superLorentzian)))
 
-z_Sled_superLorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, G_superLorentzian)), Tsit5())
-p = plot!(1e3t, (hcat(z_Sled_superLorentzian(t).u...)'), label="Sled super-Lorentzian")
+z_Sled_superLorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, G_superLorentzian)))
+
+p = plot(xlabel="t [ms]", ylabel="zs(t)")
+plot!(p, 1e3t, zero(similar(t)) .+ z_steady_state_superLorentzian, label="Henkelman's steady-state (super-Lorentzian)")
+plot!(p, 1e3t, z_Graham_superLorentzian, label="Graham super-Lorentzian")
+plot!(p, 1e3t, (hcat(z_gBloch_superLorentzian(t).u...)'), label="gBloch super-Lorentzian")
+plot!(p, 1e3t, (hcat(z_Sled_superLorentzian(t).u...)'), label="Sled super-Lorentzian")
 #md Main.HTMLPlot(p) #hide
 
 

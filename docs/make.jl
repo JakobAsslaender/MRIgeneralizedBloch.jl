@@ -15,7 +15,7 @@ function Base.show(io::IO, ::MIME"text/html", p::HTMLPlot)
     mkpath(PLOT_DIR)
     path = joinpath(PLOT_DIR, string(hash(p) % UInt32, ".html"))
     Plots.savefig(p.p, path)
-    print(io, "<object type=\"text/html\" data=\"../$(relpath(path, ROOT_DIR))\" style=\"width:100%;height:600px;\"></object>")
+    print(io, "<object type=\"text/html\" data=\"../$(relpath(path, ROOT_DIR))\" style=\"width:100%;height:425px;\"></object>")
 end
 
 # Notebook hack to display inline math correctly
@@ -29,23 +29,23 @@ OUTPUT = joinpath(@__DIR__, "src/build_literate")
 
 FILE = joinpath(@__DIR__, "src/Greens_functions.jl")
 Literate.markdown(FILE, OUTPUT)
-Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
+# Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
 Literate.script(  FILE, OUTPUT)
 
 FILE = joinpath(@__DIR__, "src/Simulation_ContinuousWave.jl")
 Literate.markdown(FILE, OUTPUT)
-Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
+# Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
 Literate.script(  FILE, OUTPUT)
 
 FILE = joinpath(@__DIR__, "src/Simulation_Pulse.jl")
 Literate.markdown(FILE, OUTPUT)
-Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
+# Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
 Literate.script(  FILE, OUTPUT)
 
-FILE = joinpath(@__DIR__, "src/Analyze_NMR_Data.jl")
-Literate.markdown(FILE, OUTPUT)
-Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
-Literate.script(  FILE, OUTPUT)
+# FILE = joinpath(@__DIR__, "src/Analyze_NMR_Data.jl")
+# Literate.markdown(FILE, OUTPUT)
+# # Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
+# Literate.script(  FILE, OUTPUT)
 
 DocMeta.setdocmeta!(MRIgeneralizedBloch, :DocTestSetup, :(using MRIgeneralizedBloch); recursive=true)
 
@@ -66,7 +66,8 @@ makedocs(;
         "generalized Bloch Paper" => Any[
         "build_literate/Greens_functions.md",
         "build_literate/Simulation_ContinuousWave.md",
-        "build_literate/Analyze_NMR_Data.md",
+        "build_literate/Simulation_Pulse.md",
+        # "build_literate/Analyze_NMR_Data.md",
         ],
         "API" => "api.md",
     ],

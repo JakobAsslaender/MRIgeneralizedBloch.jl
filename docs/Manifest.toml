@@ -909,9 +909,9 @@ uuid = "3a97d323-0669-5f0c-9066-3539efd106a3"
 
 [[MRIgeneralizedBloch]]
 deps = ["ApproxFun", "Cubature", "DifferentialEquations", "Interpolations", "LinearAlgebra", "NLsolve", "QuadGK", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "0db58d8b1105bf2fca86e8113e8099e79717f76d"
+git-tree-sha1 = "c259ada0b3706d29a07af52b59d1917c05cb3f7f"
 repo-rev = "master"
-repo-url = "/Users/asslaj01/Dropbox (NYU Langone Health)/Documents/Julia/MRIgeneralizedBloch.jl"
+repo-url = "https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl"
 uuid = "9689932d-8765-44d0-985b-2d9644d92569"
 version = "0.1.0"
 

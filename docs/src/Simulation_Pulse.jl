@@ -90,12 +90,13 @@ end
 
 # Now we have solved all five models and can plot the solutions for comparison:
 
-p = plot(TRF, z_Bloch, xaxis=:log, label="Bloch simulation", legend=:bottomright, xlabel="TRF [s]", ylabel="zs(TRF)")
-p = plot!(TRF, z_Graham_spec_Lorentzian, label="Graham's spectral model")
-p = plot!(TRF, z_Graham_SF_approx_Lorentzian, label="Graham's single frequency approximation")
-p = plot!(TRF, z_Sled_Lorentzian, label="Sled's model")
-p = plot!(TRF, z_gBloch_Lorentzian, label="generalized Bloch model")
-p = plot!(TRF, TRF .* 0 .+ cos(α), label="cos(α)")
+p = plot(xaxis=:log, legend=:bottomright, xlabel="TRF [s]", ylabel="zs(TRF)")
+plot!(p, TRF, z_gBloch_Lorentzian, label="generalized Bloch model")
+plot!(p, TRF, TRF .* 0 .+ cos(α), label="cos(α)")
+plot!(p, TRF, z_Sled_Lorentzian, label="Sled's model")
+plot!(p, TRF, z_Graham_spec_Lorentzian, label="Graham's spectral model")
+plot!(p, TRF, z_Graham_SF_approx_Lorentzian, label="Graham's single frequency approximation")
+plot!(p, TRF, z_Bloch, label="Bloch simulation")
 #md Main.HTMLPlot(p) #hide
 
 # ## Gaussian lineshape
@@ -118,11 +119,12 @@ for i = 1:length(TRF)
     z_gBloch_Gaussian[i] = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, (0, TRF[i]), (ω1[i], 1, ω0, R1, T2s, greens_gaussian)), MethodOfSteps(DP8()))[end][1]
 end
 
-p = plot(TRF, z_Graham_spec_Gaussian, xaxis=:log, label="Graham's spectral model", legend=:bottomright, xlabel="TRF [s]", ylabel="zs(TRF)")
-p = plot!(TRF, z_Graham_SF_approx_Gaussian, label="Graham's single frequency approximation")
-p = plot!(TRF, z_Sled_Gaussian, label="Sled's model")
-p = plot!(TRF, z_gBloch_Gaussian, label="generalized Bloch model")
-p = plot!(TRF, TRF .* 0 .+ cos(α), label="cos(α)")
+p = plot(xaxis=:log, legend=:bottomright, xlabel="TRF [s]", ylabel="zs(TRF)")
+plot!(p, TRF, z_gBloch_Gaussian, label="generalized Bloch model")
+plot!(p, TRF, TRF .* 0 .+ cos(α), label="cos(α)")
+plot!(p, TRF, z_Sled_Gaussian, label="Sled's model")
+plot!(p, TRF, z_Graham_spec_Gaussian, label="Graham's spectral model")
+plot!(p, TRF, z_Graham_SF_approx_Gaussian, label="Graham's single frequency approximation")
 #md Main.HTMLPlot(p) #hide
 
 # ## super-Lorentzian lineshape
@@ -144,10 +146,11 @@ for i = 1:length(TRF)
     z_gBloch_superLorentzian[i] = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, (0, TRF[i]), (ω1[i], 1, ω0, R1, T2s, G_superLorentzian)), MethodOfSteps(DP8()))[end][1]
 end
 
-p = plot(TRF, z_Graham_spec_superLorentzian, xaxis=:log, label="Graham's spectral model", legend=:bottomright, xlabel="TRF [s]", ylabel="zs(TRF)")
-p = plot!(TRF, z_Sled_superLorentzian, label="Sled's model")
-p = plot!(TRF, z_gBloch_superLorentzian, label="generalized Bloch model")
-p = plot!(TRF, TRF .* 0 .+ cos(α), label="cos(α)")
+p = plot(xaxis=:log, legend=:bottomright, xlabel="TRF [s]", ylabel="zs(TRF)")
+plot!(p, TRF, z_gBloch_superLorentzian, label="generalized Bloch model")
+plot!(p, TRF, TRF .* 0 .+ cos(α), label="cos(α)")
+plot!(p, TRF, z_Sled_superLorentzian, label="Sled's model")
+plot!(p, TRF, z_Graham_spec_superLorentzian, label="Graham's spectral model")
 #md Main.HTMLPlot(p) #hide
 
 # This simulation reveals the most pronounced deviations of the generalized Bloch model from established models due to the slower decay of the super-Lorentzian Green's function.
@@ -155,19 +158,19 @@ p = plot!(TRF, TRF .* 0 .+ cos(α), label="cos(α)")
 # ### Error analysis
 # Assuming a super-Lorentzian lineshape, we quantify the deviations of Sled's model from the generalized Bloch model:
 
-TRF = 1e-3 # s
-ω1 = α ./ TRF # rad/s
-z_Sled_superLorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, (0, TRF), (ω1, 1, ω0, R1, T2s, G_superLorentzian)), Tsit5())[end][1]
-z_gBloch_superLorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, (0, TRF), (ω1, 1, ω0, R1, T2s, G_superLorentzian)), MethodOfSteps(DP8()))[end][1]
-z_Sled_superLorentzian - z_gBloch_superLorentzian
+TRF_i = 1e-3 # s
+ω1_i = α / TRF_i # rad/s
+z_Sled_superLorentzian_i = solve(ODEProblem(apply_hamiltonian_sled!, z0, (0, TRF_i), (ω1_i, 1, ω0, R1, T2s, G_superLorentzian)), Tsit5())[end][1]
+z_gBloch_superLorentzian_i = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, (0, TRF_i), (ω1_i, 1, ω0, R1, T2s, G_superLorentzian)), MethodOfSteps(DP8()))[end][1]
+z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 
 # For ``T_{\text{RF}} = 1``ms, the deviations are small compared to the thermal equilibrium magnetization ``z^s_0 = 1``, but with ``T_{\text{RF}} = 0.1``ms, this deviation becomes sizable:
 
-TRF = 1e-4 # s
-ω1 = α ./ TRF # rad/s
-z_Sled_superLorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, (0, TRF), (ω1, 1, ω0, R1, T2s, G_superLorentzian)), Tsit5())[end][1]
-z_gBloch_superLorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, (0, TRF), (ω1, 1, ω0, R1, T2s, G_superLorentzian)), MethodOfSteps(DP8()))[end][1]
-z_Sled_superLorentzian - z_gBloch_superLorentzian
+TRF_i = 1e-4 # s
+ω1_i = α / TRF_i # rad/s
+z_Sled_superLorentzian_i = solve(ODEProblem(apply_hamiltonian_sled!, z0, (0, TRF_i), (ω1_i, 1, ω0, R1, T2s, G_superLorentzian)), Tsit5())[end][1]
+z_gBloch_superLorentzian_i = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, (0, TRF_i), (ω1_i, 1, ω0, R1, T2s, G_superLorentzian)), MethodOfSteps(DP8()))[end][1]
+z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 
 
 

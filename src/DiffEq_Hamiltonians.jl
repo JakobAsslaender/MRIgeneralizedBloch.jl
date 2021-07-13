@@ -1,3 +1,4 @@
+# todo: replace h with m_fun
 ###################################################
 # generalized Bloch Hamiltonians that can take any 
 # Green's function as an argument. 
@@ -109,10 +110,15 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, h, p::NTuple{10,Any}, t)
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1  * m[1] - (R1 + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1 * m[5]
 
-    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx) * cos(ω0 * x), eps(), t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx) * sin(ω0 * x), eps(), t, order=100)[1]
+    if ω0 == 0
+        xs = 0
+        ys = quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx), eps(), t, order=100)[1]
+    else
+        xs = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx) * sin(ω0 * x), eps(), t, order=100)[1]
+        ys = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * h(p, x; idxs=zs_idx) * cos(ω0 * x), eps(), t, order=100)[1]
+    end
 
-    ∂m∂t[4] = -B1^2 * ω1^2 * (xt + yt) + Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] + m0s * R1 * m[5]
+    ∂m∂t[4] = -B1^2 * ω1^2 * (xs + ys) + Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] + m0s * R1 * m[5]
     return ∂m∂t
 end
 
@@ -245,7 +251,7 @@ end
 function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
     ω1, B1, _, _, _, _, T2s, _, TRF, _ = p
     
-    df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0)[1]
+    df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0, order=100)[1]
         
     ∂m∂t[4] -= df_PSD(TRF / T2s) * B1^2 * ω1^2 * m[4]
     return ∂m∂t
@@ -298,7 +304,7 @@ end
 function add_partial_derivative!(∂m∂t, m, h, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
     ω1, B1, _, _, _, _, T2s, _, TRF, _ = p
 
-    f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0)[1]
+    f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0, order=100)[1]
 
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
@@ -352,7 +358,7 @@ end
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx = p
 
-    f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0)[1]
+    f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0, order=100)[1]
     Rrf = f_PSD(TRF / T2s) * B1^2 * ω1^2 * T2s
 
     return apply_hamiltonian_linear!(∂m∂t, m, (ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf), t)
@@ -495,8 +501,8 @@ julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
 function apply_hamiltonian_sled!(d∂m∂t, m, p::NTuple{6,Any}, t)
     ω1, B1, ω0, R1, T2s, g = p
 
-    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * cos(ω0 * x), 0, t)[1]
-    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * sin(ω0 * x), 0, t)[1]
+    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * cos(ω0 * x), 0, t, order=100)[1]
+    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * sin(ω0 * x), 0, t, order=100)[1]
     
     d∂m∂t[1] = -B1^2 * ω1^2 * (xt + yt) * m[1] + R1 * (1 - m[1])
 end
