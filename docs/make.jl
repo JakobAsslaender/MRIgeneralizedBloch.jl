@@ -1,3 +1,5 @@
+using Pkg
+Pkg.activate(".")
 using MRIgeneralizedBloch
 using Documenter
 using Literate
@@ -30,7 +32,17 @@ Literate.markdown(FILE, OUTPUT)
 Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
 Literate.script(  FILE, OUTPUT)
 
-FILE = joinpath(@__DIR__, "src/Simulation_CW_gBloch_vs_Graham.jl")
+FILE = joinpath(@__DIR__, "src/Simulation_ContinuousWave.jl")
+Literate.markdown(FILE, OUTPUT)
+Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
+Literate.script(  FILE, OUTPUT)
+
+FILE = joinpath(@__DIR__, "src/Simulation_Pulse.jl")
+Literate.markdown(FILE, OUTPUT)
+Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
+Literate.script(  FILE, OUTPUT)
+
+FILE = joinpath(@__DIR__, "src/Analyze_NMR_Data.jl")
 Literate.markdown(FILE, OUTPUT)
 Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
 Literate.script(  FILE, OUTPUT)
@@ -53,7 +65,8 @@ makedocs(;
         "Quick Start Tutorial" => "tutorial.md",
         "generalized Bloch Paper" => Any[
         "build_literate/Greens_functions.md",
-        "build_literate/Simulation_CW_gBloch_vs_Graham.md",
+        "build_literate/Simulation_ContinuousWave.md",
+        "build_literate/Analyze_NMR_Data.md",
         ],
         "API" => "api.md",
     ],

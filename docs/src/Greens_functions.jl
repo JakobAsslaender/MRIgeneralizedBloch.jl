@@ -11,7 +11,7 @@
 # ```math
 # 	G(t,\tau) = \int_0^{1} \exp \left(- {R_2^s}^2 (t - \tau)^2 \cdot  \frac{(3 \zeta^2 - 1)^2}{8} \right) d\zeta.
 # ```
-# As evident from these equations, the Green's functions are merely a function of ``\kappa = R_2^s (t - \tau) = (t - \tau) / T_2^s``, and in this package we implemented the functions as such: `greens_lorentzian(κ)`, `greens_gaussian(κ)`, and `greens_superlorentzian(κ)`. These functions can be used to reproduce Fig. 1 in the generalized Bloch paper:
+# As evident from these equations, the Green's functions are merely a function of ``\kappa = R_2^s \cdot (t - \tau) = (t - \tau) / T_2^s``, and in this package we implemented the functions as such: `greens_lorentzian(κ)`, `greens_gaussian(κ)`, and `greens_superlorentzian(κ)`. These functions can be used to reproduce Fig. 1 in the generalized Bloch paper:
 
 using MRIgeneralizedBloch
 using Plots
@@ -22,7 +22,7 @@ t = 0 : 1e-6 : 1e-3
 p = plot(1e3t, greens_lorentzian.(t ./ T2s), yaxis=:log, ylim=(1e-6,1), label="Lorentzian lineshape", xlabel="(t-τ) [ms]", ylabel="G((t-τ)/T2s)")
 p = plot!(1e3t, greens_gaussian.(t ./ T2s), label="Gaussian lineshape")
 p = plot!(1e3t, greens_superlorentzian.(t ./ T2s), label="super-Lorentzian l.")
-Main.HTMLPlot(p) #hide #md
+#md Main.HTMLPlot(p) #hide
 
 #src ###############################################################
 #src export data for plotting

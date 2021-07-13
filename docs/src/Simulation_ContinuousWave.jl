@@ -15,14 +15,15 @@ T2s = 10e-6 # s
 z0 = [1.0] # initial z-magnetization
 z_fun(p, t) = [1.0] # initialize history function (will be populated with an interpolation by the differential equation solver)
 
-#src version = "v1"
-#src ω1 = 1e2 * 2π # rad/s
-#src ω0 = 1e3 * 2π # rad/s
-#src TRF = 1 # s
 version = "v2" #src
 ω1 = 2000π # rad/s
 ω0 = 200π # rad/s
 TRF = .002 # s
+#src version = "v1"
+#src ω1 = 1e2 * 2π # rad/s
+#src ω0 = 1e3 * 2π # rad/s
+#src TRF = 1 # s
+
 
 t = range(0, TRF, length=1001) # plot points
 tspan = (0.0, TRF) # simulation range
@@ -98,9 +99,9 @@ p = plot!(1e3t, zero(similar(t)) .+ z_steady_state_Lorentzian, label="Henkelman'
 p = plot!(1e3t, z_Graham_Lorentzian, label="Graham's model")
 p = plot!(1e3t, (hcat(z_Sled_Lorentzian(t).u...)'), label="Sled's model")
 p = plot!(1e3t, (hcat(z_gBloch_Lorentzian(t).u...)'), label="generalized Bloch model")
-Main.HTMLPlot(p) #hide #md
+#md Main.HTMLPlot(p) #hide
 
-# The zoom functionality of the plot reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and suble, but existing differences when comapred to the other models. Choosing a longer T2s amplifies these differences. 
+# Zooming into the plot, reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and suble, but existing differences when comapred to the other models. Choosing a longer T2s amplifies these differences. 
 
 # ## Gaussian lineshape
 # We can repeat the same simulation (with the exception of the Bloch model) for the Gaussian lineshape:
@@ -119,7 +120,7 @@ p = plot(1e3t, zero(similar(t)) .+ z_steady_state_Gaussian, label="Henkelman's s
 p = plot!(1e3t, z_Graham_Gaussian, label="Graham' model")
 p = plot!(1e3t, (hcat(z_Sled_Gaussian(t).u...)'), label="Sled's model")
 p = plot!(1e3t, (hcat(z_gBloch_Gaussian(t).u...)'), label="generalized Bloch model")
-Main.HTMLPlot(p) #hide #md
+#md Main.HTMLPlot(p) #hide
 
 # ## super-Lorentzian lineshape
 # And we can repeat the same simulation (with the exception of the Bloch model) for the super-Lorentzian lineshape, which reveals the most pronounced deviations between the models due to the substantially slower decay of the Green's function:
@@ -138,14 +139,11 @@ plot!(1e3t, (hcat(z_gBloch_superLorentzian(t).u...)'), label="gBloch super-Loren
 
 z_Sled_superLorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, G_superLorentzian)), Tsit5())
 p = plot!(1e3t, (hcat(z_Sled_superLorentzian(t).u...)'), label="Sled super-Lorentzian")
-Main.HTMLPlot(p) #hide #md
-
-
-
+#md Main.HTMLPlot(p) #hide
 
 
 #src ##################################################################
-#src export data for plotting
+#src # export data for plotting
 #src ##################################################################
 using Printf #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/CW_Henkelman_steady_state_", version, ".txt")), "w") #src
