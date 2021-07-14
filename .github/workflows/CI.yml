@@ -42,7 +42,7 @@ jobs:
           file: lcov.info
   docs:
     name: Documentation
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
@@ -59,7 +59,7 @@ jobs:
             using Documenter: DocMeta, doctest
             using MRIgeneralizedBloch
             DocMeta.setdocmeta!(MRIgeneralizedBloch, :DocTestSetup, :(using MRIgeneralizedBloch); recursive=true)
-            doctest(MRIgeneralizedBloch)'
+            # doctest(MRIgeneralizedBloch)'
       - run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
