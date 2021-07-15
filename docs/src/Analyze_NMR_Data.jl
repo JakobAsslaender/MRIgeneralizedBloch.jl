@@ -17,15 +17,19 @@ using Formatting
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
 
-# and some helper functions to load the [raw data](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData). These functions are implemented in this file:
+# The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
+MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
+BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
+nothing #hide
+
+# which can be loaded with functions implemented in this file:
 include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"))
 nothing #hide
 
 # ## MnCl``_2`` Probe
 # ### ``T_2^{*,f}`` Estimation
 # We estimate ``T_2^{*,f}`` by fitting a mono-exponential decay curve to the FID of the acquisition with ``T_\text{RF} = 22.8``μs and ``T_\text{i} = 5``s.
-
-M = load_Data(string("~/mygs/asslaj01/NMR_MT_gBloch/20210419_1mM_MnCl2/ja_IR_v2 (1)/1/data.2d"))
+M = load_Data(MnCl2_data(1))
 M = M[:,1] # select Ti = 5s
 nothing #hide
 
@@ -84,7 +88,7 @@ nothing #hide
 # After loading and normalizing the data
 M = zeros(Float64, length(Ti), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(string("~/mygs/asslaj01/NMR_MT_gBloch/20210419_1mM_MnCl2/ja_IR_v2 (", TRF_scale[i], ")/1/data.2d"))
+    M[:,i] = load_spectral_integral(MnCl2_data(TRF_scale[i]))
 end
 M ./= maximum(M)
 nothing #hide
@@ -183,7 +187,7 @@ norm(fit.resid) / norm(M)
 # ### ``T_2^{*,f}`` Estimation
 # We repeat the ``T_2^{*,f}`` estimation for the bovine serum albumin (BSA) probe by fitting a mono-exponential decay curve to the FID of the acquisition with ``T_\text{RF} = 22.8``μs and ``T_\text{i} = 5``s.
 
-M = load_Data(string("~/mygs/asslaj01/NMR_MT_gBloch/20210416_15%BSA_2ndBatch/ja_IR_v2 (1)/1/data.2d"));
+M = load_Data(BSA_data(1));
 M = M[:,1] # select Ti = 5s
 Mreal = [real(M);imag(M)]
 
@@ -215,7 +219,7 @@ Pingouin.normality(fit.resid, α=0.05)
 # We also fit a mono-exponential model to each inversion recovery curve of the BSA data: 
 M = zeros(Float64, length(Ti), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(string("~/mygs/asslaj01/NMR_MT_gBloch/20210416_15%BSA_2ndBatch/ja_IR_v2 (", TRF_scale[i], ")/1/data.2d"))
+    M[:,i] = load_spectral_integral(BSA_data(TRF_scale[i]))
 end
 M ./= maximum(M)
 
@@ -342,13 +346,14 @@ end #src
 close(io) #src
 
 #src export fitted curves
+Mp = reshape(gBloch_IR_model(fit.param, G_superLorentzian, TRF, TIplot, 1/T2star_BSA), length(TIplot), length(TRF)) #src 
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_gBloch_fit.txt")), "w") #src
 write(io, "TI_s") #src
 for i = 1:length(TRF) #src
     write(io, " z_$(@sprintf("%.2e", TRF[i]))") #src
 end #src
 write(io, " \n")  #src
-    
+
 for j = 1:length(TIplot) #src
     write(io, "$(@sprintf("%.2e", TIplot[j])) ") #src
     for i = 1:length(TRF) #src
@@ -420,13 +425,14 @@ Rx = fit.param[6] # 1/s
 #src # export data
 #src #############################################################################
 #src export fitted curves
+Mp = reshape(Graham_IR_model(fit.param, TRF, TIplot, 1/T2star_BSA), length(TIplot), length(TRF)) #src 
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_Graham_fit.txt")), "w") #src
 write(io, "TI_s") #src
 for i = 1:length(TRF) #src
     write(io, " z_$(@sprintf("%.2e", TRF[i]))") #src
 end #src
 write(io, " \n")  #src
-    
+
 for j = 1:length(TIplot) #src
     write(io, "$(@sprintf("%.2e", TIplot[j])) ") #src
     for i = 1:length(TRF) #src
@@ -495,6 +501,7 @@ Rx = fit.param[6] # 1/s
 #src # export data
 #src #############################################################################
 #src export fitted curves
+Mp = reshape(Sled_IR_model(fit.param, G_superLorentzian, TRF, TIplot, 1/T2star_BSA), length(TIplot), length(TRF)) #src 
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_Sled_fit.txt")), "w") #src
 write(io, "TI_s") #src
 for i = 1:length(TRF) #src
