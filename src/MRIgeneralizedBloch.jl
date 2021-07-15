@@ -16,6 +16,7 @@ export LinearApprox_calculate_signal
 export calculatesignal_graham_ode
 
 export apply_hamiltonian_gbloch!
+export apply_hamiltonian_graham_superlorentzian!
 export apply_hamiltonian_sled!
 export hamiltonian_linear
 

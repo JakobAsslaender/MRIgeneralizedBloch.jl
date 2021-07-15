@@ -260,7 +260,7 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s;
         u0[3:5:end] .*= cos(B1 * ω1[1] * TRF[1])
 
         # calculate saturation of RF pulse
-        sol = solve(ODEProblem(Graham_Hamiltonian_superLorentzian_InversionPulse!, u0, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, TRF[1], m0s, 0.0, 0.0, T2s, 0.0, grad_list)), Tsit5(), save_everystep=false)
+        sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian_inversionpulse!, u0, (0.0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, TRF[1], m0s, 0.0, 0.0, T2s, 0.0, grad_list)), Tsit5(), save_everystep=false)
         u0[4:5:end] = sol[end][4:5:end]
 
         for i in eachindex(grad_list)

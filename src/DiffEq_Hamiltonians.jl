@@ -358,7 +358,7 @@ end
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx = p
 
-    f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0, order=100)[1]
+    f_PSD(τ) = quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0, order=100)[1]
     Rrf = f_PSD(TRF / T2s) * B1^2 * ω1^2 * T2s
 
     return apply_hamiltonian_linear!(∂m∂t, m, (ω1, B1, ω0, m0s, R1, R2f, Rx, Rrf), t)
@@ -383,7 +383,7 @@ function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{10,Any
     return ∂m∂t
 end
 
-function Graham_Hamiltonian_superLorentzian_InversionPulse!(∂m∂t, m, p::NTuple{10,Any}, t)
+function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list = p
     
     # Apply Hamiltonian to M
@@ -444,17 +444,17 @@ end
 
 Apply Sled's Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
 
-Currently, this funciton is only implemented for an isolated semi-solid spin pool.
-
 # Arguemnts
 - `∂m∂t::Vector{<:Number}`: Vector of length 1 describing to derivative of `m` wrt. time; this vector can contain any value, which is replaced by `H * m`
 - `m::Vector{<:Number}`: Vector of length 1 describing the `zs` magnetization
-- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)`, with 
+- `p::NTuple{6 or 9, Any}`: `(ω1, B1, ω0, R1, T2s, g)` for a simulating an isolated semi-solid pool or `(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)` for simulating a coupled spin system; with 
     -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
     -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
     -`ω0::Number`: Larmor or off-resonance frequency in rad/s
     -`R1::Number`: Longitudinal spin relaxation rate in 1/seconds
+    -`R2f::Number`: Trasversal spin relaxation rate of the free pool in 1/seconds
     -`T2s::Number`: Trasversal spin relaxation time in seconds
+    -`Rx::Number`: Exchange rate between the two pools in 1/seconds
     -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
 - `t::Number`: Time in seconds
 
@@ -501,8 +501,27 @@ julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
 function apply_hamiltonian_sled!(d∂m∂t, m, p::NTuple{6,Any}, t)
     ω1, B1, ω0, R1, T2s, g = p
 
-    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * cos(ω0 * x), 0, t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * sin(ω0 * x), 0, t, order=100)[1]
+    xs = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * sin(ω0 * x), 0, t, order=100)[1]
+    ys = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * cos(ω0 * x), 0, t, order=100)[1]
     
-    d∂m∂t[1] = -B1^2 * ω1^2 * (xt + yt) * m[1] + R1 * (1 - m[1])
+    d∂m∂t[1] = -B1^2 * ω1^2 * (xs + ys) * m[1] + R1 * (1 - m[1])
+end
+
+function apply_hamiltonian_sled!(∂m∂t, m, p::NTuple{9,Any}, t)
+    ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g = p
+
+    ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
+    ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
+    ∂m∂t[3] = - B1 * ω1  * m[1] - (R1 + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1 * m[5]
+
+    if ω0 == 0
+        xs = 0
+        ys = quadgk(x -> g((t - x) / T2s), 0, t, order=100)[1]
+    else
+        xs = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * sin(ω0 * x), 0, t, order=100)[1]
+        ys = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * cos(ω0 * x), 0, t, order=100)[1]
+    end
+
+    ∂m∂t[4] = -B1^2 * ω1^2 * (xs + ys) * m[4] + Rx * m0s  * m[3] - (R1 + Rx * (1 - m0s)) * m[4] + m0s * R1 * m[5]
+    return ∂m∂t
 end
