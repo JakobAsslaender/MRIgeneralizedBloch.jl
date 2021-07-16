@@ -1,4 +1,4 @@
-# Tutorial
+# Quick Start Tutorial
 ## Single RF-Pulse
 
 The core of generalized Bloch model is implemented in the function [`apply_hamiltonian_gbloch!`](@ref), which calculates the derivative `∂m/∂t` for a given magnetization vector `m` and stores it in-place in the the variable `∂m∂t`. The function interface is written in a way that we can directly feed it into the a differential equation solver of [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/): 

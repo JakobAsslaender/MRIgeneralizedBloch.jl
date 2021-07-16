@@ -1,5 +1,6 @@
 using HTTP
 using BufferedStreams
+using FFTW
 
 function load_spectral_integral(filename)
     data = load_Data(filename)
