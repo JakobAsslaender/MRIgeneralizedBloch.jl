@@ -128,7 +128,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Bloch_IR_model(fit.param, TRF[i], TIplot, T2star_MnCl2), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui()
+gui() #hide
 
 R1_MnCl2 = fit.param[3] # 1/s
 
@@ -179,7 +179,7 @@ for i = 1:length(TRF_scale)
     scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
     plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
 end
-gui()
+gui() #hide
 
 mean(residual)
 
@@ -231,7 +231,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, gBloch_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui()
+gui() #hide
 
 norm(fit.resid) / norm(M)
 
@@ -246,12 +246,6 @@ R1 = fit.param[4] # 1/s
 T2s = 1e6fit.param[5] # μs
 
 Rx = fit.param[6] # 1/s
-
-
-
-
-
-Mp = reshape(gBloch_IR_model(fit.param, G_superLorentzian, TRF, TIplot, 1/T2star_BSA), length(TIplot), length(TRF)) #src
 
 function Graham_IR_model(p, TRF, TI, R2f)
     (m0, m0f_inv, m0s, R1, T2s, Rx) = p
@@ -283,7 +277,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Graham_IR_model(fit.param, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui()
+gui() #hide
 
 norm(fit.resid) / norm(M)
 
@@ -298,9 +292,6 @@ R1 = fit.param[4] # 1/s
 T2s = 1e6fit.param[5] # μs
 
 Rx = fit.param[6] # 1/s
-
-
-Mp = reshape(Graham_IR_model(fit.param, TRF, TIplot, 1/T2star_BSA), length(TIplot), length(TRF)) #src
 
 function Sled_IR_model(p, G, TRF, TI, R2f)
     (m0, m0f_inv, m0s, R1, T2s, Rx) = p
@@ -332,7 +323,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Sled_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui()
+gui() #hide
 
 norm(fit.resid) / norm(M)
 
@@ -347,8 +338,6 @@ R1 = fit.param[4] # 1/s
 T2s = 1e6fit.param[5] # μs
 
 Rx = fit.param[6] # 1/s
-
-Mp = reshape(Sled_IR_model(fit.param, G_superLorentzian, TRF, TIplot, 1/T2star_BSA), length(TIplot), length(TRF)) #src
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 

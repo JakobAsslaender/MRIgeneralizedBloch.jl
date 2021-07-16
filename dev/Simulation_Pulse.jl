@@ -1,5 +1,5 @@
 # # RF-Pulse Simulation
-# The following code replicates the RF-pulse simulation of Fig. 3 and plots the ``z^s``-magnnetization at the end of respective pulse. 
+# The following code replicates the RF-pulse simulation of Fig. 3 and plots the ``z^s``-magnetization at the end of respective pulse. 
 
 # For these simulations we need the following packages:
 using MRIgeneralizedBloch
@@ -23,7 +23,7 @@ nothing #hide
 # Here, we simulate a π-pulse. Replace first line with `α = π/4` or `α = π/2` to simulate the other two rows of Fig. 3.
 
 # ## Lorentzian lineshape
-# In this script, we simulate the three lineshapes separtely, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth. 
+# In this script, we simulate the three lineshapes separately, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth. 
 
 # ### Bloch model
 # We can formulate the Bloch model as 
@@ -54,7 +54,7 @@ z_Graham_spec_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf)
 nothing #hide
 
 # ### Graham's single frequency approximation
-# In the single frequecy approximation, Graham assumes that the RF-pulse has only a single frequency, which reduces `Rrf` to
+# In the single frequency approximation, Graham assumes that the RF-pulse has only a single frequency, which reduces `Rrf` to
 
 g_Lorentzian(ω0) = T2s / π ./ (1 .+ (T2s .* ω0).^2)
 Rrf = @. π * ω1^2 * g_Lorentzian(ω0)
