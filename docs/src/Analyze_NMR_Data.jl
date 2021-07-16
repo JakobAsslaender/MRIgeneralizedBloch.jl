@@ -1,9 +1,7 @@
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb) [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb)
+#nb # If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
+
 # # NMR Data Analysis
-
-#md If you prefer to view this script as a Jupyter notebook: # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb)
-#md If you prefer an interactive Jupyter notebook: # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb)
-#nb If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
-
 # The following code replicates the NMR data analysis in Fig. 4, including the full MnCl``_2`` analysis that is not shown in the paper in the interest of brevity.
 
 # For this analysis we need the following packages:
@@ -17,7 +15,7 @@ using Printf
 using Formatting
 using Plots
 #md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
-#nb plotlyjs(ticks=:native)
+#nb plotlyjs(ticks=:native);
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
 
 
