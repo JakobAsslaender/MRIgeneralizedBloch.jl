@@ -1,5 +1,5 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Greens_functions.ipynb) [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Greens_functions.ipynb)
-#nb # If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
+#nb # For interactive plots, uncomment the line `plotlyjs(ticks=:native);` and run the notebook. 
 
 # # Green's Functions
 # The Green's functions are given by the Fourier transform of lineshapes. For a Lorentzian lineshape, the Green's function is
@@ -18,10 +18,9 @@
 
 using MRIgeneralizedBloch
 using Plots
-#md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
-#nb plotlyjs(ticks=:native);
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
-
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #!nb
+#nb ## plotlyjs(ticks=:native);
+#+
 T2s = 10e-6 # s
 t = 0 : 1e-6 : 1e-3
 p = plot(1e3t, greens_lorentzian.(t ./ T2s), yaxis=:log, ylim=(1e-6,1), label="Lorentzian lineshape", xlabel="(t-τ) [ms]", ylabel="G((t-τ)/T2s)")

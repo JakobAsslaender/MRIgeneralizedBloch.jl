@@ -1,5 +1,5 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb) [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb)
-#nb # If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
+#nb # For interactive plots, uncomment the line `plotlyjs(ticks=:native);` and run the notebook. 
 
 # # NMR Data Analysis
 # The following code replicates the NMR data analysis in Fig. 4, including the full MnCl``_2`` analysis that is not shown in the paper in the interest of brevity.
@@ -14,26 +14,21 @@ import Pingouin
 using Printf
 using Formatting
 using Plots
-#md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
-#nb plotlyjs(ticks=:native);
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
-
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #!nb
+#nb '# plotlyjs(ticks=:native);
 
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
 MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
-BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
-nothing #hide
+BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
 
 # which can be loaded with functions implemented in this file:
-include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"))
-nothing #hide
+include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"));
 
 # ## MnCl``_2`` Probe
 # ### ``T_2^{*,f}`` Estimation
 # We estimate ``T_2^{*,f}`` by fitting a mono-exponential decay curve to the FID of the acquisition with ``T_\text{RF} = 22.8``μs and ``T_\text{i} = 5``s.
 M = load_Data(MnCl2_data(1))
-M = M[:,1] # select Ti = 5s
-nothing #hide
+M = M[:,1]; # select Ti = 5s
 
 # The data was measured at the following time points in units of seconds:
 T_dwell = 100e-6 # s
@@ -43,12 +38,10 @@ TE = T_dwell * ((1:length(M)) .+ 7) # s
 
 # The function [curve_fit](https://julianlsolvers.github.io/LsqFit.jl/latest/api/#LsqFit.curve_fit) from the [LsqFit.jl](https://julianlsolvers.github.io/LsqFit.jl/latest/) package is only implemented for real-valued models. To accommodate this, we need to split the data into its real and imaginary part:
 TEreal = [TE;TE]
-Mreal = [real(M);imag(M)]
-nothing #hide
+Mreal = [real(M);imag(M)];
 
 # Here, we are using a simple mono-exponential model with a complex-valued scaling factor `p[1] + 1im p[2]`, the decay time ``T_2^{*,f} =`` `p[3]`, and the Larmor frequency `p[4]`:
-FID_model(t, p) = @. [p[1] * exp(- t[1:end ÷ 2] / p[3]) * cos(p[4] * t[1:end ÷ 2]); p[2] * exp(- t[end ÷ 2 + 1:end] / p[3]) * sin(p[4] * t[end ÷ 2 + 1:end])]
-nothing #hide
+FID_model(t, p) = @. [p[1] * exp(- t[1:end ÷ 2] / p[3]) * cos(p[4] * t[1:end ÷ 2]); p[2] * exp(- t[end ÷ 2 + 1:end] / p[3]) * sin(p[4] * t[end ÷ 2 + 1:end])];
 
 # Fitting this model to the NMR data estimates ``T_2^{*,f}``:
 fit = curve_fit(FID_model, TEreal, Mreal, [1, 1, 0.1, 0])
@@ -84,23 +77,19 @@ Ti .+= 12 * TRFmin + (13 * 15.065 - 5) * 1e-6 # s - correction factors
 
 # We calculate the Rabi frequencies of the RF pulses and a finer grid of ``T_\text{i}`` to plot the IR model:
 ω1 = π ./ TRF # rad/s
-TIplot = exp.(range(log(Ti[1]), log(Ti[end]), length=500)) # s
-nothing #hide
+TIplot = exp.(range(log(Ti[1]), log(Ti[end]), length=500)); # s
 
 # After loading and normalizing the data
 M = zeros(Float64, length(Ti), length(TRF_scale))
 for i = 1:length(TRF_scale)
     M[:,i] = load_spectral_integral(MnCl2_data(TRF_scale[i]))
 end
-M ./= maximum(M)
-nothing #hide
+M ./= maximum(M);
 
 # we analyze each inversion recovery curve that corresponds to a different ``T_\text{RF}`` separately. This allows us to fit a simple mono-exponential model
-standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2])
-nothing #hide
+standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);
 # where `p[1]` is the thermal equilibrium magnetization, `p[2]` ``= T_1``, and `p[1] - p[3]` is the magnetization right after the inversion pulse or, equivalently, `Minv = p[1] / p[3] - 1` is the inversion efficiency, which is 1 for an ideal π-pulse and smaller otherwise. The parameters are initialized with
-p0 = [1.0, 1.0, 2.0]
-nothing #hide
+p0 = [1.0, 1.0, 2.0];
 
 # and we can loop over ``T_\text{RF}`` to perform the fits:
 R1 = similar(M[1,:])
@@ -119,7 +108,7 @@ for i = 1:length(TRF_scale)
     scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
     plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
 end
-gui() #hide
+display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # Here, the data measured with different ``T_\text{RF}`` are indicated by markers in different colors, and the corresponding fits are the line plots in the same color. The fitted parameters are denoted in the legend and the mean value of all R1 estimates is 
@@ -161,7 +150,6 @@ function Bloch_IR_model(p, TRF, Ti, T2)
     end
     return vec(M)
 end
-nothing #hide
 
 # We use the previously estimated ``T_2^{*,f}`` value for the fit:
 fit = curve_fit((x, p) -> Bloch_IR_model(p, TRF, Ti, T2star_MnCl2), 1:length(M), vec(M), [ 1, .8, 1])
@@ -171,7 +159,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Bloch_IR_model(fit.param, TRF[i], TIplot, T2star_MnCl2), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p) #!md #hide
 #md Main.HTMLPlot(p) #hide
 
 # With this global fit, we get a very similar relaxation rate in units of 1/s
@@ -193,8 +181,7 @@ M = load_Data(BSA_data(1));
 M = M[:,1] # select Ti = 5s
 Mreal = [real(M);imag(M)]
 
-fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0])
-nothing #hide
+fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0]);
 
 # The estimated ``T_2^{*,f}`` of the BSA probe is 
 T2star_BSA = fit.param[3] # s
@@ -241,7 +228,7 @@ for i = 1:length(TRF_scale)
     scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
     plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
 end
-gui() #hide
+display(p) #!md #hide
 #md Main.HTMLPlot(p) #hide
 
 # Zooming into early phase of the recovery curve reveals the poor fit quality, in particular for long ``T_\text{RF}``. This is also reflected by a substantially larger relative residual norm compared to the MnCl``_2`` probe:
@@ -283,22 +270,18 @@ function gBloch_IR_model(p, G, TRF, TI, R2f)
         end
     end
     return vec(M)
-end
-nothing #hide
+end;
 
 # Here, we use assume a super-Lorentzian lineshape, whose Green's function is interpolated to speed up the fitting routine:
 T2s_min = 5e-6 # s
-G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF)/T2s_min)
-nothing #hide
+G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF)/T2s_min);
 
 # The fit is initialized with `p0 = [m0, m0f_inv, m0_s, R1, T2_s, Rx]` and set some reasonable bounds to the fitted parameters:
-p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
-pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
-pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
-nothing #hide
+p0   = [  1, 0.932,  0.1,   1, 10e-6, 50];
+pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10];
+pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3];
 
-fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax)
-nothing #hide
+fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data align well:
 p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
@@ -306,7 +289,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, gBloch_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p) #!md #hide
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much smaller compared to the mono-exponential fit:
@@ -394,8 +377,7 @@ function Graham_IR_model(p, TRF, TI, R2f)
     return vec(M)
 end
 
-fit = curve_fit((x, p) -> Graham_IR_model(p, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax)
-nothing #hide
+fit = curve_fit((x, p) -> Graham_IR_model(p, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data align substantially worse:
 p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
@@ -403,7 +385,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Graham_IR_model(fit.param, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p) #!md #hide
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much larger compared to the generalized Bloch fit:
@@ -471,8 +453,7 @@ function Sled_IR_model(p, G, TRF, TI, R2f)
     return vec(M)
 end
 
-fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax)
-nothing #hide
+fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data do align well either:
 p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
@@ -480,7 +461,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Sled_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p) #!md #hide
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is also large compared to the generalized Bloch fit:
