@@ -9,9 +9,6 @@ using Documenter
 using Literate
 using Plots # to not capture precompilation output
 
-using IJulia, WebIO
-WebIO.install_jupyter_nbextension()
-
 # HTML Plotting Functionality
 struct HTMLPlot
     p # :: Plots.Plot
