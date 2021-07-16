@@ -1,7 +1,7 @@
 # # Green's Functions
 
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/Greens_functions.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/Greens_functions.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Greens_functions.ipynb)
+#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Greens_functions.ipynb)
 
 # The Green's functions are given by the Fourier transform of lineshapes. For a Lorentzian lineshape, the Green's function is
 # ```math

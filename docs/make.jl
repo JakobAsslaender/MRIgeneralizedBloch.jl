@@ -32,6 +32,8 @@ function notebook_filter(str)
     replace(str, re => "\$")
 end
 
+run(`jupyter labextension install jupyterlab-plotly`) # enable plotlyjs in jupyter notebooks
+
 # Literate
 OUTPUT = joinpath(@__DIR__, "src/build_literate")
 
