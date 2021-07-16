@@ -9,6 +9,9 @@ using Documenter
 using Literate
 using Plots # to not capture precompilation output
 
+using IJulia, WebIO
+WebIO.install_jupyter_nbextension()
+
 # HTML Plotting Functionality
 struct HTMLPlot
     p # :: Plots.Plot
@@ -31,8 +34,6 @@ function notebook_filter(str)
     re = r"(?<!`)``(?!`)"  # Two backquotes not preceded by nor followed by another
     replace(str, re => "\$")
 end
-
-run(`jupyter labextension install jupyterlab-plotly`) # enable plotlyjs in jupyter notebooks
 
 # Literate
 OUTPUT = joinpath(@__DIR__, "src/build_literate")

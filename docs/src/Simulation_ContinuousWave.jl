@@ -105,6 +105,7 @@ plot!(p, 1e3t, z_Graham_Lorentzian, label="Graham's model")
 plot!(p, 1e3t, (hcat(z_Sled_Lorentzian(t).u...)'), label="Sled's model")
 plot!(p, 1e3t, (hcat(z_gBloch_Lorentzian(t).u...)'), label="generalized Bloch model")
 #md Main.HTMLPlot(p) #hide
+#nb gui()
 
 # Zooming into the plot, reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and subtle, but existing differences when compared to the other models. Choosing a longer T2s amplifies these differences. 
 

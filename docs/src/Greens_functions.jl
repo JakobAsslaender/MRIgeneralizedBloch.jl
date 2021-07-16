@@ -27,6 +27,7 @@ p = plot(1e3t, greens_lorentzian.(t ./ T2s), yaxis=:log, ylim=(1e-6,1), label="L
 p = plot!(1e3t, greens_gaussian.(t ./ T2s), label="Gaussian lineshape")
 p = plot!(1e3t, greens_superlorentzian.(t ./ T2s), label="super-Lorentzian l.")
 #md Main.HTMLPlot(p) #hide
+#nb gui()
 
 #src ###############################################################
 #src export data for plotting
