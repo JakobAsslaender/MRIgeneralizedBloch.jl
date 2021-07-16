@@ -29,10 +29,10 @@ t = range(0, TRF, length=1001) # plot points
 tspan = (0.0, TRF) # simulation range
 nothing #hide
 
-# These parameters corrspond to Fig. 2b, the parameters for replicating Fig. 2a are `ω1 = 200π`, `ω0 = 2000π`, and `TRF = 1`. 
+# These parameters correspond to Fig. 2b, the parameters for replicating Fig. 2a are `ω1 = 200π`, `ω0 = 2000π`, and `TRF = 1`. 
 
 # ## Lorentzian lineshape
-# In this script, we simulate the three lineshapes separtely, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth. 
+# In this script, we simulate the three lineshapes separately, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth. 
 
 # ### Bloch model
 # We can formulate the Bloch model as 
@@ -83,7 +83,7 @@ nothing #hide
 
 
 # ### generalized Bloch model
-# The generalized Bloch model is given by the intgro-differential equation (IDE)
+# The generalized Bloch model is given by the integro-differential equation (IDE)
 # ```math
 # \partial_t z(t) = - ω_y(t) \int_0^t G(t,τ) ω_y(τ) z(τ) dτ - ω_x(t) \int_0^t G(t,τ) ω_x(τ) z(τ) dτ + R_1 (1 - z(t)) ,
 # ```
@@ -102,7 +102,7 @@ plot!(p, 1e3t, (hcat(z_Sled_Lorentzian(t).u...)'), label="Sled's model")
 plot!(p, 1e3t, (hcat(z_gBloch_Lorentzian(t).u...)'), label="generalized Bloch model")
 #md Main.HTMLPlot(p) #hide
 
-# Zooming into the plot, reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and suble, but existing differences when comapred to the other models. Choosing a longer T2s amplifies these differences. 
+# Zooming into the plot, reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and subtle, but existing differences when compared to the other models. Choosing a longer T2s amplifies these differences. 
 
 # ## Gaussian lineshape
 # We can repeat the same simulation (with the exception of the Bloch model) for the Gaussian lineshape:
