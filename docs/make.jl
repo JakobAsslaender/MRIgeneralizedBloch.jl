@@ -42,7 +42,7 @@ Literate.script(  FILE, OUTPUT)
 
 FILE = joinpath(@__DIR__, "src/Simulation_ContinuousWave.jl")
 Literate.markdown(FILE, OUTPUT)
-# Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
+Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
 Literate.script(  FILE, OUTPUT)
 
 FILE = joinpath(@__DIR__, "src/Simulation_Pulse.jl")
