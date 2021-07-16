@@ -3,7 +3,7 @@ using QuadGK
 using DifferentialEquations
 using SpecialFunctions
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native)
 
 α = π
 TRF = exp.(range(log(2e-7), log(1e-1), length=100)) # s

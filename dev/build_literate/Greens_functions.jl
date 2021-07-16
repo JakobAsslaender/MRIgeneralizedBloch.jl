@@ -1,5 +1,6 @@
 using MRIgeneralizedBloch
 using Plots
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native)
 
 T2s = 10e-6 # s
 t = 0 : 1e-6 : 1e-3

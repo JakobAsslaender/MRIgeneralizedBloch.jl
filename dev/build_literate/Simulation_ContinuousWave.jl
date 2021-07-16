@@ -2,7 +2,8 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using QuadGK
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
+
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native)
 
 R1 = 1.0 # 1/s
 T2s = 10e-6 # s
