@@ -2,6 +2,7 @@
 
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Simulation_ContinuousWave.ipynb)
 #md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Simulation_ContinuousWave.ipynb)
+#nb If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
 
 # The following code replicates the continuous wave simulation of Fig. 2 and is slightly more comprehensive in the sense that all discussed models are simulated. 
 
@@ -11,7 +12,9 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using QuadGK
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
+#md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
+#nb plotlyjs(ticks=:native)
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 R1 = 1.0 # 1/s

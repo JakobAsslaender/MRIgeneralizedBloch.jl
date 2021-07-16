@@ -1,7 +1,8 @@
 # # Green's Functions
 
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Greens_functions.ipynb)
-#md # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Greens_functions.ipynb)
+#md If you prefer to view this script as a Jupyter notebook: # [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Greens_functions.ipynb)
+#md If you prefer an interactive Jupyter notebook: # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Greens_functions.ipynb)
+#nb If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
 
 # The Green's functions are given by the Fourier transform of lineshapes. For a Lorentzian lineshape, the Green's function is
 # ```math
@@ -19,7 +20,9 @@
 
 using MRIgeneralizedBloch
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide #md
+#md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
+#nb plotlyjs(ticks=:native)
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
 
 T2s = 10e-6 # s
 t = 0 : 1e-6 : 1e-3

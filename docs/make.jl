@@ -35,25 +35,19 @@ end
 # Literate
 OUTPUT = joinpath(@__DIR__, "src/build_literate")
 
-FILE = joinpath(@__DIR__, "src/Greens_functions.jl")
-Literate.markdown(FILE, OUTPUT)
-Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
-Literate.script(  FILE, OUTPUT)
+files = [
+    "Greens_functions.jl",
+    "Simulation_ContinuousWave.jl",
+    "Simulation_Pulse.jl",
+    "Analyze_NMR_Data.jl",
+]
 
-FILE = joinpath(@__DIR__, "src/Simulation_ContinuousWave.jl")
-Literate.markdown(FILE, OUTPUT)
-Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
-Literate.script(  FILE, OUTPUT)
-
-FILE = joinpath(@__DIR__, "src/Simulation_Pulse.jl")
-Literate.markdown(FILE, OUTPUT)
-# Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
-Literate.script(  FILE, OUTPUT)
-
-FILE = joinpath(@__DIR__, "src/Analyze_NMR_Data.jl")
-Literate.markdown(FILE, OUTPUT)
-# Literate.notebook(FILE, OUTPUT, preprocess=notebook_filter)
-Literate.script(  FILE, OUTPUT)
+for file in files
+    file_path = joinpath(@__DIR__, "src/", file)
+    Literate.markdown(file_path, OUTPUT)
+    Literate.notebook(file_path, OUTPUT, preprocess=notebook_filter)
+    Literate.script(  file_path, OUTPUT)
+end
 
 DocMeta.setdocmeta!(MRIgeneralizedBloch, :DocTestSetup, :(using MRIgeneralizedBloch); recursive=true)
 
