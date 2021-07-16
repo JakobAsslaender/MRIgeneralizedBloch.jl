@@ -4,11 +4,7 @@
 # For this analysis we need the following packages:
 using MRIgeneralizedBloch
 using DifferentialEquations
-using ApproxFun
-using SpecialFunctions
-using QuadGK
 using LinearAlgebra
-using FFTW
 using LsqFit
 using Statistics
 import Pingouin
