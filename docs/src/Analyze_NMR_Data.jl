@@ -15,7 +15,7 @@ using Printf
 using Formatting
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #!nb
-#nb '# plotlyjs(ticks=:native);
+#nb ## plotlyjs(ticks=:native);
 
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
 MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
