@@ -42,7 +42,3 @@ end
 @testset "apply_hamiltonian_graham_superlorentzian! gradients" begin
     include("Graham_Hamiltonian_Gradients.jl")
 end
-
-@testset "calculate_magnetization_n_signal" begin
-    include("calculate_magnetization_n_signal.jl")
-end
