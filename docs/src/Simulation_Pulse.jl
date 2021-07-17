@@ -11,7 +11,7 @@ using DifferentialEquations
 using SpecialFunctions
 using Plots
 #md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
-#nb plotlyjs(ticks=:native);
+#nb ## plotlyjs(ticks=:native);
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
