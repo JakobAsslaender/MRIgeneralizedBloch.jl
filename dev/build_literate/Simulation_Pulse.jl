@@ -12,8 +12,7 @@ TRF = exp.(range(log(2e-7), log(1e-1), length=100)) # s
 R1 = 1 # 1/s
 T2s = 10e-6 # s
 z0 = [1] # initial z-magnetization
-z_fun(p, t) = [1.0] # initialize history function (will be populated with an interpolation by the differential equation solver)
-nothing #hide
+z_fun(p, t) = [1.0]; # initialize history function (will be populated with an interpolation by the differential equation solver)
 
 H(ω1, ω0, R2, R1) = [-R2 -ω0  ω1  0;
                       ω0 -R2   0  0;
@@ -26,19 +25,16 @@ for i = 1:length(TRF)
 end
 
 Rrf = @. ω1^2 * T2s * ((exp(-TRF / T2s) -1) * T2s + TRF) / TRF
-z_Graham_spec_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf)
-nothing #hide
+z_Graham_spec_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf);
 
 g_Lorentzian(ω0) = T2s / π ./ (1 .+ (T2s .* ω0).^2)
 Rrf = @. π * ω1^2 * g_Lorentzian(ω0)
-z_Graham_SF_approx_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf)
-nothing #hide
+z_Graham_SF_approx_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf);
 
 z_Sled_Lorentzian = similar(TRF)
 for i = 1:length(TRF)
     z_Sled_Lorentzian[i] = solve(ODEProblem(apply_hamiltonian_sled!, z0, (0, TRF[i]), (ω1[i], 1, ω0, R1, T2s, greens_lorentzian)), Tsit5())[end][1]
 end
-nothing #hide
 
 z_gBloch_Lorentzian = similar(TRF)
 for i = 1:length(TRF)

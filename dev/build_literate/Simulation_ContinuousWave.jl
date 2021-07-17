@@ -2,8 +2,7 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using QuadGK
 using Plots
-
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native)
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native);
 
 R1 = 1.0 # 1/s
 T2s = 10e-6 # s
@@ -16,8 +15,7 @@ TRF = .002 # s
 
 
 t = range(0, TRF, length=1001) # plot points
-tspan = (0.0, TRF) # simulation range
-nothing #hide
+tspan = (0.0, TRF); # simulation range
 
 H(ω1, ω0, R2, R1) = [-R2  -ω0  ω1  0;
                        ω0 -R2   0  0;
@@ -33,14 +31,11 @@ g_Lorentzian(ω0) = T2s / π / (1 + (T2s * ω0)^2)
 z_steady_state_Lorentzian = R1 / (R1 + π * ω1^2 * g_Lorentzian(ω0))
 
 Rrf = π * ω1^2 * g_Lorentzian(ω0)
-z_Graham_Lorentzian = @. (Rrf * exp(-t * (R1 + Rrf)) + R1) / (R1 + Rrf)
-nothing #hide
+z_Graham_Lorentzian = @. (Rrf * exp(-t * (R1 + Rrf)) + R1) / (R1 + Rrf);
 
-z_Sled_Lorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)))
-nothing #hide
+z_Sled_Lorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)));
 
-z_gBloch_Lorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)))
-nothing #hide
+z_gBloch_Lorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)));
 
 p = plot(xlabel="t [ms]", ylabel="zs(t)")
 plot!(p, 1e3t, z_Bloch, label="Bloch model")

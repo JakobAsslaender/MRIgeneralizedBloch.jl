@@ -1,5 +1,5 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Simulation_ContinuousWave.ipynb) [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Simulation_ContinuousWave.ipynb)
-#nb # If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
+#nb # For interactive plots, uncomment the line `plotlyjs(ticks=:native);` and run the notebook. 
 
 # # Continuous Wave Simulation
 # The following code replicates the continuous wave simulation of Fig. 2 and is slightly more comprehensive in the sense that all discussed models are simulated. 
@@ -10,9 +10,8 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using QuadGK
 using Plots
-#md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
-
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #!nb
+#nb ## plotlyjs(ticks=:native);
 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 R1 = 1.0 # 1/s
@@ -31,8 +30,7 @@ TRF = .002 # s
 
 
 t = range(0, TRF, length=1001) # plot points
-tspan = (0.0, TRF) # simulation range
-nothing #hide
+tspan = (0.0, TRF); # simulation range
 
 # These parameters correspond to Fig. 2b, the parameters for replicating Fig. 2a are `ω1 = 200π`, `ω0 = 2000π`, and `TRF = 1`. 
 
@@ -73,8 +71,7 @@ z_steady_state_Lorentzian = R1 / (R1 + π * ω1^2 * g_Lorentzian(ω0))
 # The lineshape is also used to calculate Graham's single frequency approximation, which describes an exponential decay with the RF-induced saturation rate `Rrf`:
 
 Rrf = π * ω1^2 * g_Lorentzian(ω0)
-z_Graham_Lorentzian = @. (Rrf * exp(-t * (R1 + Rrf)) + R1) / (R1 + Rrf)
-nothing #hide
+z_Graham_Lorentzian = @. (Rrf * exp(-t * (R1 + Rrf)) + R1) / (R1 + Rrf);
 
 # ### Sled's model
 # Sled's model is given by the ordinary differential equation (ODE)
@@ -83,8 +80,7 @@ nothing #hide
 # ```
 # where ``G(t-τ)`` is the Green's function. The Hamiltonian of this ODE is implemented in [`apply_hamiltonian_sled!`](@ref) and can be solve the ODE solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-z_Sled_Lorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)))
-nothing #hide
+z_Sled_Lorentzian = solve(ODEProblem(apply_hamiltonian_sled!, z0, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)));
 
 
 # ### generalized Bloch model
@@ -94,8 +90,7 @@ nothing #hide
 # ```
 # where we explicitly denote the ``ω_x`` and ``ω_y`` components of the Rabi frequency. The Hamiltonian of the IDE is implemented in [`apply_hamiltonian_gbloch!`](@ref) and we can solve this IDE with the [delay-differential equation (DDE)](https://diffeq.sciml.ai/stable/tutorials/dde_example/) solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-z_gBloch_Lorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)))
-nothing #hide
+z_gBloch_Lorentzian = solve(DDEProblem(apply_hamiltonian_gbloch!, z0, z_fun, tspan, (ω1, 1, ω0, R1, T2s, greens_lorentzian)));
 
 # Now that we have solved all five models, we can plot the solutions for comparison:
 

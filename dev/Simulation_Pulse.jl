@@ -1,5 +1,5 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Simulation_Pulse.ipynb) [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Simulation_Pulse.ipynb)
-#nb # If the plots are displayed, either take a leap of faith and click the `Not Trusted` button on the top right to trust the embedded java-script, or execute the notebook again. 
+#nb # For interactive plots, uncomment the line `plotlyjs(ticks=:native);` and run the notebook. 
 
 # # RF-Pulse Simulation
 # The following code replicates the RF-pulse simulation of Fig. 3 and plots the ``z^s``-magnetization at the end of respective pulse. 
@@ -11,7 +11,7 @@ using DifferentialEquations
 using SpecialFunctions
 using Plots
 #md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
-#nb plotlyjs(ticks=:native);
+#nb ## plotlyjs(ticks=:native);
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
@@ -22,8 +22,7 @@ TRF = exp.(range(log(2e-7), log(1e-1), length=100)) # s
 R1 = 1 # 1/s
 T2s = 10e-6 # s
 z0 = [1] # initial z-magnetization
-z_fun(p, t) = [1.0] # initialize history function (will be populated with an interpolation by the differential equation solver)
-nothing #hide
+z_fun(p, t) = [1.0]; # initialize history function (will be populated with an interpolation by the differential equation solver)
 
 # Here, we simulate a π-pulse. Replace first line with `α = π/4` or `α = π/2` to simulate the other two rows of Fig. 3.
 
@@ -55,16 +54,14 @@ end
 # Graham's spectral model is derived by integrating over the lineshape multiplied by the spectral response function of the RF-pulse. This results in the RF-induced saturation rate `Rrf` that is used in an exponential model:
 
 Rrf = @. ω1^2 * T2s * ((exp(-TRF / T2s) -1) * T2s + TRF) / TRF
-z_Graham_spec_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf)
-nothing #hide
+z_Graham_spec_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf);
 
 # ### Graham's single frequency approximation
 # In the single frequency approximation, Graham assumes that the RF-pulse has only a single frequency, which reduces `Rrf` to
 
 g_Lorentzian(ω0) = T2s / π ./ (1 .+ (T2s .* ω0).^2)
 Rrf = @. π * ω1^2 * g_Lorentzian(ω0)
-z_Graham_SF_approx_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf)
-nothing #hide
+z_Graham_SF_approx_Lorentzian = @. (Rrf * exp(-TRF * (R1 + Rrf)) + R1) / (R1 + Rrf);
 
 # where `g_Lorentzian(ω0)` denotes the Lorentzian lineshape. 
 
@@ -79,7 +76,6 @@ z_Sled_Lorentzian = similar(TRF)
 for i = 1:length(TRF)
     z_Sled_Lorentzian[i] = solve(ODEProblem(apply_hamiltonian_sled!, z0, (0, TRF[i]), (ω1[i], 1, ω0, R1, T2s, greens_lorentzian)), Tsit5())[end][1]
 end
-nothing #hide
 
 # ### generalized Bloch model
 # The generalized Bloch model is given by the intgro-differential equation (IDE)

@@ -7,28 +7,23 @@ import Pingouin
 using Printf
 using Formatting
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native)
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native);
 
 MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
-BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
-nothing #hide
+BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
 
-include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"))
-nothing #hide
+include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"));
 
 M = load_Data(MnCl2_data(1))
-M = M[:,1] # select Ti = 5s
-nothing #hide
+M = M[:,1]; # select Ti = 5s
 
 T_dwell = 100e-6 # s
 TE = T_dwell * ((1:length(M)) .+ 7) # s
 
 TEreal = [TE;TE]
-Mreal = [real(M);imag(M)]
-nothing #hide
+Mreal = [real(M);imag(M)];
 
-FID_model(t, p) = @. [p[1] * exp(- t[1:end ÷ 2] / p[3]) * cos(p[4] * t[1:end ÷ 2]); p[2] * exp(- t[end ÷ 2 + 1:end] / p[3]) * sin(p[4] * t[end ÷ 2 + 1:end])]
-nothing #hide
+FID_model(t, p) = @. [p[1] * exp(- t[1:end ÷ 2] / p[3]) * cos(p[4] * t[1:end ÷ 2]); p[2] * exp(- t[end ÷ 2 + 1:end] / p[3]) * sin(p[4] * t[end ÷ 2 + 1:end])];
 
 fit = curve_fit(FID_model, TEreal, Mreal, [1, 1, 0.1, 0])
 T2star_MnCl2 = fit.param[3] # s
@@ -53,21 +48,17 @@ Ti = exp.(range(log(3e-3), log(5), length=20)) # s
 Ti .+= 12 * TRFmin + (13 * 15.065 - 5) * 1e-6 # s - correction factors
 
 ω1 = π ./ TRF # rad/s
-TIplot = exp.(range(log(Ti[1]), log(Ti[end]), length=500)) # s
-nothing #hide
+TIplot = exp.(range(log(Ti[1]), log(Ti[end]), length=500)); # s
 
 M = zeros(Float64, length(Ti), length(TRF_scale))
 for i = 1:length(TRF_scale)
     M[:,i] = load_spectral_integral(MnCl2_data(TRF_scale[i]))
 end
-M ./= maximum(M)
-nothing #hide
+M ./= maximum(M);
 
-standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2])
-nothing #hide
+standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);
 
-p0 = [1.0, 1.0, 2.0]
-nothing #hide
+p0 = [1.0, 1.0, 2.0];
 
 R1 = similar(M[1,:])
 residual = similar(R1)
@@ -85,7 +76,7 @@ for i = 1:length(TRF_scale)
     scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
     plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
 end
-gui() #hide
+display(p)
 
 mean(R1) # 1/s
 
@@ -118,8 +109,7 @@ function Bloch_IR_model(p, TRF, Ti, T2)
         end
     end
     return vec(M)
-end
-nothing #hide
+end;
 
 fit = curve_fit((x, p) -> Bloch_IR_model(p, TRF, Ti, T2star_MnCl2), 1:length(M), vec(M), [ 1, .8, 1])
 
@@ -128,7 +118,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Bloch_IR_model(fit.param, TRF[i], TIplot, T2star_MnCl2), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p)
 
 R1_MnCl2 = fit.param[3] # 1/s
 
@@ -140,8 +130,7 @@ M = load_Data(BSA_data(1));
 M = M[:,1] # select Ti = 5s
 Mreal = [real(M);imag(M)]
 
-fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0])
-nothing #hide
+fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0]);
 
 T2star_BSA = fit.param[3] # s
 
@@ -179,7 +168,7 @@ for i = 1:length(TRF_scale)
     scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
     plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
 end
-gui() #hide
+display(p)
 
 mean(residual)
 
@@ -211,27 +200,23 @@ function gBloch_IR_model(p, G, TRF, TI, R2f)
         end
     end
     return vec(M)
-end
-nothing #hide
+end;
 
 T2s_min = 5e-6 # s
-G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF)/T2s_min)
-nothing #hide
+G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF)/T2s_min);
 
-p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
-pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
-pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
-nothing #hide
+p0   = [  1, 0.932,  0.1,   1, 10e-6, 50];
+pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10];
+pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3];
 
-fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax)
-nothing #hide
+fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
 for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, gBloch_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p)
 
 norm(fit.resid) / norm(M)
 
@@ -267,17 +252,16 @@ function Graham_IR_model(p, TRF, TI, R2f)
         end
     end
     return vec(M)
-end
+end;
 
-fit = curve_fit((x, p) -> Graham_IR_model(p, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax)
-nothing #hide
+fit = curve_fit((x, p) -> Graham_IR_model(p, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
 for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Graham_IR_model(fit.param, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p)
 
 norm(fit.resid) / norm(M)
 
@@ -313,17 +297,16 @@ function Sled_IR_model(p, G, TRF, TI, R2f)
         end
     end
     return vec(M)
-end
+end;
 
-fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax)
-nothing #hide
+fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
 for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Sled_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-gui() #hide
+display(p)
 
 norm(fit.resid) / norm(M)
 
