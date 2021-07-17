@@ -149,7 +149,7 @@ function Bloch_IR_model(p, TRF, Ti, T2)
         end
     end
     return vec(M)
-end
+end;
 
 # We use the previously estimated ``T_2^{*,f}`` value for the fit:
 fit = curve_fit((x, p) -> Bloch_IR_model(p, TRF, Ti, T2star_MnCl2), 1:length(M), vec(M), [ 1, .8, 1])
@@ -159,7 +159,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Bloch_IR_model(fit.param, TRF[i], TIplot, T2star_MnCl2), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-display(p) #!md #hide
+display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # With this global fit, we get a very similar relaxation rate in units of 1/s
@@ -228,7 +228,7 @@ for i = 1:length(TRF_scale)
     scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
     plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
 end
-display(p) #!md #hide
+display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # Zooming into early phase of the recovery curve reveals the poor fit quality, in particular for long ``T_\text{RF}``. This is also reflected by a substantially larger relative residual norm compared to the MnCl``_2`` probe:
@@ -289,7 +289,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, gBloch_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-display(p) #!md #hide
+display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much smaller compared to the mono-exponential fit:
@@ -375,7 +375,7 @@ function Graham_IR_model(p, TRF, TI, R2f)
         end
     end
     return vec(M)
-end
+end;
 
 fit = curve_fit((x, p) -> Graham_IR_model(p, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
@@ -385,7 +385,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Graham_IR_model(fit.param, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-display(p) #!md #hide
+display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much larger compared to the generalized Bloch fit:
@@ -451,7 +451,7 @@ function Sled_IR_model(p, G, TRF, TI, R2f)
         end
     end
     return vec(M)
-end
+end;
 
 fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
@@ -461,7 +461,7 @@ for i=1:length(TRF)
     scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
     plot!(p, TIplot, Sled_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
 end
-display(p) #!md #hide
+display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is also large compared to the generalized Bloch fit:

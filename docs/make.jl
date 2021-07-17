@@ -45,8 +45,9 @@ files = [
 for file in files
     file_path = joinpath(@__DIR__, "src/", file)
     Literate.markdown(file_path, OUTPUT)
-    Literate.notebook(file_path, OUTPUT, preprocess=notebook_filter)
-    # Literate.script(  file_path, OUTPUT)
+    Literate.notebook(file_path, OUTPUT, preprocess=notebook_filter; execute=(file != "Analyze_NMR_Data.jl"))
+    # Literate.notebook(file_path, OUTPUT, preprocess=notebook_filter)
+    Literate.script(  file_path, OUTPUT)
 end
 
 DocMeta.setdocmeta!(MRIgeneralizedBloch, :DocTestSetup, :(using MRIgeneralizedBloch); recursive=true)
