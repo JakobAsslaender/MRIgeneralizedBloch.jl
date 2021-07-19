@@ -1,5 +1,4 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Simulation_ContinuousWave.ipynb) [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Simulation_ContinuousWave.ipynb)
-#nb # For interactive plots, uncomment the line `plotlyjs(ticks=:native);` and run the notebook. 
 
 # # Continuous Wave Simulation
 # The following code replicates the continuous wave simulation of Fig. 2 and is slightly more comprehensive in the sense that all discussed models are simulated. 
@@ -11,7 +10,7 @@ using DifferentialEquations
 using QuadGK
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #!nb
-#nb ## plotlyjs(ticks=:native);
+#nb plotlyjs(ticks=:native);
 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 R1 = 1.0 # 1/s
