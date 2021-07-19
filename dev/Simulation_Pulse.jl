@@ -1,5 +1,4 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Simulation_Pulse.ipynb) [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/build_literate/Simulation_Pulse.ipynb)
-#nb # For interactive plots, uncomment the line `plotlyjs(ticks=:native);` and run the notebook. 
 
 # # RF-Pulse Simulation
 # The following code replicates the RF-pulse simulation of Fig. 3 and plots the ``z^s``-magnetization at the end of respective pulse. 
@@ -10,9 +9,8 @@ using QuadGK
 using DifferentialEquations
 using SpecialFunctions
 using Plots
-#md plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); nothing #hide
-#nb ## plotlyjs(ticks=:native);
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native) #jl
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #!nb
+#nb plotlyjs(ticks=:native);
 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 α = π
