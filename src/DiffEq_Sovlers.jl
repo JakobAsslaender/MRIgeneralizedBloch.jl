@@ -91,10 +91,10 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s;
     u0[3] = (1 - m0s)
     u0[4] = m0s
     u0[5] = 1
-    h(p, t; idxs=nothing) = typeof(idxs) <: Number ? u0[idxs] : u0
+    mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? u0[idxs] : u0
 
     # prep pulse 
-    sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), alg)  
+    sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, mfun, (0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), alg)  
     u0 = sol[end]
     
     T_FP = (TR - TRF[2]) / 2 - TRF[1] / 2
@@ -113,7 +113,7 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s;
         u0[3:5:end] .*= cos(B1 * ω1[1] * TRF[1])
 
         # calculate saturation of RF pulse
-        sol = solve(DDEProblem(apply_hamiltonian_gbloch_inversion!, u0, h, (0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0, 0, T2s, 0, G, dG_o_dT2s_x_T2s, grad_list)), alg)
+        sol = solve(DDEProblem(apply_hamiltonian_gbloch_inversion!, u0, mfun, (0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0, 0, T2s, 0, G, dG_o_dT2s_x_T2s, grad_list)), alg)
         u0[4:5:end] = sol[end][4:5:end]
 
         for i in eachindex(grad_list)
@@ -134,7 +134,7 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s;
         u0 = sol[end]
 
         for ip = 2:length(TRF)
-            sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, h, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), alg)
+            sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, mfun, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), alg)
             u0 = sol[end]
     
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2

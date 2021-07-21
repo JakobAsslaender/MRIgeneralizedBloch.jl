@@ -24,14 +24,14 @@ mf = (1 - m0s) * rand()
 φ = rand() * 2π
 
 ## Solve generalized Bloch-McConnell with Lorentzian lineshape
-h(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
+mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, greens_lorentzian)
 alg = MethodOfSteps(DP8())
 u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0, h, (0.0, TRF), p),
+    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0, mfun, (0.0, TRF), p),
     alg,
 )
 

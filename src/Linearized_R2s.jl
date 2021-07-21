@@ -35,15 +35,15 @@ function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_
     else
         G = greens
     end
-    h(p, t) = [1.0]
+    mfun(p, t) = [1.0]
 
-    function hamiltonian_1D!(du, u, h, p::NTuple{3,Any}, t)
+    function hamiltonian_1D!(du, u, mfun, p::NTuple{3,Any}, t)
         ω1, T2s, g = p
-        du[1] = -ω1^2 * quadgk(x -> g((t - x) / T2s) * h(p, x)[1], 0.0, t)[1]
+        du[1] = -ω1^2 * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1], 0.0, t)[1]
     end
 
     function calculate_R2sl(τ, α)
-        z = solve(DDEProblem(hamiltonian_1D!, [1.0], h, (0, τ), (α/τ, 1, G)), MethodOfSteps(DP8()))[end][1]
+        z = solve(DDEProblem(hamiltonian_1D!, [1.0], mfun, (0, τ), (α/τ, 1, G)), MethodOfSteps(DP8()))[end][1]
     
         function f!(F, ρv)
             ρ = ρv[1]

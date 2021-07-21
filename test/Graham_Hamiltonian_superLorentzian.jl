@@ -37,12 +37,12 @@ sol = solve(
 u_Graham = sol[end]
 
 ## Solve generalized Bloch-McConnell with super-Lorentzian lineshape
-h(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
+mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, greens_superlorentzian)
 alg = MethodOfSteps(DP8())
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0, h, (0.0, TRF), p),
+    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0, mfun, (0.0, TRF), p),
     alg,
 )
 

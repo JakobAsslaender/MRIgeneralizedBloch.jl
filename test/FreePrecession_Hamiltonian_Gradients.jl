@@ -14,7 +14,7 @@ R2f = 1 / 65e-3
 T2s = 10e-6
 Rx = 30.0
 TE = 3.5e-3
-h(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(30)
+mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(30)
 alg = Tsit5()
 
 ## random initialization
