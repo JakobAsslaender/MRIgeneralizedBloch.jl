@@ -3,9 +3,9 @@ Author = "Jakob Assländer"
 CurrentModule = MRIgeneralizedBloch
 ```
 
-# MRIgeneralizedBloch.jl
+# API
 
-Documentation for [MRIgeneralizedBloch.jl](https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl).
+In the following, you find the documentation of all exported functions of the [MRIgeneralizedBloch.jl](https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl) package:
 
 ```@index
 ```

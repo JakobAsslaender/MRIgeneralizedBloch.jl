@@ -10,15 +10,8 @@ MRIgeneralizedBloch.jl is a Julia package that implements the generalized Bloch 
 For more details and scripts that reproduce all figures in the paper, please refer to above linked documentation. 
 
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl/stable)
- [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl/dev)
- 
-[![Build Status](https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/workflows/CI/badge.svg)](https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/actions)
-[![Coverage](https://codecov.io/gh/JakobAsslaender/MRIgeneralizedBloch.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JakobAsslaender/MRIgeneralizedBloch.jl)
-
-
 [docs-img]: https://img.shields.io/badge/docs-latest%20release-blue.svg
-[docs-url]: https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl/dev
+[docs-url]: https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl/stable
 
 [gh-actions-img]: https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/workflows/CI/badge.svg
 [gh-actions-url]: https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/actions

@@ -36,10 +36,12 @@ end
 OUTPUT = joinpath(@__DIR__, "src/build_literate")
 
 files = [
+    "tutorial.jl",
     "Greens_functions.jl",
     "Simulation_ContinuousWave.jl",
     "Simulation_Pulse.jl",
     "Analyze_NMR_Data.jl",
+    "Linear_Approximation.jl",
 ]
 
 for file in files
@@ -64,12 +66,13 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Quick Start Tutorial" => "tutorial.md",
-        "generalized Bloch Paper" => Any[
+        "Quick Start Tutorial" => "build_literate/tutorial.md",
+        "Generalized Bloch Paper" => Any[
         "build_literate/Greens_functions.md",
         "build_literate/Simulation_ContinuousWave.md",
         "build_literate/Simulation_Pulse.md",
         "build_literate/Analyze_NMR_Data.md",
+        "build_literate/Linear_Approximation.md",
         ],
         "API" => "api.md",
     ],

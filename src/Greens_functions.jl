@@ -1,7 +1,7 @@
 """
     greens_lorentzian(κ)
 
-Evaluate the Green's function corresponding to a Lorentzian linshape at `κ = (t-τ)/T2s`.
+Evaluate the Green's function corresponding to a Lorentzian lineshape at `κ = (t-τ)/T2s`.
 
 # Examples
 ```jldoctest
@@ -22,7 +22,7 @@ end
 """
     dG_o_dT2s_x_T2s_lorentzian(κ)
 
-Evaluate the derivative of Green's function, corresponding to a Lorentzian linshape, wrt. `T2s` at `κ = (t-τ)/T2s` and multiply it by `T2s`.
+Evaluate the derivative of Green's function, corresponding to a Lorentzian lineshape, wrt. `T2s` at `κ = (t-τ)/T2s` and multiply it by `T2s`.
 
 The multiplication is added so that the function merely depends on `κ = (t-τ)/T2s`. The actual derivative is given by `dG_o_dT2s_x_T2s_lorentzian((t-τ)/T2s)/T2s`.
 
@@ -45,7 +45,7 @@ end
 """
     greens_gaussian(κ)
 
-Evaluate the Green's function corresponding to a Gaussian linshape at `κ = (t-τ)/T2s`.
+Evaluate the Green's function corresponding to a Gaussian lineshape at `κ = (t-τ)/T2s`.
 
 # Examples
 ```jldoctest
@@ -66,7 +66,7 @@ end
 """
     dG_o_dT2s_x_T2s_gaussian(κ)
 
-Evaluate the derivative of Green's function, corresponding to a Gaussian linshape, wrt. `T2s` at `κ = (t-τ)/T2s` and multiply it by `T2s`.
+Evaluate the derivative of Green's function, corresponding to a Gaussian lineshape, wrt. `T2s` at `κ = (t-τ)/T2s` and multiply it by `T2s`.
 
 The multiplication is added so that the function merely depends on `κ = (t-τ)/T2s`. The actual derivative is given by `dG_o_dT2s_x_T2s_gaussian((t-τ)/T2s)/T2s`.
 
@@ -89,7 +89,7 @@ end
 """
     greens_superlorentzian(κ)
 
-Evaluate the Green's function corresponding to a super-Lorentzian linshape at `κ = (t-τ)/T2s`.
+Evaluate the Green's function corresponding to a super-Lorentzian lineshape at `κ = (t-τ)/T2s`.
 
 # Examples
 ```jldoctest
@@ -110,7 +110,7 @@ end
 """
     dG_o_dT2s_x_T2s_superlorentzian(κ)
 
-Evaluate the derivative of Green's function, corresponding to a super-Lorentzian linshape, wrt. `T2s` at `κ = (t-τ)/T2s` and multiply it by `T2s`.
+Evaluate the derivative of Green's function, corresponding to a super-Lorentzian lineshape, wrt. `T2s` at `κ = (t-τ)/T2s` and multiply it by `T2s`.
 
 The multiplication is added so that the function merely depends on `κ = (t-τ)/T2s`. The actual derivative is given by `dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s`.
 
