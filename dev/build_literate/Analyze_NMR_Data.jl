@@ -7,7 +7,7 @@ import Pingouin
 using Printf
 using Formatting
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native);
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
 
 MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
 BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
@@ -15,7 +15,7 @@ BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralize
 include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"));
 
 M = load_Data(MnCl2_data(1))
-M = M[:,1]; # select Ti = 5s
+M = M[:,1]; # select Tᵢ = 5s
 
 T_dwell = 100e-6 # s
 TE = T_dwell * ((1:length(M)) .+ 7) # s
@@ -26,7 +26,7 @@ Mreal = [real(M);imag(M)];
 FID_model(t, p) = @. [p[1] * exp(- t[1:end ÷ 2] / p[3]) * cos(p[4] * t[1:end ÷ 2]); p[2] * exp(- t[end ÷ 2 + 1:end] / p[3]) * sin(p[4] * t[end ÷ 2 + 1:end])];
 
 fit = curve_fit(FID_model, TEreal, Mreal, [1, 1, 0.1, 0])
-T2star_MnCl2 = fit.param[3] # s
+T₂star_MnCl2 = fit.param[3] # s
 
 stderror(fit)[3] # s
 
@@ -34,23 +34,23 @@ Mfitted = FID_model(TEreal, fit.param)
 Mfitted = Mfitted[1:end÷2] + 1im * Mfitted[end÷2+1:end]
 p = plot(xlabel="TE [s]", ylabel="|FID(TE)| [a.u.]")
 plot!(p, TE, abs.(M), label="data")
-plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T2* = %2.3f ms", 1e3 * T2star_MnCl2))
+plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T₂* = %2.3f ms", 1e3 * T₂star_MnCl2))
 
 norm(fit.resid) / norm(M)
 
 Pingouin.normality(fit.resid, α=0.05)
 
-TRFmin = 22.8e-6 # s - shortest TRF possible on the NMR
+Tʳᶠmin = 22.8e-6 # s - shortest Tʳᶠ possible on the NMR
 TRF_scale = [1;2;5:5:40] # scaling factor
-TRF = TRF_scale * TRFmin # s
+Tʳᶠ = TRF_scale * Tʳᶠmin # s
 
-Ti = exp.(range(log(3e-3), log(5), length=20)) # s
-Ti .+= 12 * TRFmin + (13 * 15.065 - 5) * 1e-6 # s - correction factors
+Tᵢ = exp.(range(log(3e-3), log(5), length=20)) # s
+Tᵢ .+= 12 * Tʳᶠmin + (13 * 15.065 - 5) * 1e-6 # s - correction factors
 
-ω1 = π ./ TRF # rad/s
-TIplot = exp.(range(log(Ti[1]), log(Ti[end]), length=500)); # s
+ω₁ = π ./ Tʳᶠ # rad/s
+Tᵢplot = exp.(range(log(Tᵢ[1]), log(Tᵢ[end]), length=500)); # s
 
-M = zeros(Float64, length(Ti), length(TRF_scale))
+M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
     M[:,i] = load_spectral_integral(MnCl2_data(TRF_scale[i]))
 end
@@ -60,79 +60,79 @@ standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);
 
 p0 = [1.0, 1.0, 2.0];
 
-R1 = similar(M[1,:])
-residual = similar(R1)
-p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
+R₁ = similar(M[1,:])
+residual = similar(R₁)
+p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i = 1:length(TRF_scale)
     Mi = @view M[:,i]
 
-    fit = curve_fit(standard_IR_model, Ti, Mi, p0)
+    fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
 
-    R1[i] = fit.param[2]
+    R₁[i] = fit.param[2]
     Minv = fit.param[3] / fit.param[1] - 1
 
     residual[i] = norm(fit.resid) / norm(Mi)
 
-    scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
-    plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
+    scatter!(p, Tᵢ, Mi, label=@sprintf("Tʳᶠ = %1.2es - data", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv), color=i)
 end
 display(p)
 
-mean(R1) # 1/s
+mean(R₁) # 1/s
 
-std(R1) # 1/s
+std(R₁) # 1/s
 
 mean(residual)
 
-Pingouin.normality(R1, α=0.05)
+Pingouin.normality(R₁, α=0.05)
 
-function Bloch_IR_model(p, TRF, Ti, T2)
-    (m0, m0_inv, R1) = p
+function Bloch_IR_model(p, Tʳᶠ, Tᵢ, T2)
+    (m0, m0_inv, R₁) = p
     R2 = 1 / T2
 
-    M = zeros(Float64, length(Ti), length(TRF))
-    for i = 1:length(TRF)
+    M = zeros(Float64, length(Tᵢ), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
         # simulate inversion pulse
-        ω1 = π / TRF[i]
-        H = [-R2 -ω1  0;
-              ω1 -R1 R1;
-               0   0  0]
+        ω₁ = π / Tʳᶠ[i]
+        H = [-R2 -ω₁ 0 ;
+              ω₁ -R₁ R₁;
+               0   0 0 ]
 
-        m_inv = m0_inv * (exp(H * TRF[i]) * [0,1,1])[2]
+        m_inv = m0_inv * (exp(H * Tʳᶠ[i]) * [0,1,1])[2]
 
         # simulate T1 recovery
-        H = [-R1 R1 * m0;
-               0       0]
+        H = [-R₁ R₁*m0;
+               0     0]
 
-        for j = 1:length(Ti)
-            M[j,i] = m0 * (exp(H .* (Ti[j] - TRF[i] / 2)) * [m_inv,1])[1]
+        for j = 1:length(Tᵢ)
+            M[j,i] = m0 * (exp(H .* (Tᵢ[j] - Tʳᶠ[i] / 2)) * [m_inv,1])[1]
         end
     end
     return vec(M)
 end;
 
-fit = curve_fit((x, p) -> Bloch_IR_model(p, TRF, Ti, T2star_MnCl2), 1:length(M), vec(M), [ 1, .8, 1])
+fit = curve_fit((x, p) -> Bloch_IR_model(p, Tʳᶠ, Tᵢ, T₂star_MnCl2), 1:length(M), vec(M), [ 1, .8, 1])
 
-p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
-for i=1:length(TRF)
-    scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
-    plot!(p, TIplot, Bloch_IR_model(fit.param, TRF[i], TIplot, T2star_MnCl2), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
+p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Bloch_IR_model(fit.param, Tʳᶠ[i], Tᵢplot, T₂star_MnCl2), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p)
 
-R1_MnCl2 = fit.param[3] # 1/s
+R₁_MnCl2 = fit.param[3] # 1/s
 
 stderror(fit)[3] # 1/s
 
 norm(fit.resid) / norm(M)
 
 M = load_Data(BSA_data(1));
-M = M[:,1] # select Ti = 5s
+M = M[:,1] # select Tᵢ = 5s
 Mreal = [real(M);imag(M)]
 
 fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0]);
 
-T2star_BSA = fit.param[3] # s
+T₂star_BSA = fit.param[3] # s
 
 stderror(fit)[3] # s
 
@@ -140,81 +140,83 @@ Mfitted = FID_model(TEreal, fit.param)
 Mfitted = Mfitted[1:end÷2] + 1im * Mfitted[end÷2+1:end]
 p = plot(xlabel="TE [s]", ylabel="|FID(TE)| [a.u.]")
 plot!(p, TE, abs.(M), label="data")
-plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T2* = %2.3f ms", 1e3 * T2star_BSA))
+plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T₂* = %2.3f ms", 1e3 * T₂star_BSA))
 
 norm(fit.resid) / norm(M)
 
 Pingouin.normality(fit.resid, α=0.05)
 
-M = zeros(Float64, length(Ti), length(TRF_scale))
+M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
     M[:,i] = load_spectral_integral(BSA_data(TRF_scale[i]))
 end
 M ./= maximum(M)
 
-R1 = similar(M[1,:])
-residual = similar(R1)
-p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
+R₁ = similar(M[1,:])
+residual = similar(R₁)
+p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i = 1:length(TRF_scale)
     Mi = @view M[:,i]
 
-    fit = curve_fit(standard_IR_model, Ti, Mi, p0)
+    fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
 
-    R1[i] = fit.param[2]
+    R₁[i] = fit.param[2]
     Minv = fit.param[3] / fit.param[1] - 1
 
     residual[i] = norm(fit.resid) / norm(Mi)
 
-    scatter!(p, Ti, Mi, label=@sprintf("TRF = %1.2es - data", TRF[i]), color=i)
-    plot!(p, TIplot, standard_IR_model(TIplot, fit.param), label=@sprintf("fit with R1 = %.3f/s; MInv = %.3f", R1[i], Minv), color=i)
+    scatter!(p, Tᵢ, Mi, label=@sprintf("Tʳᶠ = %1.2es - data", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv), color=i)
 end
 display(p)
 
 mean(residual)
 
-mean(R1) # 1/s
+mean(R₁) # 1/s
 
-std(R1) # 1/s
+std(R₁) # 1/s
 
-Pingouin.normality(R1, α=0.05)
+Pingouin.normality(R₁, α=0.05)
 
-function gBloch_IR_model(p, G, TRF, TI, R2f)
-    (m0, m0f_inv, m0s, R1, T2s, Rx) = p
+function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
     m0f = 1 - m0s
-    ω1 = π ./ TRF
+    ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
     m_fun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 
-    H = [-R1 - m0s * Rx       m0f * Rx R1 * m0f;
-               m0s * Rx -R1 - m0f * Rx R1 * m0s;
-         0              0              0       ]
+    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
+             m0s*Rx -R₁-m0f*Rx R₁*m0s;
+              0          0         0 ]
 
-    M = zeros(Float64, length(TI), length(TRF))
-    for i = 1:length(TRF)
-        m = solve(DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, TRF[i]), (ω1[i], 1, 0, m0s, R1, R2f, T2s, Rx, G)))[end]
+    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, T₂ˢ, Rx, G)
+        prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
+        m = solve(prob)[end]
 
         for j = 1:length(TI)
-            M[j,i] = m0 * (exp(H .* (TI[j] - TRF[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
         end
     end
     return vec(M)
 end;
 
-T2s_min = 5e-6 # s
-G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF)/T2s_min);
+T₂ˢ_min = 5e-6 # s
+G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ)/T₂ˢ_min);
 
-p0   = [  1, 0.932,  0.1,   1, 10e-6, 50];
-pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10];
-pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3];
+p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
+pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
+pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
 
-fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
-p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
-for i=1:length(TRF)
-    scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
-    plot!(p, TIplot, gBloch_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
+p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, gBloch_IR_model(fit.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p)
 
@@ -226,40 +228,44 @@ Minv = fit.param[2]
 
 m0s = fit.param[3]
 
-R1 = fit.param[4] # 1/s
+R₁ = fit.param[4] # 1/s
 
-T2s = 1e6fit.param[5] # μs
+T₂ˢ = 1e6fit.param[5] # μs
 
 Rx = fit.param[6] # 1/s
 
-function Graham_IR_model(p, TRF, TI, R2f)
-    (m0, m0f_inv, m0s, R1, T2s, Rx) = p
+stderror(fit)
+
+function Graham_IR_model(p, Tʳᶠ, TI, R2f)
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
     m0f = 1 - m0s
-    ω1 = π ./ TRF
+    ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
 
-    H = [-R1 - m0s * Rx       m0f * Rx R1 * m0f;
-               m0s * Rx -R1 - m0f * Rx R1 * m0s;
-         0              0              0       ]
+    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
+             m0s*Rx -R₁-m0f*Rx R₁*m0s;
+              0          0         0 ]
 
-    M = zeros(Float64, length(TI), length(TRF))
-    for i = 1:length(TRF)
-        m = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, TRF[i]), (ω1[i], 1, 0, TRF[i], m0s, R1, R2f, T2s, Rx)))[end]
+    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
+        param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, T₂ˢ, Rx)
+        prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
+        m = solve(prob)[end]
 
         for j = 1:length(TI)
-            M[j,i] = m0 * (exp(H .* (TI[j] - TRF[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
         end
     end
     return vec(M)
-end;
+end
 
-fit = curve_fit((x, p) -> Graham_IR_model(p, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit = curve_fit((x, p) -> Graham_IR_model(p, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
-p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
-for i=1:length(TRF)
-    scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
-    plot!(p, TIplot, Graham_IR_model(fit.param, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
+p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Graham_IR_model(fit.param, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p)
 
@@ -271,40 +277,44 @@ Minv = fit.param[2]
 
 m0s = fit.param[3]
 
-R1 = fit.param[4] # 1/s
+R₁ = fit.param[4] # 1/s
 
-T2s = 1e6fit.param[5] # μs
+T₂ˢ = 1e6fit.param[5] # μs
 
 Rx = fit.param[6] # 1/s
 
-function Sled_IR_model(p, G, TRF, TI, R2f)
-    (m0, m0f_inv, m0s, R1, T2s, Rx) = p
+stderror(fit)
+
+function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
     m0f = 1 - m0s
-    ω1 = π ./ TRF
+    ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
 
-    H = [-R1 - m0s * Rx       m0f * Rx R1 * m0f;
-               m0s * Rx -R1 - m0f * Rx R1 * m0s;
-         0              0              0       ]
+    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
+             m0s*Rx -R₁-m0f*Rx R₁*m0s;
+              0          0         0 ]
 
-    M = zeros(Float64, length(TI), length(TRF))
-    for i = 1:length(TRF)
-        m = solve(ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, TRF[i]), (ω1[i], 1, 0, m0s, R1, R2f, T2s, Rx, G)))[end]
+    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, T₂ˢ, Rx, G)
+        prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
+        m = solve(prob)[end]
 
         for j = 1:length(TI)
-            M[j,i] = m0 * (exp(H .* (TI[j] - TRF[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
         end
     end
     return vec(M)
-end;
+end
 
-fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, TRF, Ti, 1/T2star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
-p = plot(xlabel="Ti [s]", ylabel="zf(TRF, Ti) [a.u.]")
-for i=1:length(TRF)
-    scatter!(p, Ti, M[:,i], label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
-    plot!(p, TIplot, Sled_IR_model(fit.param, G_superLorentzian, TRF[i], TIplot, 1/T2star_BSA), label=@sprintf("TRF = %1.2es", TRF[i]), color=i)
+p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Sled_IR_model(fit.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p)
 
@@ -316,11 +326,13 @@ Minv = fit.param[2]
 
 m0s = fit.param[3]
 
-R1 = fit.param[4] # 1/s
+R₁ = fit.param[4] # 1/s
 
-T2s = 1e6fit.param[5] # μs
+T₂ˢ = 1e6 * fit.param[5] # μs
 
 Rx = fit.param[6] # 1/s
+
+stderror(fit)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 
