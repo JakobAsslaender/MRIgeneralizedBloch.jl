@@ -28,10 +28,10 @@ mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, greens_lorentzian)
 alg = MethodOfSteps(DP8())
-u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
+m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0, mfun, (0.0, TRF), p),
+    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
     alg,
 )
 
@@ -47,8 +47,8 @@ H = @SMatrix [
        0    0          0      0          0      0
 ]
 
-u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, ms, 1]
-u_Bloch = exp(H * TRF) * u0
+m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, ms, 1]
+u_Bloch = exp(H * TRF) * m0
 
 ## Test!
 max_error = 1e-3

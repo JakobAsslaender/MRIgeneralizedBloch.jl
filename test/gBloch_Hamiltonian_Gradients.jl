@@ -27,11 +27,11 @@ dGdT2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, 100)
 
 
 ## baseline IDE solution
-u0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
+m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
 gBloch_sol = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0, TRF),
         (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, N),
@@ -41,16 +41,16 @@ gBloch_sol = solve(
 
 ## Analytical gradients (using ApproxFun)
 grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]
-u0 = zeros(5 * (length(grad_list) + 1), 1)
-u0[1] = 0.5 * (1 - m0s)
-u0[3] = 0.5 * (1 - m0s)
-u0[4] = m0s
-u0[5] = 1.0
+m0 = zeros(5 * (length(grad_list) + 1), 1)
+m0[1] = 0.5 * (1 - m0s)
+m0[3] = 0.5 * (1 - m0s)
+m0[4] = m0s
+m0[5] = 1.0
 
 gBloch_sol_grad = solve(
     DDEProblem(
         apply_hamiltonian_gbloch!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dGdT2s, grad_list),
@@ -61,11 +61,11 @@ gBloch_sol_grad = solve(
 ## FD derivative wrt. m0s
 dm0s = 1e-9
 
-u0 = u0[1:5]
+m0 = m0[1:5]
 gBloch_sol_dm0s = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, B1, ω0, (m0s + dm0s), R1, R2f, T2s, Rx, N),
@@ -106,7 +106,7 @@ dR1 = 1e-9
 gBloch_sol_dR1 = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, B1, ω0, m0s, (R1 + dR1), R2f, T2s, Rx, N),
@@ -137,7 +137,7 @@ dR2f = 1e-9
 gBloch_sol_dR2f = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, B1, ω0, m0s, R1, (R2f + dR2f), T2s, Rx, N),
@@ -167,7 +167,7 @@ dRx = 1e-6
 gBloch_sol_dRx = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, B1, ω0, m0s, R1, R2f, T2s, (Rx + dRx), N),
@@ -199,7 +199,7 @@ dT2s = 1e-14
 gBloch_sol_dT2s = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, B1, ω0, m0s, R1, R2f, (T2s + dT2s), Rx, N),
@@ -230,7 +230,7 @@ dω0 = 1
 gBloch_sol_dω0 = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, B1, (ω0 + dω0), m0s, R1, R2f, T2s, Rx, N),
@@ -260,7 +260,7 @@ dB1 = 1e-9
 gBloch_sol_dB1 = solve(
     DDEProblem(
         apply_hamiltonian_gbloch_superlorentzian!,
-        u0,
+        m0,
         mfun,
         (0.0, TRF),
         (ω1, (B1 + dB1), ω0, m0s, R1, R2f, T2s, Rx, N),

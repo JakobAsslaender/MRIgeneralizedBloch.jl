@@ -22,19 +22,19 @@ ms = m0s * rand()
 mf = (1 - m0s) * rand()
 ϑ = rand() * π / 2
 φ = rand() * 2π
-u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
+m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 ## baseline ODE solution
-FP_sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), (ω0, m0s, R1, R2f, Rx)), alg)
+FP_sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, R1, R2f, Rx)), alg)
 
 ## Analytical gradients (using ApproxFun)
 grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]
 
-FP_sol_grad = solve(ODEProblem(apply_hamiltonian_freeprecession!, [u0; zeros(5 * (length(grad_list)),1)], (0, TE), (ω0, m0s, R1, R2f, Rx, grad_list)), alg)
+FP_sol_grad = solve(ODEProblem(apply_hamiltonian_freeprecession!, [m0; zeros(5 * (length(grad_list)),1)], (0, TE), (ω0, m0s, R1, R2f, Rx, grad_list)), alg)
 
 ## FD derivative wrt. m0s
 dm0s = 1e-9
-FP_sol_dm0s = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), (ω0, (m0s + dm0s), R1, R2f, Rx)), alg)
+FP_sol_dm0s = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, (m0s + dm0s), R1, R2f, Rx)), alg)
 
 t = 0 : 1e-5 : TE
 dxf = similar(t)
@@ -65,7 +65,7 @@ end
 
 ## test derivative wrt. R1 
 dR1 = 1e-9
-FP_sol_dR1 = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), (ω0, m0s, (R1+ dR1), R2f, Rx)), alg)
+FP_sol_dR1 = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, (R1+ dR1), R2f, Rx)), alg)
 
 for i = 1: length(t)
         dxf_fd[i] = (FP_sol_dR1(t[i])[1] - FP_sol(t[i])[1]) /dR1
@@ -86,7 +86,7 @@ end
 
 ## test derivative wrt. R2f
 dR2f = 1e-6
-FP_sol_dR2f = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), (ω0, m0s, R1, (R2f+dR2f), Rx)), alg)
+FP_sol_dR2f = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, R1, (R2f+dR2f), Rx)), alg)
 
 for i = 1: length(t)
         dxf_fd[i] = (FP_sol_dR2f(t[i])[1] - FP_sol(t[i])[1]) /dR2f
@@ -107,7 +107,7 @@ end
 
 ## test derivative wrt. Rx
 dRx = 1e-9
-FP_sol_dRx = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), (ω0, m0s, R1, R2f, (Rx+dRx))), alg)
+FP_sol_dRx = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, R1, R2f, (Rx+dRx))), alg)
 
 for i = 1: length(t)
         dxf_fd[i] = (FP_sol_dRx(t[i])[1] - FP_sol(t[i])[1]) /dRx
@@ -129,7 +129,7 @@ end
 
 ## test derivative wrt. T2s
 dT2s = 1e-14
-FP_sol_dT2s = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), (ω0, m0s, R1, R2f, Rx)), alg)
+FP_sol_dT2s = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, R1, R2f, Rx)), alg)
 
 for i = 1: length(t)
         dxf_fd[i] = (FP_sol_dT2s(t[i])[1] - FP_sol(t[i])[1]) /dT2s
@@ -150,7 +150,7 @@ end
 
 ## test derivative wrt. ω0
 dω0 = 1
-FP_sol_dω0 = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), ((ω0 + dω0), m0s, R1, R2f, Rx)), alg)
+FP_sol_dω0 = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), ((ω0 + dω0), m0s, R1, R2f, Rx)), alg)
 
 for i = 1: length(t)
         dxf_fd[i] = (FP_sol_dω0(t[i])[1] - FP_sol(t[i])[1]) /dω0
@@ -171,7 +171,7 @@ end
 
 ## test derivative wrt. B1
 dB1 = 1e-9
-FP_sol_dB1 = solve(ODEProblem(apply_hamiltonian_freeprecession!, u0, (0, TE), (ω0, m0s, R1, R2f, Rx)), alg)
+FP_sol_dB1 = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, R1, R2f, Rx)), alg)
 
 for i = 1: length(t)
         dxf_fd[i] = (FP_sol_dB1(t[i])[1] - FP_sol(t[i])[1]) /dB1

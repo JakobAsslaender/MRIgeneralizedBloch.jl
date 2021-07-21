@@ -19,20 +19,20 @@ TRF = 500e-6
 alg = Tsit5()
 
 ## baseline IDE solution
-u0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, u0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx)), alg)
+m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
+Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx)), alg)
 
 ## Analytical gradients (using ApproxFun)
 grad_list = [grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]
 
-Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [u0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5())
+Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx, grad_list)), Tsit5())
 
 ## FD derivative wrt. m0s
 dm0s = 1e-9
 Graham_sol_dm0s = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
-        u0,
+        m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, (m0s + dm0s), R1, R2f, T2s, Rx),
     ),
@@ -71,7 +71,7 @@ dR1 = 1e-9
 Graham_sol_dR1 = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
-        u0,
+        m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, (R1 + dR1), R2f, T2s, Rx),
     ),
@@ -100,7 +100,7 @@ dR2f = 1e-9
 Graham_sol_dR2f = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
-        u0,
+        m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1, (R2f + dR2f), T2s, Rx),
     ),
@@ -128,7 +128,7 @@ dRx = 1e-6
 Graham_sol_dRx = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
-        u0,
+        m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, (Rx + dRx)),
     ),
@@ -158,7 +158,7 @@ dT2s = 1e-14
 Graham_sol_dT2s = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
-        u0,
+        m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1, R2f, (T2s + dT2s), Rx),
     ),
@@ -187,7 +187,7 @@ dω0 = 1
 Graham_sol_dω0 = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
-        u0,
+        m0,
         (0.0, TRF),
         (ω1, B1, (ω0 + dω0), TRF, m0s, R1, R2f, T2s, Rx),
     ),
@@ -215,7 +215,7 @@ dB1 = 1e-9
 Graham_sol_dB1 = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
-        u0,
+        m0,
         (0.0, TRF),
         (ω1, (B1 + dB1), ω0, TRF, m0s, R1, R2f, T2s, Rx),
     ),

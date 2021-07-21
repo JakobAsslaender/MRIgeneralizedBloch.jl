@@ -58,11 +58,11 @@ julia> Rx = 30;
 julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 
 
-julia> u0 = [0; 0; 1-m0s; m0s; 1];
+julia> m0 = [0; 0; 1-m0s; m0s; 1];
 
 julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5);
 
-julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))
+julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G)))
 retcode: Success
 Interpolation: specialized 7th order interpolation
 t: 6-element Vector{Float64}:
@@ -91,12 +91,12 @@ julia> dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorent
 julia> grad_list = [grad_R2f(), grad_m0s()];
 
 
-julia> u0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];
+julia> m0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];
 
 
 julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5 + 5*length(grad_list));
 
-julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, u0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)), MethodOfSteps(DP8()));
+julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)));
 
 
 julia> plot(sol);

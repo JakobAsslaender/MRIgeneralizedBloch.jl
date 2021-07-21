@@ -26,10 +26,10 @@ mf = (1 - m0s) * rand()
 ## Solve generalized Bloch-McConnell with Lorentzian lineshape
 p = (ω0, m0s, R1, R2f, Rx)
 alg = Tsit5()
-u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
+m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_freeprecession!, u0, (0.0, TFP), p),
+    ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_freeprecession!, m0, (0.0, TFP), p),
     alg,
 )
 
@@ -45,8 +45,8 @@ H = @SMatrix [
        0    0          0      0          0      0
 ]
 
-u0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, ms, 1]
-u_Bloch = exp(H * TFP) * u0
+m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, ms, 1]
+u_Bloch = exp(H * TFP) * m0
 
 ## Test!
 max_error = 1e-3
