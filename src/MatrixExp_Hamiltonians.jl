@@ -49,11 +49,11 @@ julia> m0 = [0, 0, 1-m0s, 0, m0s, 1];
 
 julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s)) * m0
 6-element StaticArrays.SVector{6, Float64} with indices SOneTo(6):
-  0.0010646925712316385
+  0.0010646925712316103
   0.0
  -0.8957848933541458
-  0.005125086137871531
-  0.08119617921987107
+  0.005125086137871529
+  0.08119617921987109
   1.0
 ```
 """
