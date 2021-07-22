@@ -8,7 +8,8 @@
 using MRIgeneralizedBloch
 using DifferentialEquations
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
+#nb plotlyjs(ticks=:native);
 
 # We simulate the dynamics of a coupled spin system with the following parameters:
 m0s = 0.15
