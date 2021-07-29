@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>API · MRIgeneralizedBloch.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link rel="canonical" href="https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl/api/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">MRIgeneralizedBloch.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../build_literate/tutorial/">Quick Start Tutorial</a></li><li><span class="tocitem">Generalized Bloch Paper</span><ul><li><a class="tocitem" href="../build_literate/Greens_functions/">Green&#39;s Functions</a></li><li><a class="tocitem" href="../build_literate/Simulation_ContinuousWave/">Continuous Wave Simulation</a></li><li><a class="tocitem" href="../build_literate/Simulation_Pulse/">RF-Pulse Simulation</a></li><li><a class="tocitem" href="../build_literate/Analyze_NMR_Data/">NMR Data Analysis</a></li><li><a class="tocitem" href="../build_literate/Linear_Approximation/">Linear Approximation</a></li></ul></li><li class="is-active"><a class="tocitem" href>API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>API</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>API</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/master/docs/src/api.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="API"><a class="docs-heading-anchor" href="#API">API</a><a id="API-1"></a><a class="docs-heading-anchor-permalink" href="#API" title="Permalink"></a></h1><p>In the following, you find the documentation of all exported functions of the <a href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl">MRIgeneralizedBloch.jl</a> package:</p><ul><li><a href="#MRIgeneralizedBloch.apply_hamiltonian_gbloch!-Tuple{Any, Any, Any, NTuple{10, Any}, Any}"><code>MRIgeneralizedBloch.apply_hamiltonian_gbloch!</code></a></li><li><a href="#MRIgeneralizedBloch.apply_hamiltonian_sled!-Tuple{Any, Any, NTuple{6, Any}, Any}"><code>MRIgeneralizedBloch.apply_hamiltonian_sled!</code></a></li><li><a href="#MRIgeneralizedBloch.calculatesignal_gbloch_ide-NTuple{10, Any}"><code>MRIgeneralizedBloch.calculatesignal_gbloch_ide</code></a></li><li><a href="#MRIgeneralizedBloch.calculatesignal_graham_ode-NTuple{10, Any}"><code>MRIgeneralizedBloch.calculatesignal_graham_ode</code></a></li><li><a href="#MRIgeneralizedBloch.calculatesignal_linearapprox-NTuple{11, Any}"><code>MRIgeneralizedBloch.calculatesignal_linearapprox</code></a></li><li><a href="#MRIgeneralizedBloch.dG_o_dT2s_x_T2s_gaussian-Tuple{Any}"><code>MRIgeneralizedBloch.dG_o_dT2s_x_T2s_gaussian</code></a></li><li><a href="#MRIgeneralizedBloch.dG_o_dT2s_x_T2s_lorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.dG_o_dT2s_x_T2s_lorentzian</code></a></li><li><a href="#MRIgeneralizedBloch.dG_o_dT2s_x_T2s_superlorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.dG_o_dT2s_x_T2s_superlorentzian</code></a></li><li><a href="#MRIgeneralizedBloch.greens_gaussian-Tuple{Any}"><code>MRIgeneralizedBloch.greens_gaussian</code></a></li><li><a href="#MRIgeneralizedBloch.greens_lorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.greens_lorentzian</code></a></li><li><a href="#MRIgeneralizedBloch.greens_superlorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.greens_superlorentzian</code></a></li><li><a href="#MRIgeneralizedBloch.hamiltonian_linear-NTuple{9, Any}"><code>MRIgeneralizedBloch.hamiltonian_linear</code></a></li><li><a href="#MRIgeneralizedBloch.interpolate_greens_function-Tuple{Any, Any, Any}"><code>MRIgeneralizedBloch.interpolate_greens_function</code></a></li><li><a href="#MRIgeneralizedBloch.precompute_R2sl-NTuple{8, Any}"><code>MRIgeneralizedBloch.precompute_R2sl</code></a></li></ul><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.apply_hamiltonian_gbloch!-Tuple{Any, Any, Any, NTuple{10, Any}, Any}" href="#MRIgeneralizedBloch.apply_hamiltonian_gbloch!-Tuple{Any, Any, Any, NTuple{10, Any}, Any}"><code>MRIgeneralizedBloch.apply_hamiltonian_gbloch!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p, t)</code></pre><p>Apply the generalized Bloch Hamiltonian to <code>m</code> and write the resulting derivative wrt. time into <code>∂m∂t</code>.</p><p><strong>Arguemnts</strong></p><ul><li><code>∂m∂t::Vector{&lt;:Number}</code>: Vector describing to derivative of <code>m</code> wrt. time; this vector has to be of the same size as <code>m</code>, but can contain any value, which is replaced by <code>H * m</code></li><li><code>m::Vector{&lt;:Number}</code>: Vector the spin ensemble state of the form <code>[xf, yf, zf, zs, 1]</code> if now gradient is calculated or of the form <code>[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]</code> if n derivatives wrt. <code>θn</code> are calculated</li><li><code>mfun</code>: History fuction; can be initialized with <code>mfun(p, t; idxs=nothing) = typeof(idxs) &lt;: Number ? 0.0 : zeros(5n + 5)</code> for n gradients, and is then updated by the delay differential equation solvers</li><li><code>p::NTuple{9,10, or 11, Any}</code>: <code>(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)</code>, with    -<code>ω1::Number</code>: Rabi frequency in rad/s (rotation about the y-axis)   -<code>B1::Number</code>: B1 scaling normalized so that <code>B1=1</code> corresponds to a perfectly calibrated RF field   -<code>ω0::Number</code>: Larmor or off-resonance frequency in rad/s   -<code>m0s::Number</code>: Fractional semi-solid spin pool size in the range of 0 to 1   -<code>R1::Number</code>: Apparent longitudinal spin relaxation rate of both pools in 1/seconds   -<code>R2f::Number</code>: Trasversal spin relaxation rate of the free pool in 1/seconds   -<code>T2s::Number</code>: Trasversal spin relaxation time of the semi-solid pool in seconds   -<code>Rx::Number</code>: Exchange rate between the two pools in 1/seconds   -<code>g::Function</code>: Green&#39;s function of the form <code>G(κ) = G((t-τ)/T2s)</code>   or <code>(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, zs_idx, g)</code> with<ul><li><code>zs_idx::Integer</code>: Index to be used history function to be used in the Green&#39;s function; Default is 4 (zs), and for derivatives 9, 14, ... are used</li></ul>or <code>(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g, dG_o_dT2s_x_T2s, grad_list)</code> with<ul><li><code>dG_o_dT2s_x_T2s::Function</code>: Derivative of the Green&#39;s function wrt. T2s, multiplied by T2s; of the form <code>dG_o_dT2s_x_T2s(κ) = dG_o_dT2s_x_T2s((t-τ)/T2s)</code></li><li><code>grad_list::Vector{&lt;:grad_param}</code>: List of gradients to be calucualted; any subset of <code>[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]</code>; length of the vector must be n (cf. arguments <code>m</code> and <code>∂m∂t</code>)</li></ul></li><li><code>t::Number</code>: Time in seconds</li></ul><p>Optional:</p><ul><li><code>pulsetype=:normal</code>: Use default for a regular RF-pulse; the option <code>pulsetype=:inversion</code> should be handled with care as it is only inteded to calculate the saturation of the semi-solid pool and its derivative. </li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using DifferentialEquations
+
+julia&gt; α = π/2;
+
+julia&gt; TRF = 100e-6;
+
+julia&gt; ω1 = α/TRF;
+
+julia&gt; B1 = 1;
+
+julia&gt; ω0 = 0;
+
+julia&gt; m0s = 0.1;
+
+julia&gt; R1 = 1;
+
+julia&gt; R2f = 15;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; Rx = 30;
+
+julia&gt; G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
+
+
+julia&gt; m0 = [0; 0; 1-m0s; m0s; 1];
+
+julia&gt; mfun(p, t; idxs=nothing) = typeof(idxs) &lt;: Number ? 0.0 : zeros(5);
+
+julia&gt; sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G)))
+retcode: Success
+Interpolation: automatic order switching interpolation
+t: 9-element Vector{Float64}:
+ 0.0
+ 1.220281289257312e-7
+ 1.342309418183043e-6
+ 7.538223396809993e-6
+ 2.0264275992449307e-5
+ 3.806391790996879e-5
+ 6.131350253044042e-5
+ 8.985713095394202e-5
+ 0.0001
+u: 9-element Vector{Vector{Float64}}:
+ [0.0, 0.0, 0.9, 0.1, 1.0]
+ [0.0017251293948764095, 0.0, 0.8999983466235149, 0.0999998162918461, 1.0]
+ [0.018974855260649, 0.0, 0.8997999500976795, 0.0999777787537773, 1.0]
+ [0.10631425327309292, 0.0, 0.8936981899494069, 0.0993062488692229, 1.0]
+ [0.28162336805181576, 0.0, 0.8547938784075204, 0.09527129619977613, 1.0]
+ [0.5064779297334128, 0.0, 0.7438963250738748, 0.08537276746991054, 1.0]
+ [0.7385374607670901, 0.0, 0.5140010917423798, 0.06896091618108181, 1.0]
+ [0.888016931522836, 0.0, 0.14315426117917585, 0.04808883373953286, 1.0]
+ [0.899347249517465, 0.0, 0.00048588799488130663, 0.04106861705554077, 1.0]
+
+julia&gt; using Plots
+
+julia&gt; plot(sol, labels=[&quot;xf&quot; &quot;yf&quot; &quot;zf&quot; &quot;zs&quot; &quot;1&quot;], xlabel=&quot;t (s)&quot;, ylabel=&quot;m(t)&quot;);
+
+
+julia&gt; dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, TRF / T2s);
+
+
+julia&gt; grad_list = [grad_R2f(), grad_m0s()];
+
+
+julia&gt; m0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];
+
+
+julia&gt; mfun(p, t; idxs=nothing) = typeof(idxs) &lt;: Number ? 0.0 : zeros(5 + 5*length(grad_list));
+
+julia&gt; sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, G, dG_o_dT2s_x_T2s, grad_list)));
+
+
+julia&gt; plot(sol);</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/DiffEq_Hamiltonians.jl#L5-L110">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.apply_hamiltonian_sled!-Tuple{Any, Any, NTuple{6, Any}, Any}" href="#MRIgeneralizedBloch.apply_hamiltonian_sled!-Tuple{Any, Any, NTuple{6, Any}, Any}"><code>MRIgeneralizedBloch.apply_hamiltonian_sled!</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">apply_hamiltonian_sled!(∂m∂t, m, p, t)</code></pre><p>Apply Sled&#39;s Hamiltonian to <code>m</code> and write the resulting derivative wrt. time into <code>∂m∂t</code>.</p><p><strong>Arguemnts</strong></p><ul><li><code>∂m∂t::Vector{&lt;:Number}</code>: Vector of length 1 describing to derivative of <code>m</code> wrt. time; this vector can contain any value, which is replaced by <code>H * m</code></li><li><code>m::Vector{&lt;:Number}</code>: Vector of length 1 describing the <code>zs</code> magnetization</li><li><code>p::NTuple{6 or 9, Any}</code>: <code>(ω1, B1, ω0, R1, T2s, g)</code> for a simulating an isolated semi-solid pool or <code>(ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, g)</code> for simulating a coupled spin system; with    -<code>ω1::Number</code>: Rabi frequency in rad/s (rotation about the y-axis)   -<code>B1::Number</code>: B1 scaling normalized so that <code>B1=1</code> corresponds to a perfectly calibrated RF field   -<code>ω0::Number</code>: Larmor or off-resonance frequency in rad/s   -<code>R1::Number</code>: Longitudinal spin relaxation rate in 1/seconds   -<code>R2f::Number</code>: Trasversal spin relaxation rate of the free pool in 1/seconds   -<code>T2s::Number</code>: Trasversal spin relaxation time in seconds   -<code>Rx::Number</code>: Exchange rate between the two pools in 1/seconds   -<code>g::Function</code>: Green&#39;s function of the form <code>G(κ) = G((t-τ)/T2s)</code></li><li><code>t::Number</code>: Time in seconds</li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using DifferentialEquations
+
+julia&gt; α = π/2;
+
+julia&gt; TRF = 100e-6;
+
+julia&gt; ω1 = α/TRF;
+
+julia&gt; B1 = 1;
+
+julia&gt; ω0 = 0;
+
+julia&gt; R1 = 1;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
+
+julia&gt; m0 = [1];
+
+julia&gt; sol = solve(ODEProblem(apply_hamiltonian_sled!, m0, (0, TRF), (ω1, 1, ω0, R1, T2s, G)), Tsit5())
+retcode: Success
+Interpolation: specialized 4th order &quot;free&quot; interpolation
+t: 3-element Vector{Float64}:
+ 0.0
+ 7.475658194333419e-5
+ 0.0001
+u: 3-element Vector{Vector{Float64}}:
+ [1.0]
+ [0.6313685535188782]
+ [0.48951919836592006]
+
+julia&gt; using Plots
+
+julia&gt; plot(sol, labels=[&quot;zs&quot;], xlabel=&quot;t (s)&quot;, ylabel=&quot;m(t)&quot;);
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/DiffEq_Hamiltonians.jl#L447-L505">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.calculatesignal_gbloch_ide-NTuple{10, Any}" href="#MRIgeneralizedBloch.calculatesignal_gbloch_ide-NTuple{10, Any}"><code>MRIgeneralizedBloch.calculatesignal_gbloch_ide</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s[; grad_list, Ncyc=2, output=:complexsignal])</code></pre><p>Calculate the signal or magnetixation evolution with the full generalized Bloch model assuming a super-Lorentzian lineshape (slow).</p><p>The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. </p><p><strong>Arguemnts</strong></p><ul><li><code>α::Vector{&lt;:Number}</code>: Array of flip angles in radians</li><li><code>TRF::Vector{&lt;:Number}</code>: Array of the RF-pulse durations in seconds</li><li><code>TR::Number</code>: Repetition time in seconds</li><li><code>ω0::Number</code>: Off-resonance frequency in rad/s </li><li><code>B1::Number</code>: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field</li><li><code>m0s::Number</code>: Fractional size of the semi-solid pool; should be in range of 0 to 1</li><li><code>R1::Number</code>: Apparent longitudinal relaxation rate of the free and semi-solid pool in 1/seconds</li><li><code>R2f::Number</code>: Transversal relaxation rate of the free pool in 1/seconds</li><li><code>Rx::Number</code>: Exchange rate between the two spin pools in 1/seconds</li><li><code>T2s::Number</code>: Transversal relaxationt time of the semi-solid pool in seconds</li></ul><p>Optional:</p><ul><li><code>grad_list=[]</code>: Vector to indicate which gradients should be calculated; the vector can either be empty <code>[]</code> for no gradient, or contain any subset/order of <code>grad_list=[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]</code></li><li><code>Ncyc=2</code>: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time. </li><li><code>output=:complexsignal</code>: The defaul keywords triggers the function to output a complex-valued signal (<code>xf + 1im yf</code>); the keyword <code>output=:realmagnetization</code> triggers an output of the entire (real valued) vector <code>[xf, yf, zf, xs, zs]</code></li><li><code>greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian)</code>: Tuple of a Greens function <code>G(κ) = G((t-τ)/T2s)</code> and its partial derivative wrt. T2s, multiplied by T2s <code>∂G((t-τ)/T2s)/∂T2s * T2s</code>. This package supplies the three Greens functions <code>greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian)</code> (default), <code>greens=(greens_lorentzian, dG_o_dT2s_x_T2s_lorentzian)</code>, and <code>greens=(greens_gaussian, dG_o_dT2s_x_T2s_gaussian)</code></li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; calculatesignal_gbloch_ide(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6)
+100×1 Matrix{ComplexF64}:
+ -0.024657762441422027 + 0.0im
+ 0.0037348678313655435 - 0.0im
+ -0.019057736703007047 + 0.0im
+  0.007146413346758778 - 0.0im
+ -0.013913423956595785 + 0.0im
+  0.010291046549792265 - 0.0im
+ -0.009153866378612775 + 0.0im
+  0.013213045210360654 - 0.0im
+ -0.004734258510785772 + 0.0im
+   0.01593906991792929 - 0.0im
+                       ⋮
+   0.05321851165156517 - 0.0im
+   0.05261662009092025 + 0.0im
+  0.053387874462524944 - 0.0im
+  0.052832959843114265 + 0.0im
+   0.05354631440847341 - 0.0im
+  0.053034722397620235 + 0.0im
+   0.05369453263373485 - 0.0im
+   0.05322289238188484 + 0.0im
+   0.05383318553569216 - 0.0im
+
+julia&gt; calculatesignal_gbloch_ide(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6; grad_list=[grad_R1(), grad_T2s()], output=:realmagnetization)
+100×15 transpose(::Matrix{Float64}) with eltype Float64:
+ -0.0246575    0.0   0.00191834  …   0.0    -8.09518  -146.358   0.0
+  0.00373479  -0.0  -0.0217727      -0.0    83.521    -135.807   0.0
+ -0.0190576    0.0   0.00549726      0.0   -21.4616   -119.477   0.0
+  0.00714631  -0.0  -0.0164074      -0.0    64.4139   -106.11    0.0
+ -0.0139133    0.0   0.0087715       0.0   -30.9968    -92.3956  0.0
+  0.0102909   -0.0  -0.0114604   …  -0.0    49.4596    -83.7202  0.0
+ -0.00915379   0.0   0.0118022       0.0   -37.5344    -75.2901  0.0
+  0.0132129   -0.0  -0.00687472     -0.0    37.423     -71.2706  0.0
+ -0.00473424   0.0   0.0146242       0.0   -42.288     -66.9254  0.0
+  0.0159389   -0.0  -0.00261256     -0.0    27.1804    -66.0774  0.0
+  ⋮                              ⋱
+  0.0532167   -0.0   0.0525262      -0.0  -206.85     -155.403   0.0
+  0.0526148    0.0   0.0533279       0.0  -210.517    -155.62    0.0
+  0.053386    -0.0   0.0527502      -0.0  -209.167    -155.899   0.0
+  0.0528312    0.0   0.0534917       0.0  -212.584    -156.103   0.0
+  0.0535445   -0.0   0.052959    …  -0.0  -211.372    -156.364   0.0
+  0.0530329    0.0   0.0536449       0.0  -214.557    -156.555   0.0
+  0.0536927   -0.0   0.0531539      -0.0  -213.471    -156.799   0.0
+  0.053221     0.0   0.0537883       0.0  -216.439    -156.979   0.0
+  0.0538313   -0.0   0.0533355      -0.0  -215.468    -157.207   0.0</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/DiffEq_Sovlers.jl#L1-L74">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.calculatesignal_graham_ode-NTuple{10, Any}" href="#MRIgeneralizedBloch.calculatesignal_graham_ode-NTuple{10, Any}"><code>MRIgeneralizedBloch.calculatesignal_graham_ode</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s[; grad_list, Ncyc=2, output=:complexsignal])</code></pre><p>Calculate the signal or magnetixation evolution with Graham&#39;s spectral model assuming a super-Lorentzian lineshape.</p><p>The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. </p><p><strong>Arguemnts</strong></p><ul><li><code>α::Vector{&lt;:Number}</code>: Array of flip angles in radians</li><li><code>TRF::Vector{&lt;:Number}</code>: Array of the RF-pulse durations in seconds</li><li><code>TR::Number</code>: Repetition time in seconds</li><li><code>ω0::Number</code>: Off-resonance frequency in rad/s </li><li><code>B1::Number</code>: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field</li><li><code>m0s::Number</code>: Fractional size of the semi-solid pool; should be in range of 0 to 1</li><li><code>R1::Number</code>: Apparent longitudinal relaxation rate of the free and semi-solid pool in 1/seconds</li><li><code>R2f::Number</code>: Transversal relaxation rate of the free pool in 1/seconds</li><li><code>Rx::Number</code>: Exchange rate between the two spin pools in 1/seconds</li><li><code>T2s::Number</code>: Transversal relaxationt time of the semi-solid pool in seconds</li></ul><p>Optional:</p><ul><li><code>grad_list=[]</code>: Vector to indicate which gradients should be calculated; the vector can either be empty <code>[]</code> for no gradient, or contain any subset/order of <code>grad_list=[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]</code></li><li><code>Ncyc=2</code>: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time. </li><li><code>output=:complexsignal</code>: The defaul keywords triggers the function to output a complex-valued signal (<code>xf + 1im yf</code>); the keyword <code>output=:realmagnetization</code> triggers an output of the entire (real valued) vector <code>[xf, yf, zf, xs, zs]</code></li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; calculatesignal_graham_ode(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6)
+100×1 Matrix{ComplexF64}:
+  -0.02507016283364451 + 0.0im
+ 0.0037430687099323156 - 0.0im
+  -0.01943221197276058 + 0.0im
+  0.007158922245383863 - 0.0im
+ -0.014255325151363943 + 0.0im
+  0.010307593338620509 - 0.0im
+ -0.009486903618758917 + 0.0im
+  0.013252701136887458 - 0.0im
+ -0.005050073780485204 + 0.0im
+  0.015978096974037494 - 0.0im
+                       ⋮
+   0.05452107922170709 - 0.0im
+   0.05378824747234005 + 0.0im
+  0.054667746773539264 - 0.0im
+   0.05399168955011588 + 0.0im
+   0.05480524072601236 - 0.0im
+   0.05418157100953124 + 0.0im
+   0.05493412868432558 - 0.0im
+   0.05435879806126502 + 0.0im
+  0.055054944205797034 - 0.0im
+
+julia&gt; calculatesignal_graham_ode(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6; grad_list=[grad_R1(), grad_T2s()], output=:realmagnetization)
+100×15 transpose(::Matrix{Float64}) with eltype Float64:
+ -0.0249614    0.0   0.00192295  …   0.0    -7.79895  -141.002   0.0
+  0.00374263  -0.0  -0.0220613      -0.0    81.4297   -131.309   0.0
+ -0.0193318    0.0   0.00550778      0.0   -20.7551   -116.146   0.0
+  0.00715882  -0.0  -0.0166685      -0.0    62.8368   -103.541   0.0
+ -0.014162     0.0   0.00878636      0.0   -30.0836    -90.4788  0.0
+  0.010306    -0.0  -0.0117047   …  -0.0    48.2494    -81.8859  0.0
+ -0.00938721   0.0   0.0118269       0.0   -36.5357    -73.5855  0.0
+  0.0132393   -0.0  -0.00710492     -0.0    36.5226    -69.4018  0.0
+ -0.0049538    0.0   0.0146514       0.0   -41.1928    -65.1257  0.0
+  0.0159661   -0.0  -0.00282248     -0.0    26.5349    -64.1602  0.0
+  ⋮                              ⋱
+  0.0541053   -0.0   0.053379       -0.0  -202.073    -149.963   0.0
+  0.0535064    0.0   0.0541954       0.0  -205.711    -150.191   0.0
+  0.054291    -0.0   0.0536194      -0.0  -204.431    -150.476   0.0
+  0.0537389    0.0   0.054375        0.0  -207.825    -150.691   0.0
+  0.054465    -0.0   0.0538441   …  -0.0  -206.681    -150.958   0.0
+  0.0539561    0.0   0.0545433       0.0  -209.847    -151.16    0.0
+  0.0546281   -0.0   0.0540539      -0.0  -208.826    -151.411   0.0
+  0.054159     0.0   0.054701        0.0  -211.78     -151.601   0.0
+  0.0547809   -0.0   0.05425        -0.0  -210.87     -151.835   0.0</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/DiffEq_Sovlers.jl#L159-L231">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.calculatesignal_linearapprox-NTuple{11, Any}" href="#MRIgeneralizedBloch.calculatesignal_linearapprox-NTuple{11, Any}"><code>MRIgeneralizedBloch.calculatesignal_linearapprox</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT[; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal])</code></pre><p>Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Loretzian lineshape. </p><p>The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. </p><p><strong>Arguemnts</strong></p><ul><li><code>α::Vector{&lt;:Number}</code>: Array of flip angles in radians</li><li><code>TRF::Vector{&lt;:Number}</code>: Array of the RF-pulse durations in seconds</li><li><code>TR::Number</code>: Repetition time in seconds</li><li><code>ω0::Number</code>: Off-resonance frequency in rad/s </li><li><code>B1::Number</code>: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field</li><li><code>m0s::Number</code>: Fractional size of the semi-solid pool; should be in range of 0 to 1</li><li><code>R1::Number</code>: Apparent longitudinal relaxation rate of the free and semi-solid pool in 1/seconds</li><li><code>R2f::Number</code>: Transversal relaxation rate of the free pool in 1/seconds</li><li><code>Rx::Number</code>: Exchange rate between the two spin pools in 1/seconds</li><li><code>T2s::Number</code>: Transversal relaxationt time of the semi-solid pool in seconds</li><li><code>R2slT::NTuple{3, Function}</code>: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with <a href="#MRIgeneralizedBloch.precompute_R2sl-NTuple{8, Any}"><code>precompute_R2sl</code></a></li></ul><p>Optional:</p><ul><li><code>grad_list=[undef]</code>: Vector to indicate which gradients should be calculated; the vector elements can either be <code>undef</code> for no gradient, or any subset/order of <code>grad_list=[grad_m0s(), grad_R1(), grad_R2f(), grad_Rx(), grad_T2s(), grad_ω0(), grad_B1()]</code></li><li><code>rfphase_increment=[π]::Vector{&lt;:Number}</code>: Increment of the RF phase between consequtive pulses. The default value <code>π</code>, together with <span>$ω0=0$</span> corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array. </li><li><code>m0=:antiperiodic</code>: With the default keyword <code>:antiperiodic</code>, the signal and their derivatives are calcualted assuming <span>$m(0) = -m(T)$</span>, where <code>T</code> is the duration of the RF-train. With the keyword :thermal, the magnetization <span>$m(0)$</span> is initialized with thermal equilibrium <code>[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]</code>, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword <code>:IR</code>, this initalization is followed an inversion pulse of duration <code>TRF[1]</code>, (set <code>α[1]=π</code>) and a α[2]/2 - TR/2 prep pulse.</li><li><code>output=:complexsignal</code>: The defaul keywords triggers the function to output a complex-valued signal (<code>xf + 1im yf</code>); the keyword <code>output=:realmagnetization</code> triggers an output of the entire (real valued) vector <code>[xf, yf, zf, xs, zs]</code></li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; R2slT = precompute_R2sl(4e-4, 6e-4, 5e-6, 15e-6, 0, π, 0.9, 1.1);
+
+
+julia&gt; calculatesignal_linearapprox(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.1, 1, 15, 30, 10e-6, R2slT)
+100×1×1 Array{ComplexF64, 3}:
+[:, :, 1] =
+  -0.02534278046134154 - 6.748418787451518e-18im
+  0.003747524854957436 + 3.4325653058017187e-18im
+   -0.0196833907083505 - 2.8004553842504324e-18im
+  0.007162011566093652 + 3.672271808540125e-19im
+ -0.014489517679344808 + 4.801739729077009e-19im
+  0.010305804983291571 - 2.1233287976034503e-18im
+ -0.009686634863202483 + 3.1882740494855564e-18im
+   0.01322536234967787 - 4.1197910372278614e-18im
+ -0.005228086823125368 + 5.405192374297665e-18im
+  0.015948493046190188 - 5.693388849090533e-18im
+                       ⋮
+   0.05320472714326833 + 1.3125707519115202e-18im
+   0.05258500575198769 + 4.900122476070182e-18im
+  0.053374187025433915 + 1.4500192394684467e-18im
+   0.05280280912207337 + 4.790222663609598e-18im
+   0.05353272287002102 + 1.5786388776856578e-18im
+   0.05300592940528556 + 4.687377647481522e-18im
+   0.05368103548081201 + 1.6989211160502906e-18im
+   0.05319535891146354 + 4.591205423715975e-18im
+   0.05381978096985631 + 1.811340158316642e-18im</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/MatrixExp_Solvers.jl#L4-L59">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.dG_o_dT2s_x_T2s_gaussian-Tuple{Any}" href="#MRIgeneralizedBloch.dG_o_dT2s_x_T2s_gaussian-Tuple{Any}"><code>MRIgeneralizedBloch.dG_o_dT2s_x_T2s_gaussian</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">dG_o_dT2s_x_T2s_gaussian(κ)</code></pre><p>Evaluate the derivative of Green&#39;s function, corresponding to a Gaussian lineshape, wrt. <code>T2s</code> at <code>κ = (t-τ)/T2s</code> and multiply it by <code>T2s</code>.</p><p>The multiplication is added so that the function merely depends on <code>κ = (t-τ)/T2s</code>. The actual derivative is given by <code>dG_o_dT2s_x_T2s_gaussian((t-τ)/T2s)/T2s</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; t = 100e-6;
+
+julia&gt; τ = 0;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; dGdT2s = dG_o_dT2s_x_T2s_gaussian((t-τ)/T2s)/T2s
+1.9287498479639177e-15</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Greens_functions.jl#L66-L84">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.dG_o_dT2s_x_T2s_lorentzian-Tuple{Any}" href="#MRIgeneralizedBloch.dG_o_dT2s_x_T2s_lorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.dG_o_dT2s_x_T2s_lorentzian</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">dG_o_dT2s_x_T2s_lorentzian(κ)</code></pre><p>Evaluate the derivative of Green&#39;s function, corresponding to a Lorentzian lineshape, wrt. <code>T2s</code> at <code>κ = (t-τ)/T2s</code> and multiply it by <code>T2s</code>.</p><p>The multiplication is added so that the function merely depends on <code>κ = (t-τ)/T2s</code>. The actual derivative is given by <code>dG_o_dT2s_x_T2s_lorentzian((t-τ)/T2s)/T2s</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; t = 100e-6;
+
+julia&gt; τ = 0;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; dGdT2s = dG_o_dT2s_x_T2s_lorentzian((t-τ)/T2s)/T2s
+45.39992976248485</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Greens_functions.jl#L22-L40">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.dG_o_dT2s_x_T2s_superlorentzian-Tuple{Any}" href="#MRIgeneralizedBloch.dG_o_dT2s_x_T2s_superlorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.dG_o_dT2s_x_T2s_superlorentzian</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">dG_o_dT2s_x_T2s_superlorentzian(κ)</code></pre><p>Evaluate the derivative of Green&#39;s function, corresponding to a super-Lorentzian lineshape, wrt. <code>T2s</code> at <code>κ = (t-τ)/T2s</code> and multiply it by <code>T2s</code>.</p><p>The multiplication is added so that the function merely depends on <code>κ = (t-τ)/T2s</code>. The actual derivative is given by <code>dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; t = 100e-6;
+
+julia&gt; τ = 0;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; dGdT2s = dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s
+15253.095033670965</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Greens_functions.jl#L110-L128">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.greens_gaussian-Tuple{Any}" href="#MRIgeneralizedBloch.greens_gaussian-Tuple{Any}"><code>MRIgeneralizedBloch.greens_gaussian</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">greens_gaussian(κ)</code></pre><p>Evaluate the Green&#39;s function corresponding to a Gaussian lineshape at <code>κ = (t-τ)/T2s</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; t = 100e-6;
+
+julia&gt; τ = 0;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; greens_gaussian((t-τ)/T2s)
+1.9287498479639178e-22</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Greens_functions.jl#L45-L61">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.greens_lorentzian-Tuple{Any}" href="#MRIgeneralizedBloch.greens_lorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.greens_lorentzian</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">greens_lorentzian(κ)</code></pre><p>Evaluate the Green&#39;s function corresponding to a Lorentzian lineshape at <code>κ = (t-τ)/T2s</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; t = 100e-6;
+
+julia&gt; τ = 0;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; greens_lorentzian((t-τ)/T2s)
+4.5399929762484854e-5</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Greens_functions.jl#L1-L17">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.greens_superlorentzian-Tuple{Any}" href="#MRIgeneralizedBloch.greens_superlorentzian-Tuple{Any}"><code>MRIgeneralizedBloch.greens_superlorentzian</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">greens_superlorentzian(κ)</code></pre><p>Evaluate the Green&#39;s function corresponding to a super-Lorentzian lineshape at <code>κ = (t-τ)/T2s</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; t = 100e-6;
+
+julia&gt; τ = 0;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; greens_superlorentzian((t-τ)/T2s)
+0.1471246868094442</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Greens_functions.jl#L89-L105">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.hamiltonian_linear-NTuple{9, Any}" href="#MRIgeneralizedBloch.hamiltonian_linear-NTuple{9, Any}"><code>MRIgeneralizedBloch.hamiltonian_linear</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s[, dR2sdT2s, dR2sdB1, grad_type])</code></pre><p>Calculate the hamiltonian of the linear approximation of the generalized Bloch model. </p><p>If no gradient is supplied, it returns a 6x6 (static) matrix with the dimensions (in this order) <code>[xf, yf, zf, xs, zs, 1]</code>; the attached 1 is a mathematical trick to allow for <span>$T_1$</span> relaxation to a non-zero thermal equilibrium. If a gradient is supplied, it returns a 11x11 (static) matrix with the dimensions (in this order) <code>[xf, yf, zf, xs, zs, dxf/dθ, dyf/dθ, dzf/dθ, dxs/dθ, dzs/dθ,  1]</code>, where <code>θ</code> is the parameter specified by <code>grad_type</code></p><p><strong>Arguemnts</strong></p><ul><li><code>ω1::Number</code>: Rabi frequency in rad/s (rotation about the y-axis)</li><li><code>B1::Number</code>: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field</li><li><code>ω0::Number</code>: Larmor (or off-resonance) frequency in rad/s (rotation about the z-axis)</li><li><code>T::Number</code>: Time in seconds; this can, e.g., be the RF-pulse duration, or the time of free precession with <code>ω1=0</code></li><li><code>m0s::Number</code>: Fractional size of the semi-solid pool; should be in range of 0 to 1</li><li><code>R1::Number</code>: Apparent longitudinal relaxation rate of the free and semi-solid pool in 1/seconds</li><li><code>R2f::Number</code>: Transversal relaxation rate of the free pool in 1/seconds</li><li><code>Rx::Number</code>: Exchange rate between the two spin pools in 1/seconds</li><li><code>R2s::Number</code>: Transversal relaxationt rate of the semi-solid pool in 1/seconds; this number can be calcualated with the first function returned by <a href="#MRIgeneralizedBloch.precompute_R2sl-NTuple{8, Any}"><code>precompute_R2sl</code></a> to implement the linear approximation described in the generalized Bloch paper</li></ul><p>Optional:</p><ul><li><code>dR2sdT2s::Number</code>: Derivative of linearized R2sl wrt. the actual T2s; only required if <code>grad_type = grad_T2s()</code>; this number can be calcualated with the second function returned by <a href="#MRIgeneralizedBloch.precompute_R2sl-NTuple{8, Any}"><code>precompute_R2sl</code></a></li><li><code>dR2sdB1::Number</code>: Derivative of linearized R2sl wrt. B1; only required if <code>grad_type = grad_B1()</code>; this number can be calcualated with the third function returned by <a href="#MRIgeneralizedBloch.precompute_R2sl-NTuple{8, Any}"><code>precompute_R2sl</code></a></li><li><code>grad_type::grad_param</code>: <code>grad_m0s()</code>, <code>grad_R1()</code>, <code>grad_R2f()</code>, <code>grad_Rx()</code>, <code>grad_T2s()</code>, <code>grad_ω0()</code>, or <code>grad_B1()</code>; create one hamiltonian for each desired gradient</li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; α = π;
+
+julia&gt; T = 500e-6;
+
+julia&gt; ω1 = α/T;
+
+julia&gt; B1 = 1;
+
+julia&gt; ω0 = 0;
+
+julia&gt; m0s = 0.1;
+
+julia&gt; R1 = 1;
+
+julia&gt; R2f = 15;
+
+julia&gt; Rx = 30;
+
+julia&gt; R2s = 1e5;
+
+julia&gt; m0 = [0, 0, 1-m0s, 0, m0s, 1];
+
+julia&gt; (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s)) * m0
+6-element StaticArrays.SVector{6, Float64} with indices SOneTo(6):
+  0.0010646925712316103
+  0.0
+ -0.8957848933541458
+  0.005125086137871529
+  0.08119617921987109
+  1.0</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/MatrixExp_Hamiltonians.jl#L2-L59">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.interpolate_greens_function-Tuple{Any, Any, Any}" href="#MRIgeneralizedBloch.interpolate_greens_function-Tuple{Any, Any, Any}"><code>MRIgeneralizedBloch.interpolate_greens_function</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">interpolate_greens_function(f, κmin, κmax)</code></pre><p>Interpolate the Green&#39;s function f in the range between κmin and κmax.</p><p>The interpolation uses the ApproxFun.jl package that incorporates Chebyshev polynomials and ensures an approximation to machine precision. </p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; t = 100e-6;
+
+julia&gt; τ = 0;
+
+julia&gt; T2s = 10e-6;
+
+julia&gt; greens_superlorentzian((t-τ)/T2s)
+0.1471246868094442
+
+julia&gt; Gint = interpolate_greens_function(greens_superlorentzian, 0, 20);
+
+
+julia&gt; Gint((t-τ)/T2s)
+0.14712468680944407</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Greens_functions.jl#L134-L158">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="MRIgeneralizedBloch.precompute_R2sl-NTuple{8, Any}" href="#MRIgeneralizedBloch.precompute_R2sl-NTuple{8, Any}"><code>MRIgeneralizedBloch.precompute_R2sl</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia hljs">precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_min, B1_max[; greens=greens_superlorentzian])</code></pre><p>Pre-compute and interpolate the linearized <code>R2sl(TRF, α, B1, T2s)</code> and its derivatives <code>dR2sldB1(TRF, α, B1, T2s)</code> and <code>R2sldT2s(TRF, α, B1, T2s)</code> in the range specified by the arguments.</p><p>The function solves the generalized Bloch equations of an isolated semi-solid pool for values in the specified range, calulates the linearized R2sl that minimizes the error of <code>zs</code> at the end of the RF-pulse, and interpolates between the different samples. </p><p><strong>Arguemnts</strong></p><ul><li><code>TRF_min::Number</code>: lower bound of the RF-pulse duration range in seconds</li><li><code>TRF_max::Number</code>: upper bound of the RF-pulse duration range in seconds</li><li><code>T2s_min::Number</code>: lower bound of the <code>T2s</code> range in seconds</li><li><code>T2s_max::Number</code>: upper bound of the <code>T2s</code> range in seconds</li><li><code>α_min::Number</code>: lower bound of the flip angle range in radians</li><li><code>α_max::Number</code>: upper bound of the flip angle range in radians</li><li><code>B1_min::Number</code>: lower bound of the B1 range, normalized so that <code>B1 = 1</code> corresponds to a perfectly calibrated RF field</li><li><code>B1_max::Number</code>: upper bound of the B1 range, normalized so that <code>B1 = 1</code> corresponds to a perfectly calibrated RF field</li></ul><p>Optional:</p><ul><li><code>greens=greens_superlorentzian</code>: Greens function in the form <code>G(κ) = G((t-τ)/T2s)</code>. This package supplies the three Greens functions <code>greens=greens_superlorentzian</code> (default), <code>greens=greens_lorentzian</code>, and <code>greens=greens_gaussian</code></li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3);
+
+
+julia&gt; (R2sl, dR2sldB1, R2sldT2s) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3; greens=greens_gaussian);
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/e578484b261a886f6854dcb007a6cb495a9bacac/src/Linearized_R2s.jl#L1-L29">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../build_literate/Linear_Approximation/">« Linear Approximation</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Thursday 29 July 2021 19:48">Thursday 29 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
