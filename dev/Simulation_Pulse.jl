@@ -190,6 +190,7 @@ z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 # For ``T_{\text{RF}} = 1``ms, the deviations are small compared to the thermal equilibrium magnetization ``z^s_0 = 1``, but with ``T_{\text{RF}} = 0.1``ms, this deviation becomes sizable:
 
 Tʳᶠᵢ = 1e-4 # s
+ω₁ᵢ = α / Tʳᶠᵢ # rad/s
 param = (ω₁ᵢ, 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
 
 prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠᵢ), param)
