@@ -1,13 +1,14 @@
 # MRIgeneralizedBloch.jl
 
 
-| **Documentation**         | **Build Status**                                                      |
-|:------------------------- |:--------------------------------------------------------------------- |
-| [![][docs-img]][docs-url] | [![][gh-actions-img]][gh-actions-url] [![][codecov-img]][codecov-url] |
+| **Documentation**         | **Paper**                   | **Build Status**                                                      |
+|:------------------------- |:--------------------------- |:--------------------------------------------------------------------- |
+| [![][docs-img]][docs-url] | [![][paper-img]][paper-url] | [![][gh-actions-img]][gh-actions-url] [![][codecov-img]][codecov-url] |
 
-MRIgeneralizedBloch.jl is a Julia package that implements the generalized Bloch equations for modeling the dynamics of the semi-solid spin pool in magnetic resonance imaging (MRI), and its exchange with the free spin pool. It utilizes the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package to solve integro-differential equation. It also implements a linear approximation of the generalized Bloch equations that assumes rectangular radio frequency pulses and uses matrix exponentiation of [static arrays](https://github.com/JuliaArrays/StaticArrays.jl), which results in almost non-allocating and extremely fast code. 
 
-For more details and scripts that reproduce all figures in the paper, please refer to above linked documentation. 
+MRIgeneralizedBloch.jl is a Julia package that implements the [generalized Bloch equations](https://arxiv.org/pdf/2107.11000.pdf) for modeling the dynamics of the semi-solid spin pool in magnetic resonance imaging (MRI), and its exchange with the free spin pool. It utilizes the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package to solve its integro-differential equation. It also implements a linear approximation of the generalized Bloch equations that assumes rectangular radio frequency pulses and uses matrix exponentiation of [static arrays](https://github.com/JuliaArrays/StaticArrays.jl), which results in virtually non-allocating and extremely fast code. 
+
+For more details, please refer to the [paper](https://arxiv.org/pdf/2107.11000.pdf) and the above linked documentation, which also contains scripts that reproduce all figures in the paper.
 
 
 [docs-img]: https://img.shields.io/badge/docs-latest%20release-blue.svg
@@ -18,3 +19,6 @@ For more details and scripts that reproduce all figures in the paper, please ref
 
 [codecov-img]: https://codecov.io/gh/JakobAsslaender/MRIgeneralizedBloch.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/JakobAsslaender/MRIgeneralizedBloch.jl
+
+[paper-img]: https://img.shields.io/badge/arXiv-2107.11000-blue.svg
+[paper-url]: https://arxiv.org/pdf/2107.11000.pdf
