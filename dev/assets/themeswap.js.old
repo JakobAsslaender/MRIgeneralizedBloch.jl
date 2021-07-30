@@ -10,7 +10,7 @@ function set_theme_from_local_storage() {
     theme =  window.localStorage.getItem("documenter-theme");
   }
   // Check if the browser supports user color preference
-  var darkPreference = true;
+  var darkPreference = false;
   // Check if the users preference is for dark color scheme
   if(window.matchMedia('(prefers-color-scheme: dark)').matches === true) {
     darkPreference = true;
