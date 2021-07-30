@@ -78,6 +78,8 @@ makedocs(;
     ],
 )
 
+run(`sed -i'.old' 's/var darkPreference = false/var darkPreference = true/g' docs/build/assets/themeswap.js`)
+
 deploydocs(;
     repo="github.com/JakobAsslaender/MRIgeneralizedBloch.jl",
 )
