@@ -35,10 +35,14 @@ end
     include("FreePrecession_Hamiltonian_Gradients.jl")
 end
 
-@testset "Linaer_Approx gradients" begin
-    include("Linaer_Approx_Gradients.jl")
+@testset "Linear_Approx gradients" begin
+    include("Linear_Approx_Gradients.jl")
 end
 
 @testset "apply_hamiltonian_graham_superlorentzian! gradients" begin
     include("Graham_Hamiltonian_Gradients.jl")
+end
+
+@testset "inversionpulse" begin
+    include("inversionpulse.jl")
 end
