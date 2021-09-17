@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Linear_Approximation.ipynb)
 
 # # Linear Approximation
-# The following code demonstrates the linear approximation of the generalized Bloch model and replicates Figs. 5-7 in the paper. 
+# The following code demonstrates the linear approximation of the generalized Bloch model and replicates Figs. 7 and 8 in the paper. 
 
 # For this analysis we need the following packages:
 using DifferentialEquations
@@ -24,69 +24,37 @@ Rₓ = 70; # 1/s
 G = interpolate_greens_function(greens_superlorentzian, 0, 1e-3 / 5e-6);
 
 # The function [`precompute_R2sl`](@ref) returns another function, `R₂ˢˡ(Tʳᶠ, α, B1, T₂ˢ)`, that interpolates the linearized relaxation rate, as well as functions that describe its derivatives wrt. ``T_2^s`` and ``B_1``, respectively:
-(R₂ˢˡ, ∂R₂ˢˡ∂T₂ˢ, ∂R₂ˢˡ∂B₁) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0.01π, π, 1-eps(), 1+eps(); greens=G);
+(R₂ˢˡ, ∂R₂ˢˡ∂T₂ˢ, ∂R₂ˢˡ∂B₁) = precompute_R2sl(100e-6, 1e-3, 5e-6, 20e-6, 0.01π, π, 1-eps(), 1+eps(); greens=G);
 # The derivatives are not used here and are just assigned for demonstration purposes. 
 
-# In order to replicate Fig. 5a, we plot `R₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ)` for ``α = π`` and varying ``T_\text{RF}`` and ``T_2^s``:
-α = π
-T₂ˢ = 5e-6 : 1e-7 : 15e-6 # s
-Tʳᶠ = 100e-6 : 100e-6 : 1e-3 # s
-p = plot(xlabel = "T₂ˢ [μs]", ylabel = "T₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ) / T₂ˢ")
-for Tʳᶠᵢ in Tʳᶠ
-    plot!(p, T₂ˢ*1e6, 1 ./ (T₂ˢ .* R₂ˢˡ.(Tʳᶠᵢ, α, 1, T₂ˢ)), label=string(Tʳᶠᵢ*1e6, "μs"))
-end
-display(p) #!md
+# In order to replicate Fig. 7, we plot `R₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ)` for a varying ``α`` and ``T_\text{RF}/T_2^s``:
+α = (0.01:.01:1) * π
+TʳᶠoT₂ˢ = 5:200
+
+TʳᶠoT₂ˢ_m = repeat(reshape(TʳᶠoT₂ˢ, 1, :), length(α), 1)
+α_m = repeat(α, 1, size(TʳᶠoT₂ˢ_m, 2))
+
+p = plot(xlabel="Tʳᶠ/T₂ˢ", ylabel="α/π")
+contour!(p, TʳᶠoT₂ˢ, α ./ π, 1 ./ R₂ˢˡ.(TʳᶠoT₂ˢ_m, α_m, 1, 1), fill = true)
 #md Main.HTMLPlot(p) #hide
 
 #src export 
 using Printf #src
-io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Linearized_T2s_alpha_pi.txt")), "w") #src
-write(io, "T2s_us") #src
-for TRFi in Tʳᶠ #src
-    write(io, @sprintf(" T2sl/T2s_TRF_%.0f ", TRFi*1e6)) #src
-end #src
-write(io, " \n") #src
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Linearized_T2s.txt")), "w") #src
+write(io, "alphaopi TRFoT2s T2sloT2s \n") #src
 
-for T2si in T₂ˢ #src
-    write(io, @sprintf("%1.3f ", 1e6T2si)) #src
-    for TRFi in Tʳᶠ #src
-        write(io, @sprintf("%1.3f ", 1 / (T2si * R₂ˢˡ(TRFi, α, 1, T2si)))) #src
-    end #src
-    write(io, "\n") #src
-end #src
-close(io) #src
-
-# In order to replicate Fig. 5b, we plot `R₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ)` for ``T_\text{RF} = 100μs`` and with varying α and ``T_2^s``:
-Tʳᶠ = 100e-6 # s
-α = (0.1 : .1 : 1) * π
-p = plot(xlabel = "T₂ˢ [μs]", ylabel = "T₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ) / T₂ˢ")
-for αᵢ in α
-    plot!(p, 1e6*T₂ˢ, 1 ./ (T₂ˢ .* R₂ˢˡ.(Tʳᶠ, αᵢ, 1, T₂ˢ)), label=string(αᵢ/π, "π"))
-end
-display(p) #!md
-#md Main.HTMLPlot(p) #hide
-
-#src export 
-io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Linearized_T2s_TRF_100us.txt")), "w") #src
-write(io, "T2s_us") #src
 for αi in α #src
-    write(io, @sprintf(" T2sl/T2s_a/pi_%.1f ", αi/π)) #src
-end #src
-write(io, " \n") #src
-
-for T2si in T₂ˢ #src
-    write(io, @sprintf("%1.3f ", 1e6T2si)) #src
-    for αi in α #src
-        write(io, @sprintf("%1.3f ", 1 / (T2si * R₂ˢˡ(Tʳᶠ, αi, 1, T2si)))) #src
+    for TʳᶠoT₂ˢi in TʳᶠoT₂ˢ #src
+        write(io, @sprintf("%1.3f %1.3f %1.3f \n", αi/π, TʳᶠoT₂ˢi, 1 / R₂ˢˡ(TʳᶠoT₂ˢi, αi, 1, 1))) #src
     end #src
-    write(io, "\n") #src
+    write(io, " \n") #src
 end #src
 close(io) #src
-
 
 
 # ## Single RF Pulse
-# To replicate Fig. 6, we simulate and plot the dynamics of a coupled spin system during a single π-pulse, starting from thermal equilibrium. 
+# To replicate Fig. 8a, we simulate and plot the dynamics of a coupled spin system during a single π-pulse, starting from thermal equilibrium. 
+Tʳᶠ = 100e-6 # s
 T₂ˢ = 10e-6 # μs
 m0_5D = [0,0,m₀ᶠ,m₀ˢ,1]
 mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # intialize history function, here with the ability to just call a single index
@@ -97,7 +65,7 @@ prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 sol_pi_full = solve(prob);
 
 # and we evaluate the interpolated solution at the following time points:
-t = (0 : .01 : 1) * Tʳᶠ # s
+t = (0:.01:1) * Tʳᶠ # s
 Mpi_full = zeros(length(t),4)
 for i in eachindex(t)
     Mpi_full[i,:] = sol_pi_full(t[i])[1:4]
@@ -125,7 +93,7 @@ plot!(p, t, Mpi_appx[:,4] / m₀ˢ, label="zˢ/m₀ˢ linear approximation")
 # We observe slight deviations of zˢ during the pulse, but a virtually perfect match at the end of the RF pulse. 
 
 # ## RF Pulses with Different Flip Angles
-# To replicate Fig. 7, we simulate the spin dynamics during multiple RF pulses with different flip angles α, each simulation starting from thermal equilibrium, and analyze the magnetization at the end of each pulse:
+# To replicate Fig. 8b, we simulate the spin dynamics during multiple RF pulses with different flip angles α, each simulation starting from thermal equilibrium, and analyze the magnetization at the end of each pulse:
 α = (.01:.01:1) * π
 
 M_full = zeros(length(α), 4)
@@ -134,7 +102,7 @@ for i in eachindex(α)
     param = (α[i]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, T₂ˢ, Rₓ, G)
     prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
     M_full[i,:] = solve(prob)[end][1:4]
-
+    
     u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
@@ -170,7 +138,7 @@ prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 #src export data for t vs. M figure
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Linearized_gBloch_M_during_Pulse.txt")), "w") #src
 write(io, "t_us xf_full xf_appx zf_full zf_appx zs_full zs_appx \n") #src
-for i in eachindex(t) #src
+for i = 1:3:length(t) #src
     write(io, @sprintf("%1.3f ", t[i]*1e6)) #src
     write(io, @sprintf("%1.3f ", Mpi_full[i,1] / m₀ᶠ)) #src
     write(io, @sprintf("%1.3f ", Mpi_appx[i,1] / m₀ᶠ)) #src
@@ -185,7 +153,7 @@ close(io) #src
 #src export data for α vs. M figure
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Linearized_gBloch_vary_alpha.txt")), "w") #src
 write(io, "alpha/pi xf_full xf_appx zf_full zf_appx zs_full zs_appx \n") #src
-for i in eachindex(α) #src
+for i = 1:3:length(α) #src
     write(io, @sprintf("%1.3f ", α[i]/π)) #src
     write(io, @sprintf("%1.3f ", M_full[i,1] / m₀ᶠ)) #src
     write(io, @sprintf("%1.3f ", M_appx[i,1] / m₀ᶠ)) #src
