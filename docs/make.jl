@@ -40,7 +40,8 @@ files = [
     "Greens_functions.jl",
     "Simulation_ContinuousWave.jl",
     "Simulation_Pulse.jl",
-    "Analyze_NMR_Data.jl",
+    "Analyze_NMR_IR_Data.jl",
+    "Analyze_NMR_PreSat_Data.jl",
     "Linear_Approximation.jl",
 ]
 
@@ -71,7 +72,8 @@ makedocs(;
         "build_literate/Greens_functions.md",
         "build_literate/Simulation_ContinuousWave.md",
         "build_literate/Simulation_Pulse.md",
-        "build_literate/Analyze_NMR_Data.md",
+        "build_literate/Analyze_NMR_IR_Data.md",
+        "build_literate/Analyze_NMR_PreSat_Data.md",
         "build_literate/Linear_Approximation.md",
         ],
         "API" => "api.md",

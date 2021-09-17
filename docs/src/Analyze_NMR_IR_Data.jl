@@ -1,7 +1,7 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_IR_Data.ipynb)
 
-# # NMR IR - Data Analysis
-# The following code replicates the NMR data analysis in Figs. 4-6 and complements the paper with additional anlyses that are not shown in the paper in the interest of brevity.
+# # Inversion Recovery Experiments
+# The following code replicates the NMR data analysis in Figs. 4-6 and complements the paper with additional analyses that are not shown in the paper in the interest of brevity.
 
 # For this analysis we need the following packages:
 using MRIgeneralizedBloch
@@ -604,8 +604,8 @@ scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
 scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
 #md Main.HTMLPlot(p) #hide
 
-# Here, we use the biophysical parameters from the generalized Bloch fit as we consider them to be the best estimates. This approach has the advantage that residuals at long ``T_\text{RF}`` are unafected by the poor fits of Graham's and Sled's models at short ``T_\text{RF}``. To confirm that the residuals from the actual fits are worse, simply replace `Graham_IR_model(fit_gBloch.param, ...)` by `Graham_IR_model(fit_Graham.param, ...)` and `Sled_IR_model(fit_gBloch.param, ...)` by `Sled_IR_model(fit_Sled.param, ...)` in the notebook version of this documentation.
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb)
+# Here, we use the biophysical parameters from the generalized Bloch fit as we consider them to be the best estimates. This approach has the advantage that residuals at long ``T_\text{RF}`` are unaffected by the poor fits of Graham's and Sled's models at short ``T_\text{RF}``. To confirm that the residuals from the actual fits are worse, simply replace `Graham_IR_model(fit_gBloch.param, ...)` by `Graham_IR_model(fit_Graham.param, ...)` and `Sled_IR_model(fit_gBloch.param, ...)` by `Sled_IR_model(fit_Sled.param, ...)` in the notebook version of this documentation.
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_IR_Data.ipynb)
 
 
 #src #############################################################################
