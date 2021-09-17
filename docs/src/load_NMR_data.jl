@@ -1,12 +1,9 @@
 using HTTP
 using BufferedStreams
-using FFTW
 
-function load_spectral_integral(filename)
+function load_first_datapoint(filename)
     data = load_Data(filename)
-    data = fftshift(fft(data, 1), 1)
-
-    M = vec(sum(+, data, dims=1))
+    M = data[1,:]
 
     phase = angle(M[end])
     M = M .* exp(-1im * phase)

@@ -81,7 +81,7 @@ Tᵢplot = exp.(range(log(Tᵢ[1]), log(Tᵢ[end]), length=500)); # s
 # After loading and normalizing the data
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(MnCl2_data(TRF_scale[i]))
+    M[:,i] = load_first_datapoint(MnCl2_data(TRF_scale[i]))
 end
 M ./= maximum(M);
 
@@ -255,7 +255,7 @@ Pingouin.normality(fit.resid, α=0.05)
 # We also fit a mono-exponential model to each inversion recovery curve of the BSA data: 
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(BSA_data(TRF_scale[i]))
+    M[:,i] = load_first_datapoint(BSA_data(TRF_scale[i]))
 end
 M ./= maximum(M)
 #src #############################################################################
