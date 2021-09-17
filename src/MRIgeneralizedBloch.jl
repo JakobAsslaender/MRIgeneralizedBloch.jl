@@ -10,11 +10,6 @@ using StaticArrays
 using LinearAlgebra
 using NLsolve
 
-export calculatesignal_gbloch_ide
-export LinearApprox_calculate_magnetization
-export LinearApprox_calculate_signal
-export calculatesignal_graham_ode
-
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_graham_superlorentzian!
 export apply_hamiltonian_sled!
@@ -27,6 +22,9 @@ export dG_o_dT2s_x_T2s_lorentzian
 export dG_o_dT2s_x_T2s_gaussian
 export dG_o_dT2s_x_T2s_superlorentzian
 export interpolate_greens_function
+
+export calculatesignal_gbloch_ide
+export calculatesignal_graham_ode
 
 export precompute_R2sl
 export evaluate_R2sl_vector

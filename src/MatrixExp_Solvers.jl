@@ -59,7 +59,7 @@ julia> calculatesignal_linearapprox(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 
 """
 function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal)
 
-    R2s_vec = evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
+    R2s_vec = evaluate_R2sl_vector(abs.(α), TRF, B1, T2s, R2slT, grad_list)
 
     return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, R2s_vec; grad_list=grad_list, rfphase_increment=rfphase_increment, m0=m0, output=output)
 end
@@ -73,7 +73,7 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, R2
         jj = 1
     elseif output == :complexsignal
         S = Array{ComplexF64}(undef, length(ω1), length(rfphase_increment), 1 + length(grad_list))
-        jj = [[1,j+1] for j=1:length(grad_list)]
+        jj = [[1,j + 1] for j = 1:length(grad_list)]
     elseif output == :realmagnetization && grad_list == [undef]
         S = Array{SVector{6,Float64}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
         jj = 1
@@ -84,15 +84,15 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, R2
 
     if m0 == :thermal || m0 == :IR
         if grad_list == [undef]
-            _m0 = @SVector [0, 0, 1-m0s, 0, m0s, 1]
+            _m0 = @SVector [0, 0, 1 - m0s, 0, m0s, 1]
         else
-            _m0 = @SVector [0, 0, 1-m0s, 0, m0s, 0, 0, 0, 0, 0, 1]
+            _m0 = @SVector [0, 0, 1 - m0s, 0, m0s, 0, 0, 0, 0, 0, 1]
         end
     elseif isa(m0, AbstractVector)
         if grad_list == [undef] && length(m0) < 6
-            _m0 = SVector{6}([m0; zeros(5-length(m0)); 1])
+            _m0 = SVector{6}([m0; zeros(5 - length(m0)); 1])
         elseif length(m0) < 11
-            _m0 = SVector{11}([m0; zeros(10-length(m0)); 1])
+            _m0 = SVector{11}([m0; zeros(10 - length(m0)); 1])
         else
             error("the m0 vector of length <= 5 w/o gradients or <= 10 with gradients")
         end
@@ -105,7 +105,7 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, R2
             m = antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1, R2f, Rx, R2s_vec[1], R2s_vec[2], R2s_vec[3], grad_list[j], rfphase_increment[i])
         elseif m0 == :thermal || isa(m0, AbstractVector)
             # this implements the α[1]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
-            u_pr = exp(hamiltonian_linear(ω1[1]/2, B1, ω0, TRF[1], m0s, R1, R2f, Rx, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad)) # R2sl is actually wrong for the prep pulse
+            u_pr = exp(hamiltonian_linear(ω1[1] / 2, B1, ω0, TRF[1], m0s, R1, R2f, Rx, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad)) # R2sl is actually wrong for the prep pulse
             m = u_pr * _m0
         elseif m0 == :IR
             # this implements the π - spoiler - TR - α[2]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
@@ -113,7 +113,7 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, R2
             m = u_ip * _m0
             u_fp = exp(hamiltonian_linear(0, B1, ω0, TR, m0s, R1, R2f, Rx, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad))
             m = u_fp * m
-            u_pr = exp(hamiltonian_linear(ω1[2]/2, B1, ω0, TRF[2], m0s, R1, R2f, Rx, R2s_vec[1][2], R2s_vec[2][2], R2s_vec[3][2], grad)) # R2sl is actually wrong for the prep pulse
+            u_pr = exp(hamiltonian_linear(ω1[2] / 2, B1, ω0, TRF[2], m0s, R1, R2f, Rx, R2s_vec[1][2], R2s_vec[2][2], R2s_vec[3][2], grad)) # R2sl is actually wrong for the prep pulse
             m = u_pr * m
         end
 
