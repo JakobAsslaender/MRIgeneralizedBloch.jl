@@ -1,7 +1,7 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_Data.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_IR_Data.ipynb)
 
-# # NMR Data Analysis
-# The following code replicates the NMR data analysis in Fig. 4, including the full MnCl``_2`` analysis that is not shown in the paper in the interest of brevity.
+# # Inversion Recovery Experiments
+# The following code replicates the NMR data analysis in Figs. 4-6 and complements the paper with additional analyses that are not shown in the paper in the interest of brevity.
 
 # For this analysis we need the following packages:
 using MRIgeneralizedBloch
@@ -56,7 +56,7 @@ plot!(p, TE, abs.(M), label="data")
 plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T₂* = %2.3f ms", 1e3 * T₂star_MnCl2))
 #md Main.HTMLPlot(p) #hide
 
-# The relative residual norm of the fit, i.e. ``||residual||_2/||M||_2`` is
+# The relative residual norm of the fit, i.e. ``||\text{residual}||_2/||M||_2`` is
 norm(fit.resid) / norm(M)
 
 # Despite its small ``\ell_2``-norm, the Shapiro-Wilk test indicates that the residual is not Gaussian or normal distributed at a significance level of `α=0.05`
@@ -81,9 +81,29 @@ Tᵢplot = exp.(range(log(Tᵢ[1]), log(Tᵢ[end]), length=500)); # s
 # After loading and normalizing the data
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(MnCl2_data(TRF_scale[i]))
+    M[:,i] = load_first_datapoint(MnCl2_data(TRF_scale[i]))
 end
 M ./= maximum(M);
+
+#src #############################################################################
+#src # export MnCl2 data
+#src #############################################################################
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_data_MnCl2.txt")), "w") #src
+write(io, "TI_s") #src
+for i = 1:length(Tʳᶠ) #src
+    write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
+end #src
+write(io, " \n")  #src
+
+for j = 1:length(Tᵢ) #src
+    write(io, "$(@sprintf("%.2e", Tᵢ[j])) ") #src
+    for i = 1:length(Tʳᶠ) #src
+        write(io, "$(@sprintf("%.2e", M[j,i])) ") #src
+    end #src
+    write(io, " \n") #src
+end #src
+close(io) #src
+#src #############################################################################
 
 # we analyze each inversion recovery curve that corresponds to a different ``T_\text{RF}`` separately. This allows us to fit a simple mono-exponential model
 standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);
@@ -91,26 +111,58 @@ standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);
 p0 = [1.0, 1.0, 2.0];
 
 # and we can loop over ``T_\text{RF}`` to perform the fits:
+param = similar(M[1,:], Vector{Float64}) #src
 R₁ = similar(M[1,:])
+Minv = similar(R₁)
 residual = similar(R₁)
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i = 1:length(TRF_scale)
     Mi = @view M[:,i]
 
     fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
+    param[i] = fit.param #src
 
     R₁[i] = fit.param[2]
-    Minv = fit.param[3] / fit.param[1] - 1
+    Minv[i] = fit.param[3] / fit.param[1] - 1
 
     residual[i] = norm(fit.resid) / norm(Mi)
 
     scatter!(p, Tᵢ, Mi, label=@sprintf("Tʳᶠ = %1.2es - data", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
-# Here, the data measured with different ``T_\text{RF}`` are indicated by markers in different colors, and the corresponding fits are the line plots in the same color. The fitted parameters are denoted in the legend and the mean value of all R₁ estimates is 
+#src #############################################################################
+#src # export fitted curves
+#src #############################################################################
+Mp = [standard_IR_model(Tᵢplot, param[i]) for i=1:length(Tʳᶠ)] #src
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_monoExp_fit_MnCl2.txt")), "w") #src
+write(io, "TI_s") #src
+for i = 1:length(Tʳᶠ) #src
+    write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
+end #src
+write(io, " \n")  #src
+
+for j = 1:length(Tᵢplot) #src
+    write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
+    for i = 1:length(Tʳᶠ) #src
+        write(io, "$(@sprintf("%.2e", Mp[i][j])) ") #src
+    end #src
+    write(io, " \n") #src
+end #src
+close(io) #src
+#src #############################################################################
+
+# Here, the data measured with different ``T_\text{RF}`` are indicated by markers in different colors, and the corresponding fits are the line plots in the same color. The fitted parameters are denoted in the legend. In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with ``T_\text{RF}=22.8``μs 
+Minv[1]
+#-
+R₁[1] # 1/s
+# and of the dataset acquired with ``T_\text{RF}=912``μs 
+Minv[end]
+#-
+R₁[end] # 1/s
+# The mean value of all R₁ estimates is 
 mean(R₁) # 1/s
 
 # 1/s and its standard deviation in units of 1/s is 
@@ -118,10 +170,6 @@ std(R₁) # 1/s
 
 # The relative residual norm of the fits is on average 
 mean(residual)
-
-# Further, we cannot reject the null hypothesis that the estimated R₁ values are Gaussian distributed:
-Pingouin.normality(R₁, α=0.05)
-
 
 # ### Global IR Fit 
 # As an alternative to individual fits to the inversion recovery curves with different ``T_\text{RF}``, we can also perform a global fit that accounts for the ``T_2^{*,f}`` decay during the inversion pulse. The model first simulates the ``T_2^{*,f}`` decay during the inversion pulse, followed by ``T_1`` recovery:
@@ -196,7 +244,7 @@ plot!(p, TE, abs.(M), label="data")
 plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T₂* = %2.3f ms", 1e3 * T₂star_BSA))
 #md Main.HTMLPlot(p) #hide
 
-# The relative residual norm (``||residual||_2/||M||_2``) is
+# The relative residual norm (``||\text{residual}||_2/||M||_2``) is
 norm(fit.resid) / norm(M)
 
 # Despite the small residual, the Shapiro-Wilk test indicates that the residual is not normal distributed for this sample either:
@@ -207,40 +255,84 @@ Pingouin.normality(fit.resid, α=0.05)
 # We also fit a mono-exponential model to each inversion recovery curve of the BSA data: 
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(BSA_data(TRF_scale[i]))
+    M[:,i] = load_first_datapoint(BSA_data(TRF_scale[i]))
 end
 M ./= maximum(M)
+#src #############################################################################
+#src # export BSA data
+#src #############################################################################
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_data_BSA.txt")), "w") #src
+write(io, "TI_s") #src
+for i = 1:length(Tʳᶠ) #src
+    write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
+end #src
+write(io, " \n")  #src
 
-R₁ = similar(M[1,:])
-residual = similar(R₁)
+for j = 1:length(Tᵢ) #src
+    write(io, "$(@sprintf("%.2e", Tᵢ[j])) ") #src
+    for i = 1:length(Tʳᶠ) #src
+        write(io, "$(@sprintf("%.2e", M[j,i])) ") #src
+    end #src
+    write(io, " \n") #src
+end #src
+close(io) #src
+#src #############################################################################
+
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i = 1:length(TRF_scale)
     Mi = @view M[:,i]
     
     fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
+    param[i] = fit.param #src
 
     R₁[i] = fit.param[2]
-    Minv = fit.param[3] / fit.param[1] - 1
-
+    Minv[i] = fit.param[3] / fit.param[1] - 1
     residual[i] = norm(fit.resid) / norm(Mi)
 
     scatter!(p, Tᵢ, Mi, label=@sprintf("Tʳᶠ = %1.2es - data", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
-# Zooming into early phase of the recovery curve reveals the poor fit quality, in particular for long ``T_\text{RF}``. This is also reflected by a substantially larger relative residual norm compared to the MnCl``_2`` sample:
+#src #############################################################################
+#src # export fitted curves
+#src #############################################################################
+Mp = [standard_IR_model(Tᵢplot, param[i]) for i=1:length(Tʳᶠ)] #src
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_monoExp_fit_BSA.txt")), "w") #src
+write(io, "TI_s") #src
+for i = 1:length(Tʳᶠ) #src
+    write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
+end #src
+write(io, " \n")  #src
+
+for j = 1:length(Tᵢplot) #src
+    write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
+    for i = 1:length(Tʳᶠ) #src
+        write(io, "$(@sprintf("%.2e", Mp[i][j])) ") #src
+    end #src
+    write(io, " \n") #src
+end #src
+close(io) #src
+#src #############################################################################
+
+
+# Zooming into the early phase of the recovery curve reveals the poor fit quality, in particular for long ``T_\text{RF}``. This is also reflected by a substantially larger relative residual norm compared to the MnCl``_2`` sample:
 mean(residual)
 
-# The mean of all R₁ fits in units of 1/s is 
+# In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with ``T_\text{RF}=22.8``μs 
+Minv[1]
+#-
+R₁[1] # 1/s
+# and of the dataset acquired with ``T_\text{RF}=912``μs 
+Minv[end]
+#-
+R₁[end] # 1/s
+# The mean value of all R₁ estimates is 
 mean(R₁) # 1/s
 
 # and its standard deviation is substantially larger compared to the same fit of the MnCl``_2`` sample:
 std(R₁) # 1/s
-
-# In contrast to the MnCl``_2`` sample, we can reject the null hypothesis that the R₁ rates, estimated with a mono-exponential model from the BSA sample with different ``T_\text{RF}``, are Gaussian distributed:
-Pingouin.normality(R₁, α=0.05)
 
 
 
@@ -282,57 +374,40 @@ p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
 pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
 pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
 
-fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_gBloch = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data align well:
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i=1:length(Tʳᶠ)
     scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, gBloch_IR_model(fit.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much smaller compared to the mono-exponential fit:
-norm(fit.resid) / norm(M)
+norm(fit_gBloch.resid) / norm(M)
 
 # The estimated parameters are
-m0 = fit.param[1]
+m0 = fit_gBloch.param[1]
 #-
-Minv = fit.param[2]
+Minv = fit_gBloch.param[2]
 #-
-m0s = fit.param[3]
+m0s = fit_gBloch.param[3]
 #-
-R₁ = fit.param[4] # 1/s
+R₁ = fit_gBloch.param[4] # 1/s
 #-
-T₂ˢ = 1e6fit.param[5] # μs
+T₂ˢ = 1e6fit_gBloch.param[5] # μs
 #-
-Rx = fit.param[6] # 1/s
+Rx = fit_gBloch.param[6] # 1/s
 # with the uncertainties (in the same order)
-stderror(fit)
+stderror(fit_gBloch)
+
 
 #src #############################################################################
-#src # export data
+#src # export fitted curves
 #src #############################################################################
-#src measured data
-io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_data.txt")), "w") #src
-write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
-    write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
-end #src
-write(io, " \n")  #src
-
-for j = 1:length(Tᵢ) #src
-    write(io, "$(@sprintf("%.2e", Tᵢ[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
-        write(io, "$(@sprintf("%.2e", M[j,i])) ") #src
-    end #src
-    write(io, " \n") #src
-end #src
-close(io) #src
-
-#src export fitted curves
-Mp = reshape(gBloch_IR_model(fit.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
+Mp = reshape(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_gBloch_fit.txt")), "w") #src
 write(io, "TI_s") #src
 for i = 1:length(Tʳᶠ) #src
@@ -348,7 +423,7 @@ for j = 1:length(Tᵢplot) #src
     write(io, " \n") #src
 end #src
 close(io) #src
-
+#src #############################################################################
 
 
 
@@ -380,41 +455,41 @@ function Graham_IR_model(p, Tʳᶠ, TI, R2f)
     return vec(M)
 end
 
-fit = curve_fit((x, p) -> Graham_IR_model(p, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_Graham = curve_fit((x, p) -> Graham_IR_model(p, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data align substantially worse:
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i=1:length(Tʳᶠ)
     scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, Graham_IR_model(fit.param, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much larger compared to the generalized Bloch fit:
-norm(fit.resid) / norm(M)
+norm(fit_Graham.resid) / norm(M)
 
 # The estimated parameters are
-m0 = fit.param[1]
+m0 = fit_Graham.param[1]
 #-
-Minv = fit.param[2]
+Minv = fit_Graham.param[2]
 #-
-m0s = fit.param[3]
+m0s = fit_Graham.param[3]
 #-
-R₁ = fit.param[4] # 1/s
+R₁ = fit_Graham.param[4] # 1/s
 #-
-T₂ˢ = 1e6fit.param[5] # μs
+T₂ˢ = 1e6fit_Graham.param[5] # μs
 #-
-Rx = fit.param[6] # 1/s
+Rx = fit_Graham.param[6] # 1/s
 # with the uncertainties (in the same order)
-stderror(fit)
+stderror(fit_Graham)
 
 
 #src #############################################################################
 #src # export data
 #src #############################################################################
 #src export fitted curves
-Mp = reshape(Graham_IR_model(fit.param, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
+Mp = reshape(Graham_IR_model(fit_Graham.param, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_Graham_fit.txt")), "w") #src
 write(io, "TI_s") #src
 for i = 1:length(Tʳᶠ) #src
@@ -460,41 +535,41 @@ function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
     return vec(M)
 end
 
-fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_Sled = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data do not align well either:
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i=1:length(Tʳᶠ)
     scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, Sled_IR_model(fit.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
 
 # which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is also large compared to the generalized Bloch fit:
-norm(fit.resid) / norm(M)
+norm(fit_Sled.resid) / norm(M)
 
 # The estimated parameters are
-m0 = fit.param[1]
+m0 = fit_Sled.param[1]
 #-
-Minv = fit.param[2]
+Minv = fit_Sled.param[2]
 #-
-m0s = fit.param[3]
+m0s = fit_Sled.param[3]
 #-
-R₁ = fit.param[4] # 1/s
+R₁ = fit_Sled.param[4] # 1/s
 #-
-T₂ˢ = 1e6 * fit.param[5] # μs
+T₂ˢ = 1e6fit_Sled.param[5] # μs
 #-
-Rx = fit.param[6] # 1/s
+Rx = fit_Sled.param[6] # 1/s
 # with the uncertainties (in the same order)
-stderror(fit)
+stderror(fit_Sled)
 
 
 #src #############################################################################
 #src # export data
 #src #############################################################################
 #src export fitted curves
-Mp = reshape(Sled_IR_model(fit.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
+Mp = reshape(Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_Sled_fit.txt")), "w") #src
 write(io, "TI_s") #src
 for i = 1:length(Tʳᶠ) #src
@@ -507,6 +582,44 @@ for j = 1:length(Tᵢplot) #src
     for i = 1:length(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", Mp[j,i])) ") #src
     end #src
+    write(io, " \n") #src
+end #src
+close(io) #src
+
+# ### Analysis of the Residuals
+# In order to visualize how well the three models align with the data at different ``T_\text{RF}``, we calculate the ``\ell_2``-norm of the residuals after subtracting the modeled from the measured signal and normalize it by the ``\ell_2``-norm of the signal. 
+
+resid_gBlo = similar(Tʳᶠ)
+resid_Sled = similar(Tʳᶠ)
+resid_Grah = similar(Tʳᶠ)
+for i=1:length(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_gBloch.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
+    resid_Sled[i] = norm(Sled_IR_model(  fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+end
+
+p = plot(xlabel="Tʳᶠ [s]", ylabel="relative residual")
+scatter!(p, Tʳᶠ, resid_gBlo, label="generalized Bloch model")
+scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
+scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
+#md Main.HTMLPlot(p) #hide
+
+# Here, we use the biophysical parameters from the generalized Bloch fit as we consider them to be the best estimates. This approach has the advantage that residuals at long ``T_\text{RF}`` are unaffected by the poor fits of Graham's and Sled's models at short ``T_\text{RF}``. To confirm that the residuals from the actual fits are worse, simply replace `Graham_IR_model(fit_gBloch.param, ...)` by `Graham_IR_model(fit_Graham.param, ...)` and `Sled_IR_model(fit_gBloch.param, ...)` by `Sled_IR_model(fit_Sled.param, ...)` in the notebook version of this documentation.
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_IR_Data.ipynb)
+
+
+#src #############################################################################
+#src # export data
+#src #############################################################################
+#src export fitted curves
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_residuum.txt")), "w") #src
+write(io, "TRF_ms Graham_percent Sled_percent gBloch_percent \n")  #src
+
+for i = 1:length(Tʳᶠ) #src
+    write(io, "$(@sprintf("%.2e", 1e3 * Tʳᶠ[i])) ") #src
+    write(io, "$(@sprintf("%.2e", 1e2 * resid_Grah[i])) ") #src
+    write(io, "$(@sprintf("%.2e", 1e2 * resid_Sled[i])) ") #src
+    write(io, "$(@sprintf("%.2e", 1e2 * resid_gBlo[i])) ") #src
     write(io, " \n") #src
 end #src
 close(io) #src

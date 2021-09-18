@@ -17,18 +17,17 @@ R₁ = 1.0 # 1/s
 T₂ˢ = 10e-6 # s
 
 version = "v2" #src
+Tʳᶠ = 2e-3 # s
 ω₁ = 2000π # rad/s
 ω₀ = 200π # rad/s
-Tʳᶠ = 2e-3 # s
 #src version = "v1"
-#src ω₁ = 1e2 * 2π # rad/s
-#src ω₀ = 1e3 * 2π # rad/s
 #src Tʳᶠ = 1 # s
+#src ω₁ = 1e2 * 2π # rad/s
 
 t = range(0, Tʳᶠ, length=1001) # time points for plotting
 tspan = (0.0, Tʳᶠ); # simulation range
 
-# These parameters correspond to Fig. 2b, the parameters for replicating Fig. 2a are `ω₁ = 200π`, `ω₀ = 2000π`, and `Tʳᶠ = 1`. 
+# These parameters correspond to Fig. 2b, the parameters for replicating Fig. 2a are `ω₁ = 200π` and `Tʳᶠ = 1`s. 
 
 # ## Lorentzian Lineshape
 # In this script, we simulate the three lineshapes separately, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth. 
@@ -174,7 +173,7 @@ close(io) #src
     
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/CW_SpinDynamics_", version, ".txt")), "w") #src
 write(io, "t_s t_ms z_Bloch z_gBloch_Lorentzian z_gBloch_Gaussian z_gBloch_superLorentzian z_Graham_Lorentzian z_Graham_Gaussian z_Graham_superLorentzian z_Sled_Lorentzian z_Sled_Gaussian z_Sled_superLorentzian \n") #src
-for i = 1:length(t) #src
+for i = 1:30:length(t) #src
     write(io, @sprintf("%1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e \n", t[i], t[i]*1e3, z_Bloch[i], z_gBloch_Lorentzian(t[i])[1], z_gBloch_Gaussian(t[i])[1], z_gBloch_superLorentzian(t[i])[1], z_Graham_Lorentzian[i], z_Graham_Gaussian[i], z_Graham_superLorentzian[i], z_Sled_Lorentzian(t[i])[1], z_Sled_Gaussian(t[i])[1], z_Sled_superLorentzian(t[i])[1])) #src
 end #src
 close(io) #src

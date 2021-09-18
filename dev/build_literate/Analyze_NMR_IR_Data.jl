@@ -52,7 +52,7 @@ Tᵢplot = exp.(range(log(Tᵢ[1]), log(Tᵢ[end]), length=500)); # s
 
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(MnCl2_data(TRF_scale[i]))
+    M[:,i] = load_first_datapoint(MnCl2_data(TRF_scale[i]))
 end
 M ./= maximum(M);
 
@@ -61,6 +61,7 @@ standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);
 p0 = [1.0, 1.0, 2.0];
 
 R₁ = similar(M[1,:])
+Minv = similar(R₁)
 residual = similar(R₁)
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i = 1:length(TRF_scale)
@@ -69,22 +70,28 @@ for i = 1:length(TRF_scale)
     fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
 
     R₁[i] = fit.param[2]
-    Minv = fit.param[3] / fit.param[1] - 1
+    Minv[i] = fit.param[3] / fit.param[1] - 1
 
     residual[i] = norm(fit.resid) / norm(Mi)
 
     scatter!(p, Tᵢ, Mi, label=@sprintf("Tʳᶠ = %1.2es - data", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv[i]), color=i)
 end
 display(p)
+
+Minv[1]
+
+R₁[1] # 1/s
+
+Minv[end]
+
+R₁[end] # 1/s
 
 mean(R₁) # 1/s
 
 std(R₁) # 1/s
 
 mean(residual)
-
-Pingouin.normality(R₁, α=0.05)
 
 function Bloch_IR_model(p, Tʳᶠ, Tᵢ, T2)
     (m0, m0_inv, R₁) = p
@@ -148,12 +155,11 @@ Pingouin.normality(fit.resid, α=0.05)
 
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
-    M[:,i] = load_spectral_integral(BSA_data(TRF_scale[i]))
+    M[:,i] = load_first_datapoint(BSA_data(TRF_scale[i]))
 end
 M ./= maximum(M)
 
-R₁ = similar(M[1,:])
-residual = similar(R₁)
+
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i = 1:length(TRF_scale)
     Mi = @view M[:,i]
@@ -161,22 +167,27 @@ for i = 1:length(TRF_scale)
     fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
 
     R₁[i] = fit.param[2]
-    Minv = fit.param[3] / fit.param[1] - 1
-
+    Minv[i] = fit.param[3] / fit.param[1] - 1
     residual[i] = norm(fit.resid) / norm(Mi)
 
     scatter!(p, Tᵢ, Mi, label=@sprintf("Tʳᶠ = %1.2es - data", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf("fit with R₁ = %.3f/s; MInv = %.3f", R₁[i], Minv[i]), color=i)
 end
 display(p)
 
 mean(residual)
 
+Minv[1]
+
+R₁[1] # 1/s
+
+Minv[end]
+
+R₁[end] # 1/s
+
 mean(R₁) # 1/s
 
 std(R₁) # 1/s
-
-Pingouin.normality(R₁, α=0.05)
 
 function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
     (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
@@ -211,30 +222,30 @@ p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
 pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
 pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
 
-fit = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_gBloch = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i=1:length(Tʳᶠ)
     scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, gBloch_IR_model(fit.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p)
 
-norm(fit.resid) / norm(M)
+norm(fit_gBloch.resid) / norm(M)
 
-m0 = fit.param[1]
+m0 = fit_gBloch.param[1]
 
-Minv = fit.param[2]
+Minv = fit_gBloch.param[2]
 
-m0s = fit.param[3]
+m0s = fit_gBloch.param[3]
 
-R₁ = fit.param[4] # 1/s
+R₁ = fit_gBloch.param[4] # 1/s
 
-T₂ˢ = 1e6fit.param[5] # μs
+T₂ˢ = 1e6fit_gBloch.param[5] # μs
 
-Rx = fit.param[6] # 1/s
+Rx = fit_gBloch.param[6] # 1/s
 
-stderror(fit)
+stderror(fit_gBloch)
 
 function Graham_IR_model(p, Tʳᶠ, TI, R2f)
     (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
@@ -260,30 +271,30 @@ function Graham_IR_model(p, Tʳᶠ, TI, R2f)
     return vec(M)
 end
 
-fit = curve_fit((x, p) -> Graham_IR_model(p, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_Graham = curve_fit((x, p) -> Graham_IR_model(p, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i=1:length(Tʳᶠ)
     scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, Graham_IR_model(fit.param, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p)
 
-norm(fit.resid) / norm(M)
+norm(fit_Graham.resid) / norm(M)
 
-m0 = fit.param[1]
+m0 = fit_Graham.param[1]
 
-Minv = fit.param[2]
+Minv = fit_Graham.param[2]
 
-m0s = fit.param[3]
+m0s = fit_Graham.param[3]
 
-R₁ = fit.param[4] # 1/s
+R₁ = fit_Graham.param[4] # 1/s
 
-T₂ˢ = 1e6fit.param[5] # μs
+T₂ˢ = 1e6fit_Graham.param[5] # μs
 
-Rx = fit.param[6] # 1/s
+Rx = fit_Graham.param[6] # 1/s
 
-stderror(fit)
+stderror(fit_Graham)
 
 function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
     (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
@@ -309,30 +320,44 @@ function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
     return vec(M)
 end
 
-fit = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_Sled = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i=1:length(Tʳᶠ)
     scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, Sled_IR_model(fit.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p)
 
-norm(fit.resid) / norm(M)
+norm(fit_Sled.resid) / norm(M)
 
-m0 = fit.param[1]
+m0 = fit_Sled.param[1]
 
-Minv = fit.param[2]
+Minv = fit_Sled.param[2]
 
-m0s = fit.param[3]
+m0s = fit_Sled.param[3]
 
-R₁ = fit.param[4] # 1/s
+R₁ = fit_Sled.param[4] # 1/s
 
-T₂ˢ = 1e6 * fit.param[5] # μs
+T₂ˢ = 1e6fit_Sled.param[5] # μs
 
-Rx = fit.param[6] # 1/s
+Rx = fit_Sled.param[6] # 1/s
 
-stderror(fit)
+stderror(fit_Sled)
+
+resid_gBlo = similar(Tʳᶠ)
+resid_Sled = similar(Tʳᶠ)
+resid_Grah = similar(Tʳᶠ)
+for i=1:length(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_gBloch.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
+    resid_Sled[i] = norm(Sled_IR_model(  fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+end
+
+p = plot(xlabel="Tʳᶠ [s]", ylabel="relative residual")
+scatter!(p, Tʳᶠ, resid_gBlo, label="generalized Bloch model")
+scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
+scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 

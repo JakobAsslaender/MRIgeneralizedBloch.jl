@@ -7,9 +7,9 @@ plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
 R₁ = 1.0 # 1/s
 T₂ˢ = 10e-6 # s
 
+Tʳᶠ = 2e-3 # s
 ω₁ = 2000π # rad/s
 ω₀ = 200π # rad/s
-Tʳᶠ = 2e-3 # s
 
 t = range(0, Tʳᶠ, length=1001) # time points for plotting
 tspan = (0.0, Tʳᶠ); # simulation range

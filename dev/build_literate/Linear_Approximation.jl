@@ -13,25 +13,18 @@ Rₓ = 70; # 1/s
 
 G = interpolate_greens_function(greens_superlorentzian, 0, 1e-3 / 5e-6);
 
-(R₂ˢˡ, ∂R₂ˢˡ∂T₂ˢ, ∂R₂ˢˡ∂B₁) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0.01π, π, 1-eps(), 1+eps(); greens=G);
+(R₂ˢˡ, ∂R₂ˢˡ∂T₂ˢ, ∂R₂ˢˡ∂B₁) = precompute_R2sl(100e-6, 1e-3, 5e-6, 20e-6, 0.01π, π, 1-eps(), 1+eps(); greens=G);
 
-α = π
-T₂ˢ = 5e-6 : 1e-7 : 15e-6 # s
-Tʳᶠ = 100e-6 : 100e-6 : 1e-3 # s
-p = plot(xlabel = "T₂ˢ [μs]", ylabel = "T₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ) / T₂ˢ")
-for Tʳᶠᵢ in Tʳᶠ
-    plot!(p, T₂ˢ*1e6, 1 ./ (T₂ˢ .* R₂ˢˡ.(Tʳᶠᵢ, α, 1, T₂ˢ)), label=string(Tʳᶠᵢ*1e6, "μs"))
-end
-display(p)
+α = (0.01:.01:1) * π
+TʳᶠoT₂ˢ = 5:200
+
+TʳᶠoT₂ˢ_m = repeat(reshape(TʳᶠoT₂ˢ, 1, :), length(α), 1)
+α_m = repeat(α, 1, size(TʳᶠoT₂ˢ_m, 2))
+
+p = plot(xlabel="Tʳᶠ/T₂ˢ", ylabel="α/π")
+contour!(p, TʳᶠoT₂ˢ, α ./ π, 1 ./ R₂ˢˡ.(TʳᶠoT₂ˢ_m, α_m, 1, 1), fill = true)
 
 Tʳᶠ = 100e-6 # s
-α = (0.1 : .1 : 1) * π
-p = plot(xlabel = "T₂ˢ [μs]", ylabel = "T₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ) / T₂ˢ")
-for αᵢ in α
-    plot!(p, 1e6*T₂ˢ, 1 ./ (T₂ˢ .* R₂ˢˡ.(Tʳᶠ, αᵢ, 1, T₂ˢ)), label=string(αᵢ/π, "π"))
-end
-display(p)
-
 T₂ˢ = 10e-6 # μs
 m0_5D = [0,0,m₀ᶠ,m₀ˢ,1]
 mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # intialize history function, here with the ability to just call a single index
@@ -40,7 +33,7 @@ param = (π/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, T₂ˢ, Rₓ, G)
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 sol_pi_full = solve(prob);
 
-t = (0 : .01 : 1) * Tʳᶠ # s
+t = (0:.01:1) * Tʳᶠ # s
 Mpi_full = zeros(length(t),4)
 for i in eachindex(t)
     Mpi_full[i,:] = sol_pi_full(t[i])[1:4]
