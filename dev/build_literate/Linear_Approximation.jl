@@ -21,7 +21,7 @@ TʳᶠoT₂ˢ = 5:200
 TʳᶠoT₂ˢ_m = repeat(reshape(TʳᶠoT₂ˢ, 1, :), length(α), 1)
 α_m = repeat(α, 1, size(TʳᶠoT₂ˢ_m, 2))
 
-p = plot(xlabel="Tʳᶠ/T₂ˢ", ylabel="α/π")
+p = plot(xlabel="Tʳᶠ/T₂ˢ", ylabel="α/π", colorbar_title="T₂ˢˡ/T₂ˢ")
 contour!(p, TʳᶠoT₂ˢ, α ./ π, 1 ./ R₂ˢˡ.(TʳᶠoT₂ˢ_m, α_m, 1, 1), fill = true)
 
 Tʳᶠ = 100e-6 # s

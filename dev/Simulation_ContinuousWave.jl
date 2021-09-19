@@ -10,8 +10,7 @@ using DifferentialEquations
 using QuadGK
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
-#nb plotlyjs(ticks=:native);
-
+ 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 R₁ = 1.0 # 1/s
 T₂ˢ = 10e-6 # s
@@ -82,16 +81,15 @@ z_Sled_Lorentzian = solve(prob);
 
 
 # ### Generalized Bloch Model
-# The generalized Bloch model is given by the integro-differential equation (IDE)
+# The generalized Bloch model is an integro-differential equation (IDE) as it depends on z(τ) instead of z(t):
 # ```math
-# \partial_t z(t) = - ω_1(t) \int_0^t G(t,τ) ω_1(τ) z(τ) dτ + R_1 (1 - z(t)) ,
+# \partial_t z(t) = - ω_1(t) \int_0^t G(t,τ) ω_1(τ) z(τ) dτ + R_1 (1 - z(t)) .
 # ```
-# or by
+# For off-resonant RF-pulses with ``ω_1 = ω_x + i ω_y``, it is given by
 # ```math
-# \partial_t z(t) = - ω_y(t) \int_0^t G(t,τ) ω_y(τ) z(τ) dτ - ω_x(t) \int_0^t G(t,τ) ω_x(τ) z(τ) dτ + R_1 (1 - z(t)) ,
+# \partial_t z(t) = - ω_y(t) \int_0^t G(t,τ) ω_y(τ) z(τ) dτ - ω_x(t) \int_0^t G(t,τ) ω_x(τ) z(τ) dτ + R_1 (1 - z(t)) .
 # ```
-
-# for off-resonant RF-pulses with ``ω_1 = ω_x + i ω_y``. The Hamiltonian of the IDE is implemented in [`apply_hamiltonian_gbloch!`](@ref) and we can solve this IDE with the [delay-differential equation (DDE)](https://diffeq.sciml.ai/stable/tutorials/dde_example/) solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
+# The Hamiltonian of the IDE is implemented in [`apply_hamiltonian_gbloch!`](@ref) and we can solve this IDE with the [delay-differential equation (DDE)](https://diffeq.sciml.ai/stable/tutorials/dde_example/) solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
 zfun(p, t) = [1.0] # initialize history function (will be populated with an interpolation by the DDE solver)
 

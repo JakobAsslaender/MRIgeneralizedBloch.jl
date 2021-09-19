@@ -23,8 +23,7 @@ using Statistics
 using Printf
 using Plots
 plotlyjs(bg=RGBA(31 / 255, 36 / 255, 36 / 255, 1.0), ticks=:native); # hide #!nb
-#nb plotlyjs(ticks=:native);
-
+ 
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
 MnCl2_data(ω1_dB) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_PreSat_v2%20(", ω1_dB, ")/1/data.2d?raw=true")
 BSA_data(ω1_dB)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_PreSat_v2%20(", ω1_dB, ")/1/data.2d?raw=true");
