@@ -1003,7 +1003,9 @@ version = "0.5.1"
 
 [[LsqFit]]
 deps = ["Distributions", "ForwardDiff", "LinearAlgebra", "NLSolversBase", "OptimBase", "Random", "StatsBase"]
-git-tree-sha1 = "91aa1442e63a77f101aff01dec5a821a17f43922"
+git-tree-sha1 = "a8282182857ea29c719a260db1f5c8d44b61c8a3"
+repo-rev = "ensure-strictly-monotoneous-decay-(prevent-really-bad-steps-at-slow-lambda)"
+repo-url = "https://github.com/JakobAsslaender/LsqFit.jl"
 uuid = "2fda8390-95c7-5789-9bda-21331edee243"
 version = "0.12.1"
 
