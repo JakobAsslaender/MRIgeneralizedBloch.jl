@@ -10,8 +10,7 @@ using DifferentialEquations
 using SpecialFunctions
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
-#nb plotlyjs(ticks=:native);
-
+ 
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 R₁ = 1 # 1/s
 T₂ˢ = 10e-6; # s

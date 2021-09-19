@@ -14,8 +14,7 @@ using Printf
 using Formatting
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
-#nb plotlyjs(ticks=:native);
-
+ 
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
 MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
 BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
@@ -154,11 +153,11 @@ end #src
 close(io) #src
 #src #############################################################################
 
-# Here, the data measured with different ``T_\text{RF}`` are indicated by markers in different colors, and the corresponding fits are the line plots in the same color. The fitted parameters are denoted in the legend. In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with ``T_\text{RF}=22.8``μs 
+# Here, the data measured with different ``T_\text{RF}`` are indicated by markers in different colors, and the corresponding fits are the line plots in the same color. The fitted parameters are denoted in the legend. In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with ``T_\text{RF}=22.8``μs:
 Minv[1]
 #-
 R₁[1] # 1/s
-# and of the dataset acquired with ``T_\text{RF}=912``μs 
+# and of the dataset acquired with ``T_\text{RF}=912``μs:
 Minv[end]
 #-
 R₁[end] # 1/s

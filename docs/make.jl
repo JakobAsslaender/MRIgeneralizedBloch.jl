@@ -80,6 +80,7 @@ makedocs(;
     ],
 )
 
+# Set dark theme as default independent of the OS's settings
 run(`sed -i'.old' 's/var darkPreference = false/var darkPreference = true/g' docs/build/assets/themeswap.js`)
 
 deploydocs(;

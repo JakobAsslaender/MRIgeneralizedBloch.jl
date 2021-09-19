@@ -9,8 +9,7 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
-#nb plotlyjs(ticks=:native);
-
+ 
 # We simulate the dynamics of a coupled spin system with the following parameters:
 m0s = 0.15
 R1 = 1 # 1/s
@@ -18,7 +17,7 @@ R2f = 15 # 1/s
 T2s = 10e-6 # s
 Rx = 30; # 1/s
 
-# and the thermal equilibrium magnetization
+# and the thermal equilibrium of the magnetization `m = [xf; yf; zf; zs; 1]`:
 m0 = [0; 0; 1-m0s; m0s; 1];
 
 # during a rectangular RF-pulse with the flip angle and pulse duration
