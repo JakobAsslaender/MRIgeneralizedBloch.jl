@@ -17,7 +17,7 @@ const ROOT_DIR = joinpath(@__DIR__, "build")
 const PLOT_DIR = joinpath(ROOT_DIR, "plots")
 function Base.show(io::IO, ::MIME"text/html", p::HTMLPlot)
     mkpath(PLOT_DIR)
-    path = joinpath(PLOT_DIR, string(hash(p) % UInt32, ".html"))
+    path = joinpath(PLOT_DIR, string(UInt32(floor(rand()*1e9)), ".html"))
     Plots.savefig(p.p, path)
     if get(ENV, "CI", "false") == "true" # for prettyurl
         print(io, "<object type=\"text/html\" data=\"../../$(relpath(path, ROOT_DIR))\" style=\"width:100%;height:425px;\"></object>")
