@@ -428,8 +428,8 @@ close(io) #src
 
 
 
-# ### Global IR Fit - Graham's Single Frequency Approximation
-# For comparison, we repeat the same fit with [Graham's single frequency approximation](http://dx.doi.org/10.1002/jmri.1880070520):
+# ### Global IR Fit - Graham's Spectral Model
+# For comparison, we repeat the same fit with [Graham's spectral model](http://dx.doi.org/10.1002/jmri.1880070520):
 function Graham_IR_model(p, Tʳᶠ, TI, R2f)
     (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
     m0f = 1 - m0s
