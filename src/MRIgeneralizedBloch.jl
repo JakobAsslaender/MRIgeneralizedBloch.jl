@@ -9,11 +9,13 @@ using SpecialFunctions
 using StaticArrays
 using LinearAlgebra
 using NLsolve
+using ExponentialUtilities
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_graham_superlorentzian!
 export apply_hamiltonian_sled!
 export hamiltonian_linear
+export d_hamiltonian_linear_dω1
 
 export greens_lorentzian
 export greens_gaussian
@@ -53,5 +55,7 @@ include("MatrixExp_Solvers.jl")
 include("DiffEq_Sovlers.jl")
 include("Greens_functions.jl")
 include("MatrixExp_Hamiltonians.jl")
+include("OptimalControl.jl")
+include("Gradient_Hamiltonians.jl")
 
 end
