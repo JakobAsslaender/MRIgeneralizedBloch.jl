@@ -305,3 +305,61 @@ function z_rotation_propagator(rfphase_increment, grad::grad_param)
                       0                 0                0 0 0 0                 0                0 0 0 1]
     return u_rot
 end
+
+function xs_destructor(_)
+    @SMatrix [
+        1 0 0 0 0 0;
+        0 1 0 0 0 0;
+        0 0 1 0 0 0;
+        0 0 0 0 0 0;
+        0 0 0 0 1 0;
+        0 0 0 0 0 1]
+end
+
+function xs_destructor(grad::grad_param)
+    @SMatrix [
+        1 0 0 0 0 0 0 0 0 0 0;
+        0 1 0 0 0 0 0 0 0 0 0;
+        0 0 1 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 1 0 0 0 0 0 0;
+        0 0 0 0 0 1 0 0 0 0 0;
+        0 0 0 0 0 0 1 0 0 0 0;
+        0 0 0 0 0 0 0 1 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 1 0;
+        0 0 0 0 0 0 0 0 0 0 1]
+end
+
+function A0(_)
+    @SMatrix [
+        1 0 0 0 0 0;    
+        0 1 0 0 0 0;
+        0 0 1 0 0 0;
+        0 0 0 1 0 0;
+        0 0 0 0 1 0;
+        0 0 0 0 0 0]
+end
+
+function A0(grad::grad_param)
+    @SMatrix [
+        1 0 0 0 0 0 0 0 0 0 0;    
+        0 1 0 0 0 0 0 0 0 0 0;
+        0 0 1 0 0 0 0 0 0 0 0;
+        0 0 0 1 0 0 0 0 0 0 0;
+        0 0 0 0 1 0 0 0 0 0 0;
+        0 0 0 0 0 1 0 0 0 0 0;
+        0 0 0 0 0 0 1 0 0 0 0;
+        0 0 0 0 0 0 0 1 0 0 0;
+        0 0 0 0 0 0 0 0 1 0 0;
+        0 0 0 0 0 0 0 0 0 1 0;
+        0 0 0 0 0 0 0 0 0 0 0]
+end
+    
+function C(_)
+    @SVector [0,0,0,0,0,-1]
+end
+
+function C(grad::grad_param)
+    @SVector [0,0,0,0,0,0,0,0,0,0,-1]
+end
