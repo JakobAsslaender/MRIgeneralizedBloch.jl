@@ -586,11 +586,41 @@ end #src
 close(io) #src
 
 # ### Analysis of the Residuals
-# In order to visualize how well the three models align with the data at different ``T_\text{RF}``, we calculate the ``\ell_2``-norm of the residuals after subtracting the modeled from the measured signal and normalize it by the ``\ell_2``-norm of the signal. 
+# In order to visualize how well the three models align with the data at different ``T_\text{RF}``, we calculate the ``\ell_2``-norm of the residuals after subtracting the modeled from the measured signal and normalize it by the ``\ell_2``-norm of the signal: 
 
 resid_gBlo = similar(Tʳᶠ)
 resid_Sled = similar(Tʳᶠ)
 resid_Grah = similar(Tʳᶠ)
+for i=1:length(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
+    resid_Sled[i] = norm(Sled_IR_model(  fit_Sled.param,   G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+end
+
+p = plot(xlabel="Tʳᶠ [s]", ylabel="relative residual")
+scatter!(p, Tʳᶠ, resid_gBlo, label="generalized Bloch model")
+scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
+scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
+#md Main.HTMLPlot(p) #hide
+
+#src #############################################################################
+#src # export data
+#src #############################################################################
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_residuum_each_fit.txt")), "w") #src
+write(io, "TRF_ms Graham_percent Sled_percent gBloch_percent \n")  #src
+
+for i = 1:length(Tʳᶠ) #src
+    write(io, "$(@sprintf("%.2e", 1e3 * Tʳᶠ[i])) ") #src
+    write(io, "$(@sprintf("%.2e", 1e2 * resid_Grah[i])) ") #src
+    write(io, "$(@sprintf("%.2e", 1e2 * resid_Sled[i])) ") #src
+    write(io, "$(@sprintf("%.2e", 1e2 * resid_gBlo[i])) ") #src
+    write(io, " \n") #src
+end #src
+close(io) #src
+
+
+# This analysis examines the residuals from the actual fits, i.e. it uses the biophysical parameters of respective fit to model the signal. The disadvantage of this approach is that residuals at long ``T_\text{RF}`` are negatively affected by the poor fits of Graham's and Sled's models at short ``T_\text{RF}``. This problem is overcome by subtracting the measured signal from signal that is simulated with the biophysical parameters that were estimated by fitting the generalized Bloch model:
+
 for i=1:length(Tʳᶠ)
     resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
     resid_Grah[i] = norm(Graham_IR_model(fit_gBloch.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
@@ -603,15 +633,12 @@ scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
 scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
 #md Main.HTMLPlot(p) #hide
 
-# Here, we use the biophysical parameters from the generalized Bloch fit as we consider them to be the best estimates. This approach has the advantage that residuals at long ``T_\text{RF}`` are unaffected by the poor fits of Graham's and Sled's models at short ``T_\text{RF}``. To confirm that the residuals from the actual fits are worse, simply replace `Graham_IR_model(fit_gBloch.param, ...)` by `Graham_IR_model(fit_Graham.param, ...)` and `Sled_IR_model(fit_gBloch.param, ...)` by `Sled_IR_model(fit_Sled.param, ...)` in the notebook version of this documentation.
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Analyze_NMR_IR_Data.ipynb)
-
+# One can observe reduced residuals for Graham's and Sled's models for long ``T_\text{RF}`` as a trade off for larger residuals at short ``T_\text{RF}``. Yet, the residuals at long ``T_\text{RF}`` are still substantially larger compared to ones of the generalized Bloch model. 
 
 #src #############################################################################
 #src # export data
 #src #############################################################################
-#src export fitted curves
-io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_residuum.txt")), "w") #src
+io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_residuum_gBloch_est.txt")), "w") #src
 write(io, "TRF_ms Graham_percent Sled_percent gBloch_percent \n")  #src
 
 for i = 1:length(Tʳᶠ) #src

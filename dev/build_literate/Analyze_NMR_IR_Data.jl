@@ -350,6 +350,17 @@ resid_Sled = similar(Tʳᶠ)
 resid_Grah = similar(Tʳᶠ)
 for i=1:length(Tʳᶠ)
     resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
+    resid_Sled[i] = norm(Sled_IR_model(  fit_Sled.param,   G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+end
+
+p = plot(xlabel="Tʳᶠ [s]", ylabel="relative residual")
+scatter!(p, Tʳᶠ, resid_gBlo, label="generalized Bloch model")
+scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
+scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
+
+for i=1:length(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
     resid_Grah[i] = norm(Graham_IR_model(fit_gBloch.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
     resid_Sled[i] = norm(Sled_IR_model(  fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
 end
