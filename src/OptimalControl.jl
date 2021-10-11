@@ -10,52 +10,73 @@ end
 
 
 function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list::AbstractArray{T}; rfphase_increment=[π]) where T <: grad_param
-    E      = Array{Matrix{Float64}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
-    dEdω1  = Array{Matrix{Float64}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
-    dEdTRF = Array{Matrix{Float64}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
+    E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
+    dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
+    dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
 
-    R2s_vec = evaluate_R2sl_vector_OCT(ω1 .* TRF, TRF, B1, T2s, R2slT, grad_list)
-    cache = ExponentialUtilities.alloc_mem(zeros(22, 22), ExpMethodHigham2005Base())
+    # R2s_vec = evaluate_R2sl_vector_OCT(ω1 .* TRF, TRF, B1, T2s, R2slT, grad_list)
+    cache = [ExponentialUtilities.alloc_mem(zeros(22, 22), ExpMethodHigham2005Base()) for _ = 1:Threads.nthreads()]
+    dH = [zeros(Float64, 22, 22) for _ = 1:Threads.nthreads()]
 
-    dH = zeros(Float64, 22, 22)
     for r in eachindex(rfphase_increment)
         u_rot = z_rotation_propagator(rfphase_increment[r], grad_m0s())
-        for g in eachindex(grad_list)
-            u_fp = xs_destructor(grad_list[g]) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g]))
-            u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad_list[g])
-            E[1,r,g] = u_fp * u_pl * u_rot * u_fp
-            dEdω1[1,r,g] = zeros(11, 11)
-            dEdTRF[1,r,g] = zeros(11, 11)
-            
+        Threads.@threads for t in 1:length(ω1)
+            for g in eachindex(grad_list)
+                if t == 1
+                    u_fp = xs_destructor(grad_list[g]) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g]))
+                    u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, 
+                    R2slT[1](TRF[1], ω1[1] * TRF[1], B1, T2s), 
+                    R2slT[2](TRF[1], ω1[1] * TRF[1], B1, T2s), 
+                    R2slT[3](TRF[1], ω1[1] * TRF[1], B1, T2s), 
+                    grad_list[g])
+                    E[1,r,g] = u_fp * u_pl * u_rot * u_fp
+                    dEdω1[1,r,g] = @SMatrix zeros(11, 11)
+                    dEdTRF[1,r,g] = @SMatrix zeros(11, 11)
+                else
+                    H_fp = hamiltonian_linear(0, B1, ω0, 1, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g])
+                    u_fp = xs_destructor(grad_list[g]) * exp(H_fp * ((TR - TRF[t]) / 2))
 
-            H_fp = hamiltonian_linear(0, B1, ω0, 1, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g])
-            for t in 2:length(ω1)
-                u_fp = xs_destructor(grad_list[g]) * exp(H_fp * ((TR - TRF[t]) / 2))
+                    H_pl = hamiltonian_linear(ω1[t], B1, ω0, 1, m0s, R1, R2f, Rx, 
+                    R2slT[1](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    R2slT[2](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    R2slT[3](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    grad_list[g])
 
-                H_pl = hamiltonian_linear(ω1[t], B1, ω0, 1, m0s, R1, R2f, Rx, R2s_vec[1][t], R2s_vec[2][t], R2s_vec[3][t], grad_list[g])
-
-                dHdω1 = d_hamiltonian_linear_dω1(B1, 1, R2s_vec[4][t], R2s_vec[6][t], R2s_vec[7][t], grad_list[g])
+                    dHdω1 = d_hamiltonian_linear_dω1(B1, 1, 
+                    R2slT[4](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    R2slT[6](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    R2slT[7](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    grad_list[g])
         
-                @views dH[1:11,1:11]   .= H_pl
-                @views dH[12:22,12:22] .= H_pl
-                @views dH[1:11,12:22]  .= 0
-                @views dH[12:22,1:11]  .= dHdω1
-                dH .*= TRF[t]
-                E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
+                    @views dH[Threads.threadid()][1:11,1:11]   .= H_pl
+                    @views dH[Threads.threadid()][12:22,12:22] .= H_pl
+                    @views dH[Threads.threadid()][1:11,12:22]  .= 0
+                    @views dH[Threads.threadid()][12:22,1:11]  .= dHdω1
+                    dH[Threads.threadid()] .*= TRF[t]
+                    E_pl = exponential!(dH[Threads.threadid()], ExpMethodHigham2005Base(), cache[Threads.threadid()])
 
-                @views E[t,r,g]     = u_fp * E_pl[1:11,1:11]   * u_rot * u_fp
-                @views dEdω1[t,r,g] = u_fp * E_pl[12:end,1:11] * u_rot * u_fp
+                    E_pl1 = SMatrix{11,11}(@view E_pl[1:11,1:11])
+                    E_pl2 = SMatrix{11,11}(@view E_pl[12:end,1:11])
+                    E[t,r,g]     = u_fp * E_pl1 * u_rot * u_fp
+                    dEdω1[t,r,g] = u_fp * E_pl2 * u_rot * u_fp
 
-                TRF
-                dHdTRF = H_pl .+ d_hamiltonian_linear_dTRF_add(TRF[t], R2s_vec[5][t], R2s_vec[8][t], R2s_vec[9][t], grad_list[g])
-                H_pl *= TRF[t]
-                @views dH[1:11,1:11]   .= H_pl
-                @views dH[12:22,12:22] .= H_pl
-                @views dH[1:11,12:22]  .= 0
-                @views dH[12:22,1:11]  .= dHdTRF
-                E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
+                    # TRF
+                    dHdTRF = H_pl .+ d_hamiltonian_linear_dTRF_add(TRF[t], 
+                    R2slT[5](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    R2slT[8](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    R2slT[9](TRF[t], ω1[t] * TRF[t], B1, T2s), 
+                    grad_list[g])
+                    H_pl *= TRF[t]
+                    @views dH[Threads.threadid()][1:11,1:11]   .= H_pl
+                    @views dH[Threads.threadid()][12:22,12:22] .= H_pl
+                    @views dH[Threads.threadid()][1:11,12:22]  .= 0
+                    @views dH[Threads.threadid()][12:22,1:11]  .= dHdTRF
+                    E_pl = exponential!(dH[Threads.threadid()], ExpMethodHigham2005Base(), cache[Threads.threadid()])
 
-                @views dEdTRF[t,r,g] = u_fp * ((E_pl[12:end,1:11] - (1 / 2 * H_fp * E_pl[1:11,1:11])) * u_rot - (1 / 2 * E_pl[1:11,1:11] * u_rot * H_fp)) * u_fp
+                    E_pl1 = SMatrix{11,11}(@view E_pl[1:11,1:11])
+                    E_pl2 = SMatrix{11,11}(@view E_pl[12:end,1:11])
+                    dEdTRF[t,r,g] = u_fp * ((E_pl2 - (1 / 2 * H_fp * E_pl1)) * u_rot - (1 / 2 * E_pl1 * u_rot * H_fp)) * u_fp
+                end
             end
         end
     end
