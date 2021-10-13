@@ -14,73 +14,79 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s,
     dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
 
-    # R2s_vec = evaluate_R2sl_vector_OCT(ω1 .* TRF, TRF, B1, T2s, R2slT, grad_list)
-    cache = [ExponentialUtilities.alloc_mem(zeros(22, 22), ExpMethodHigham2005Base()) for _ = 1:Threads.nthreads()]
-    dH = [zeros(Float64, 22, 22) for _ = 1:Threads.nthreads()]
+    cache = ExponentialUtilities.alloc_mem(zeros(22, 22), ExpMethodHigham2005Base())
+    dH = zeros(Float64, 22, 22)
 
     for r in eachindex(rfphase_increment)
         u_rot = z_rotation_propagator(rfphase_increment[r], grad_m0s())
-        Threads.@threads for t in 1:length(ω1)
-            for g in eachindex(grad_list)
-                if t == 1
-                    u_fp = xs_destructor(grad_list[g]) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g]))
-                    u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, 
-                    R2slT[1](TRF[1], ω1[1] * TRF[1], B1, T2s), 
-                    R2slT[2](TRF[1], ω1[1] * TRF[1], B1, T2s), 
-                    R2slT[3](TRF[1], ω1[1] * TRF[1], B1, T2s), 
-                    grad_list[g])
-                    E[1,r,g] = u_fp * u_pl * u_rot * u_fp
-                    dEdω1[1,r,g] = @SMatrix zeros(11, 11)
-                    dEdTRF[1,r,g] = @SMatrix zeros(11, 11)
-                else
-                    H_fp = hamiltonian_linear(0, B1, ω0, 1, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g])
-                    u_fp = xs_destructor(grad_list[g]) * exp(H_fp * ((TR - TRF[t]) / 2))
+        for g in eachindex(grad_list)
+            grad = grad_list[g]
 
-                    H_pl = hamiltonian_linear(ω1[t], B1, ω0, 1, m0s, R1, R2f, Rx, 
-                    R2slT[1](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    R2slT[2](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    R2slT[3](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    grad_list[g])
+            u_fp = xs_destructor(grad_list[g]) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g]))
+            u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, 
+            R2slT[1](TRF[1], ω1[1] * TRF[1], B1, T2s), 
+            R2slT[2](TRF[1], ω1[1] * TRF[1], B1, T2s), 
+            R2slT[3](TRF[1], ω1[1] * TRF[1], B1, T2s), 
+            grad_list[g])
+            E[1,r,g] = u_fp * u_pl * u_rot * u_fp
+            dEdω1[1,r,g] = @SMatrix zeros(11, 11)
+            dEdTRF[1,r,g] = @SMatrix zeros(11, 11)
 
-                    dHdω1 = d_hamiltonian_linear_dω1(B1, 1, 
-                    R2slT[4](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    R2slT[6](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    R2slT[7](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    grad_list[g])
-        
-                    @views dH[Threads.threadid()][1:11,1:11]   .= H_pl
-                    @views dH[Threads.threadid()][12:22,12:22] .= H_pl
-                    @views dH[Threads.threadid()][1:11,12:22]  .= 0
-                    @views dH[Threads.threadid()][12:22,1:11]  .= dHdω1
-                    dH[Threads.threadid()] .*= TRF[t]
-                    E_pl = exponential!(dH[Threads.threadid()], ExpMethodHigham2005Base(), cache[Threads.threadid()])
-
-                    E_pl1 = SMatrix{11,11}(@view E_pl[1:11,1:11])
-                    E_pl2 = SMatrix{11,11}(@view E_pl[12:end,1:11])
-                    E[t,r,g]     = u_fp * E_pl1 * u_rot * u_fp
-                    dEdω1[t,r,g] = u_fp * E_pl2 * u_rot * u_fp
-
-                    # TRF
-                    dHdTRF = H_pl .+ d_hamiltonian_linear_dTRF_add(TRF[t], 
-                    R2slT[5](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    R2slT[8](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    R2slT[9](TRF[t], ω1[t] * TRF[t], B1, T2s), 
-                    grad_list[g])
-                    H_pl *= TRF[t]
-                    @views dH[Threads.threadid()][1:11,1:11]   .= H_pl
-                    @views dH[Threads.threadid()][12:22,12:22] .= H_pl
-                    @views dH[Threads.threadid()][1:11,12:22]  .= 0
-                    @views dH[Threads.threadid()][12:22,1:11]  .= dHdTRF
-                    E_pl = exponential!(dH[Threads.threadid()], ExpMethodHigham2005Base(), cache[Threads.threadid()])
-
-                    E_pl1 = SMatrix{11,11}(@view E_pl[1:11,1:11])
-                    E_pl2 = SMatrix{11,11}(@view E_pl[12:end,1:11])
-                    dEdTRF[t,r,g] = u_fp * ((E_pl2 - (1 / 2 * H_fp * E_pl1)) * u_rot - (1 / 2 * E_pl1 * u_rot * H_fp)) * u_fp
-                end
+            for t in 2:length(ω1)
+                calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad, u_rot, dH, cache)
             end
         end
     end
     return (E, dEdω1, dEdTRF)
+end
+
+function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad, u_rot, dH, cache)
+
+    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1, R2f, Rx, 0.0, 0.0, 0.0, grad)
+    ux = xs_destructor(grad)
+    u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
+
+    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1, R2f, Rx, 
+        R2slT[1](TRF, ω1 * TRF, B1, T2s), 
+        R2slT[2](TRF, ω1 * TRF, B1, T2s), 
+        R2slT[3](TRF, ω1 * TRF, B1, T2s), 
+        grad)
+
+    dHdω1 = d_hamiltonian_linear_dω1(B1, 1, 
+        R2slT[4](TRF, ω1 * TRF, B1, T2s), 
+        R2slT[6](TRF, ω1 * TRF, B1, T2s), 
+        R2slT[7](TRF, ω1 * TRF, B1, T2s), 
+        grad)
+
+    @views dH[1:11,1:11]   .= H_pl
+    @views dH[12:22,12:22] .= H_pl
+    @views dH[1:11,12:22]  .= 0
+    @views dH[12:22,1:11]  .= dHdω1
+    dH .*= TRF
+    E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
+
+    E_pl1 = SMatrix{11,11}(@view E_pl[1:11,1:11])
+    E_pl2 = SMatrix{11,11}(@view E_pl[12:end,1:11])
+    E[t,r,g]     = u_fp * E_pl1 * u_rot * u_fp
+    dEdω1[t,r,g] = u_fp * E_pl2 * u_rot * u_fp
+
+    # TRF
+    dHdTRF = H_pl + d_hamiltonian_linear_dTRF_add(TRF, 
+        R2slT[5](TRF, ω1 * TRF, B1, T2s), 
+        R2slT[8](TRF, ω1 * TRF, B1, T2s), 
+        R2slT[9](TRF, ω1 * TRF, B1, T2s), 
+        grad)
+    H_pl *= TRF
+    @views dH[1:11,1:11]   .= H_pl
+    @views dH[12:22,12:22] .= H_pl
+    @views dH[1:11,12:22]  .= 0
+    @views dH[12:22,1:11]  .= dHdTRF
+    E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
+
+    E_pl1 = SMatrix{11,11}(@view E_pl[1:11,1:11])
+    E_pl2 = SMatrix{11,11}(@view E_pl[12:end,1:11])
+    dEdTRF[t,r,g] = u_fp * ((E_pl2 - (1 / 2 * H_fp * E_pl1)) * u_rot - (1 / 2 * E_pl1 * u_rot * H_fp)) * u_fp
+    return nothing
 end
 
 function calcualte_cycle_propgator(E)
@@ -116,7 +122,7 @@ end
 # the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them. 
 function calculate_adjoint_state(d, Q, E)
     P = similar(E, Array{Float64})
-    λ = @views P[end,:,:]
+    λ = @view P[end,:,:]
 
     for g in 1:size(E, 3), r in 1:size(E, 2)
         λ[r,g] = d(size(E, 1), r, g)
@@ -127,10 +133,10 @@ function calculate_adjoint_state(d, Q, E)
             λ[r,1] = transpose(E[t + 1,r,1]) * λ[r,1]
             λ[r,1] += d(t, r, 1)
             for g = 2:size(E, 3)
-                @views λ[r,g] = transpose(E[t + 1,r,g][6:10,:]) * λ[r,g][6:10]
-                @views λ[r,1][1:5] .+= λ[r,g][1:5]
+                λ[r,g] = transpose(E[t + 1,r,g][6:10,:]) * λ[r,g][6:10]
+                λ[r,1][1:5] .+= λ[r,g][1:5]
                 # λ[r,1][end]  += λ[r,g][end]
-                λ[r,g] += d(t, r, g)
+                λ[r,g] .+= d(t, r, g)
             end
         end
 
@@ -141,8 +147,8 @@ function calculate_adjoint_state(d, Q, E)
 
         P[end,r,1] = inv(transpose(Q[r,1])) * λ[r,1]
         for g = 2:size(E, 3)
-            @views λ[r,g] = inv(transpose(Q[r,g]))[:,6:10] * λ[r,g][6:10]
-            @views λ[r,1][1:5] .+= λ[r,g][1:5]
+            λ[r,g] = inv(transpose(Q[r,g]))[:,6:10] * λ[r,g][6:10]
+            λ[r,1][1:5] .+= λ[r,g][1:5]
             # P[end,r,1][end]  += P[end,r,g][end]
         end
 
@@ -157,7 +163,7 @@ function calculate_adjoint_state(d, Q, E)
                     P[t - 1,r,1][1:5] .+= P[t - 1,r,g][1:5]
                     P[t - 1,r,1][end]  += P[t - 1,r,g][end]
                 end
-                P[t - 1,r,g] += d(t, r, g)
+                P[t - 1,r,g] .+= d(t, r, g)
             end
 
         # for g = 2:length(grad_list)
@@ -168,29 +174,6 @@ function calculate_adjoint_state(d, Q, E)
     end
     return P
 end
-
-# function dLdy_old(y, w)
-#     F = y' * y
-#     println(F)
-#     Fi = inv(F)
-
-#     _dLdy = similar(y)
-#     dFdy = similar(F)
-#     tmp  = similar(F)
-
-#     for t in 1:size(y, 1), g in 1:size(y, 2)
-#         dFdy .= 0
-#         for i = 1:size(y, 2)
-#             dFdy[i,g] = conj(y[t,i])
-#             dFdy[g,i] = y[t,i]
-#         end
-#         dFdy[g,g] = 2 * real(dFdy[g,g])
-        
-#         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-#         _dLdy[t,g] = w * diag(dFdy)
-#     end
-#     return _dLdy    
-# end
 
 function dLdy(Y, w)
     # d = similar(Y, SVector{11,Float64})
@@ -256,8 +239,12 @@ function calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
             grad_ω1[t]  -= transpose(P[t - 1,r,g]) * (dEdω1[t,r,g] * Y[t - 1,r,g])
             grad_TRF[t] -= transpose(P[t - 1,r,g]) * (dEdTRF[t,r,g] * Y[t - 1,r,g])
         else
-            grad_ω1[t]  -= transpose(P[t - 1,r,g][6:10]) * (dEdω1[t,r,g][6:10,:] * Y[t - 1,r,g])
-            grad_TRF[t] -= transpose(P[t - 1,r,g][6:10]) * (dEdTRF[t,r,g][6:10,:] * Y[t - 1,r,g])
+            a = dEdω1[t,r,g] * Y[t - 1,r,g]
+            b = dEdTRF[t,r,g] * Y[t - 1,r,g]
+            for i = 6:10
+                grad_ω1[t]  -= P[t - 1,r,g][i] * a[i]
+                grad_TRF[t]  -= P[t - 1,r,g][i] * b[i]
+            end
         end
     end
     return (grad_ω1, grad_TRF)
