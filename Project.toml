@@ -15,7 +15,7 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-ApproxFun = "0.13"
+ApproxFun = "0.12, 0.13"
 Cubature = "1"
 DifferentialEquations = "6"
 Interpolations = "0.13"
