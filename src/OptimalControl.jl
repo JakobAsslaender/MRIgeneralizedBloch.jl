@@ -241,7 +241,7 @@ function calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
         else
             a = dEdω1[t,r,g] * Y[t - 1,r,g]
             b = dEdTRF[t,r,g] * Y[t - 1,r,g]
-            for i = 6:10
+            @inbounds for i = 6:10
                 grad_ω1[t]  -= P[t - 1,r,g][i] * a[i]
                 grad_TRF[t]  -= P[t - 1,r,g][i] * b[i]
             end
