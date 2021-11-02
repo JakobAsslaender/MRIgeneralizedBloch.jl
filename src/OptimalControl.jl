@@ -1,12 +1,32 @@
 function OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list, weights)
-    (E, dEdω1, dEdTRF) = MRIgeneralizedBloch.calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list)
+    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list)
     Q = calcualte_cycle_propgator(E)
     Y = propagate_magnetization(Q, E)
-    (CRB, d) = dLdy(Y, weights)
+    (CRB, d) = dCRBdm(Y, weights)
     P = calculate_adjoint_state(d, Q, E)
     (grad_ω1, grad_TRF) = calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
     return (CRB, grad_ω1, grad_TRF)
 end
+
+function OCT_TV_gradient(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list, weights, λ_TV)
+    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list)
+    Q = calcualte_cycle_propgator(E)
+    Y = propagate_magnetization(Q, E)
+
+    (CRB, d) = dCRBdm(Y, weights)
+    P = calculate_adjoint_state(d, Q, E)
+    (grad_ω1, grad_TRF) = calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
+
+    (TV, d) = dthetaTVdm(Y, λ_TV)
+    P = calculate_adjoint_state(d, Q, E)
+    (grad_ω1_TV, grad_TRF_TV) = calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
+
+    grad_ω1  .-= grad_ω1_TV
+    grad_TRF .-= grad_TRF_TV
+
+    return (CRB+TV, grad_ω1, grad_TRF)
+end
+
 
 
 function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list::AbstractArray{T}; rfphase_increment=[π]) where T <: grad_param
@@ -106,7 +126,7 @@ function propagate_magnetization(Q, E)
     Y = similar(E, SVector{11,Float64})
     
     for r in 1:size(E, 2), g in 1:size(E, 3)
-        m = Q[r,g] \ MRIgeneralizedBloch.C(grad_m0s())
+        m = Q[r,g] \ C(grad_m0s())
     
         Y[1,r,g] = m
         for t = 2:size(E, 1)
@@ -175,10 +195,9 @@ function calculate_adjoint_state(d, Q, E)
     return P
 end
 
-function dLdy(Y, w)
-    # d = similar(Y, SVector{11,Float64})
-    _dLdx = Array{Float64}(undef, size(Y, 1), size(Y, 2), size(Y, 3) + 1)
-    _dLdy = similar(_dLdx)
+function dCRBdm(Y, w)
+    _dCRBdx = Array{Float64}(undef, size(Y, 1), size(Y, 2), size(Y, 3) + 1)
+    _dCRBdy = similar(_dCRBdx)
     F = zeros(ComplexF64, size(Y, 3) + 1, size(Y, 3) + 1)
     dFdy = similar(F)
     tmp  = similar(F)
@@ -210,7 +229,7 @@ function dLdy(Y, w)
         end
         dFdy[g1 + 1,g1 + 1] = 2 * real(dFdy[g1 + 1,g1 + 1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dLdx[t,r,g1 + 1] = real.(w * diag(dFdy))
+        _dCRBdx[t,r,g1 + 1] = real.(w * diag(dFdy))
 
         # derivative wrt. y
         dFdy .= 0
@@ -222,12 +241,55 @@ function dLdy(Y, w)
         end
         dFdy[g1 + 1,g1 + 1] = 2 * real(dFdy[g1 + 1,g1 + 1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dLdy[t,r,g1 + 1] = real.(w * diag(dFdy))
+        _dCRBdy[t,r,g1 + 1] = real.(w * diag(dFdy))
     end
 
-    d(t, r, g) = @SVector [_dLdx[t,r,1], _dLdy[t,r,1],0,0,0,_dLdx[t,r,g + 1], _dLdy[t,r,g + 1],0,0,0,0]
+    d(t, r, g) = @SVector [_dCRBdx[t,r,1], _dCRBdy[t,r,1],0,0,0,_dCRBdx[t,r,g + 1], _dCRBdy[t,r,g + 1],0,0,0,0]
 
     return (CRB, d)
+end
+
+function dthetaTVdm(Y, λ)
+    # ϑ = vec([atan(Y[t,r,1][1] / Y[t,r,1][3]) for t=1:size(Y,1), r=1:size(Y,2)])
+    # TV = (ϑ[1] - ϑ[end])^2
+    # for t=2:length(ϑ)
+    #     TV += (ϑ[t] - ϑ[t-1])^2
+    # end
+
+    T = size(Y, 1)
+    R = size(Y, 2)
+    @inline x(t, r) = Y[t,r,1][1]
+    @inline z(t, r) = Y[t,r,1][3]
+    @inline ϑ(t, r) = atan(x(t, r) / z(t, r))
+
+    TV = zero(eltype(Y[1]))
+    _dthetaTVdx = ones(size(Y, 1), size(Y, 2))
+    _dthetaTVdz = ones(size(Y, 1), size(Y, 2))
+
+    ϑₙ₋₁ = ϑ(T, R)
+    ϑₙ₋₂ = ϑ(T - 1, R)
+    tₙ₋₁ = T
+    rₙ₋₁ = R
+    for r ∈ 1:R
+        for t ∈ 1:T
+            ϑₙ = ϑ(t, r)
+            TV += (ϑₙ - ϑₙ₋₁)^2
+
+            dₙ  = x(t, r)^2 + z(t, r)^2
+            _dthetaTVdx[t,r] *= z(t, r) / dₙ
+            _dthetaTVdz[t,r] *= -x(t, r) / dₙ
+            _dthetaTVdx[tₙ₋₁,rₙ₋₁] *= 2λ * (2ϑₙ₋₁ - ϑₙ - ϑₙ₋₂)
+            _dthetaTVdz[tₙ₋₁,rₙ₋₁] *= 2λ * (2ϑₙ₋₁ - ϑₙ - ϑₙ₋₂)
+
+            tₙ₋₁ = t
+            rₙ₋₁ = r
+            ϑₙ₋₂ = ϑₙ₋₁
+            ϑₙ₋₁ = ϑₙ
+        end
+    end
+
+    d(t, r, _) = @SVector [_dthetaTVdx[t,r], 0, _dthetaTVdz[t,r],0,0,0,0,0,0,0,0]
+    return (λ * TV, d)
 end
 
 function calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
