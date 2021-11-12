@@ -1,5 +1,5 @@
-function OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list, weights)
-    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list)
+function OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights)
+    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
     Q = calcualte_cycle_propgator(E)
     Y = propagate_magnetization(Q, E)
     (CRB, d) = dCRBdm(Y, weights)
@@ -8,8 +8,8 @@ function OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_
     return (CRB, grad_ω1, grad_TRF)
 end
 
-function OCT_TV_gradient(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list, weights, λ_TV)
-    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list)
+function OCT_TV_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, λ_TV)
+    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
     Q = calcualte_cycle_propgator(E)
     Y = propagate_magnetization(Q, E)
 
@@ -29,7 +29,7 @@ end
 
 
 
-function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad_list::AbstractArray{T}; rfphase_increment=[π]) where T <: grad_param
+function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list::AbstractArray{T}; rfphase_increment=[π]) where T <: grad_param
     E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
@@ -42,7 +42,7 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s,
         for g in eachindex(grad_list)
             grad = grad_list[g]
 
-            u_fp = xs_destructor(grad_list[g]) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1, R2f, Rx, 0, 0, 0, grad_list[g]))
+            u_fp = xs_destructor(grad_list[g]) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad_list[g]))
             u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, 
             R2slT[1](TRF[1], ω1[1] * TRF[1], B1, T2s), 
             R2slT[2](TRF[1], ω1[1] * TRF[1], B1, T2s), 
@@ -53,20 +53,20 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s,
             dEdTRF[1,r,g] = @SMatrix zeros(11, 11)
 
             for t in 2:length(ω1)
-                calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad, u_rot, dH, cache)
+                calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
             end
         end
     end
     return (E, dEdω1, dEdTRF)
 end
 
-function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1, R2f, Rx, T2s, R2slT, grad, u_rot, dH, cache)
+function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
 
-    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1, R2f, Rx, 0.0, 0.0, 0.0, grad)
+    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, Rx, R1s, 0.0, 0.0, 0.0, grad)
     ux = xs_destructor(grad)
     u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
 
-    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1, R2f, Rx, 
+    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rx, R1s,
         R2slT[1](TRF, ω1 * TRF, B1, T2s), 
         R2slT[2](TRF, ω1 * TRF, B1, T2s), 
         R2slT[3](TRF, ω1 * TRF, B1, T2s), 
