@@ -52,7 +52,7 @@ julia> R1f = 1/3;
 
 julia> R2f = 15;
 
-julia> R1f = 2;
+julia> R1s = 2;
 
 julia> T2s = 10e-6;
 
@@ -67,31 +67,32 @@ julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5);
 
 julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)))
 retcode: Success
-Interpolation: automatic order switching interpolation
+Interpolation: specialized 4th order "free" interpolation, specialized 2nd order "free" stiffness-aware interpolation
 t: 9-element Vector{Float64}:
  0.0
- 1.220281289257312e-7
- 1.342309418183043e-6
- 7.538223396809993e-6
- 2.0264275992449307e-5
- 3.806391790996879e-5
- 6.131350253044042e-5
- 8.985713095394202e-5
+ 1.375006182301112e-7
+ 1.512506800531223e-6
+ 8.04255964308422e-6
+ 2.1078484518172075e-5
+ 3.9114139737297395e-5
+ 6.268790292353144e-5
+ 9.147705095836351e-5
  0.0001
 u: 9-element Vector{Vector{Float64}}:
- [0.0, 0.0, 0.9, 0.1, 1.0]
- [0.0017251293948764095, 0.0, 0.8999983466235149, 0.0999998162918461, 1.0]
- [0.018974855260649, 0.0, 0.8997999500976795, 0.0999777787537773, 1.0]
- [0.10631425327309292, 0.0, 0.8936981899494069, 0.0993062488692229, 1.0]
- [0.28162336805181576, 0.0, 0.8547938784075204, 0.09527129619977613, 1.0]
- [0.5064779297334128, 0.0, 0.7438963250738748, 0.08537276746991054, 1.0]
- [0.7385374607670901, 0.0, 0.5140010917423798, 0.06896091618108181, 1.0]
- [0.888016931522836, 0.0, 0.14315426117917585, 0.04808883373953286, 1.0]
- [0.899347249517465, 0.0, 0.00048588799488130663, 0.04106861705554077, 1.0]
+ [0.0, 0.0, 0.8, 0.2, 1.0]
+ [0.001727880603076341, 0.0, 0.7999981340131751, 0.19999953350448, 1.0]
+ [0.019004717382235078, 0.0, 0.7997742277135814, 0.19994357804868362, 1.0]
+ [0.10079108788864381, 0.0, 0.7936248155456308, 0.19842287319977142, 1.0]
+ [0.26002573409211854, 0.0, 0.7565529847116781, 0.18981913439205117, 1.0]
+ [0.4610419429673234, 0.0, 0.6537242534410707, 0.16937688960872904, 1.0]
+ [0.666173809234659, 0.0, 0.44261243675880635, 0.13589316093594178, 1.0]
+ [0.7923116716967052, 0.0, 0.10713152453821989, 0.09390269485075242, 1.0]
+ [0.7994211188440913, 0.0, 0.0004403374356386769, 0.0821480968384837, 1.0]
 
 julia> using Plots
 
 julia> plot(sol, labels=["xf" "yf" "zf" "zs" "1"], xlabel="t (s)", ylabel="m(t)");
+
 
 
 julia> dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, TRF / T2s);
@@ -108,7 +109,9 @@ julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5 + 5*len
 julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)));
 
 
+
 julia> plot(sol);
+
 ```
 """
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
@@ -505,8 +508,6 @@ julia> B1 = 1;
 
 julia> ω0 = 0;
 
-julia> R1f = 1/3;
-
 julia> R1s = 2;
 
 julia> T2s = 10e-6;
@@ -515,21 +516,22 @@ julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 
 julia> m0 = [1];
 
-julia> sol = solve(ODEProblem(apply_hamiltonian_sled!, m0, (0, TRF), (ω1, 1, ω0, R1f, R1s, T2s, G)), Tsit5())
+julia> sol = solve(ODEProblem(apply_hamiltonian_sled!, m0, (0, TRF), (ω1, 1, ω0, R1s, T2s, G)), Tsit5())
 retcode: Success
 Interpolation: specialized 4th order "free" interpolation
 t: 3-element Vector{Float64}:
  0.0
- 7.475658194333419e-5
+ 7.475414666720001e-5
  0.0001
 u: 3-element Vector{Vector{Float64}}:
  [1.0]
- [0.6313685535188782]
- [0.48951919836592006]
+ [0.6313928231811974]
+ [0.48953654496619214]
 
 julia> using Plots
 
 julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
+
 
 ```
 """
@@ -542,8 +544,8 @@ function apply_hamiltonian_sled!(d∂m∂t, m, p::NTuple{6,Any}, t)
     d∂m∂t[1] = -B1^2 * ω1^2 * (xs + ys) * m[1] + R1s * (1 - m[1])
 end
 
-function apply_hamiltonian_sled!(∂m∂t, m, p::NTuple{9,Any}, t)
-    ω1, B1, ω0, m0s, R1f, R2f, T2s, Rx, g = p
+function apply_hamiltonian_sled!(∂m∂t, m, p::NTuple{10,Any}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g = p
 
     ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
