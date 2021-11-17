@@ -10,7 +10,8 @@ TRF = 100e-6 # s
 ω1 = α ./ TRF # rad/s
 m0s = 0.1
 m0f = 1-m0s
-R1 = 1.0 # 1/s
+R1f = 0.3 # 1/s
+R1s = 2.0 # 1/s
 R2f = 1 / 50e-3 # 1/s
 T2s = 10e-6 # s
 Rx = 70 # 1/s
@@ -30,8 +31,8 @@ u0_6D = [0,0,m0f,0,m0s,1]
 M_full = zeros(length(ω1), 4)
 M_appx = similar(M_full)
 Threads.@threads for i in eachindex(ω1)
-    M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))[end][1:4]
-    u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, α[i], 1, T2s))) * u0_6D
+    M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))[end][1:4]
+    u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2s(TRF, α[i], 1, T2s))) * u0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
 
@@ -43,7 +44,7 @@ end
 
 ## benchmark the different solvers (excecute one line at a time to provoke individual results to be printed)
 print("Time to solve the full gene. Bloch IDE for 100us π-pulse:")
-@btime solve(DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1, R2f, T2s, Rx, G)), MethodOfSteps(DP8()))
+@btime solve(DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))
 
 print("Time to solve the linear approximation for 100us π-pulse:")
-@btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1, R2f, Rx, R2s(TRF, α[end-1], 1, T2s))) * u0_6D
+@btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2s(TRF, α[end-1], 1, T2s))) * u0_6D

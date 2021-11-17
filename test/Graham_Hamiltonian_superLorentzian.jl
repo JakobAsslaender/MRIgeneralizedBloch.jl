@@ -13,7 +13,8 @@ B1 = 0.7 + 0.6 * rand()
 ω0 = 0 # Graham's spectral model is only implemented for on-resonance pulses
 m0s = 0.2 * rand()
 m0f = 1 - m0s
-R1 = 0.7 + 0.6 * rand()
+R1f = 0.5 + 0.2 * rand()
+R1s = 2 + rand()
 R2f = 1 / (40e-3 + 100e-3 * rand())
 T2s = 5e-6 + 10e-6 * rand()
 R2s = 1 / T2s
@@ -25,7 +26,7 @@ mf = (1 - m0s) * rand()
 φ = rand() * 2π
 
 ## Solve Graham's solution
-p = (ω1, B1, ω0, TRF, m0s, R1, R2f, T2s, Rx)
+p = (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)
 alg = Tsit5()
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
@@ -39,7 +40,7 @@ u_Graham = sol[end]
 ## Solve generalized Bloch-McConnell with super-Lorentzian lineshape
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
-p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, greens_superlorentzian)
+p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, greens_superlorentzian)
 alg = MethodOfSteps(DP8())
 sol = solve(
     DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
