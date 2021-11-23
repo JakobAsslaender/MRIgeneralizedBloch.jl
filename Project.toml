@@ -21,7 +21,7 @@ DifferentialEquations = "6"
 Interpolations = "0.13"
 NLsolve = "4"
 QuadGK = "2"
-SpecialFunctions = "1"
+SpecialFunctions = "1, 2"
 StaticArrays = "1"
 julia = "1.6"
 
