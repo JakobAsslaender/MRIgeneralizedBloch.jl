@@ -35,14 +35,15 @@ function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_
     else
         G = greens
     end
-    mfun(p, t) = [1.0]
-
-    function hamiltonian_1D!(du, u, mfun, p::NTuple{3,Any}, t)
-        ω1, T2s, g = p
-        du[1] = -ω1^2 * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1], 0.0, t)[1]
-    end
 
     function calculate_R2sl(τ, α)
+        mfun(p, t) = [1.0]
+    
+        function hamiltonian_1D!(du, u, mfun, p::NTuple{3,Any}, t)
+            ω1, T2s, g = p
+            du[1] = -ω1^2 * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1], 0.0, t)[1]
+        end
+
         z = solve(DDEProblem(hamiltonian_1D!, [1.0], mfun, (0, τ), (α / τ, 1, G)), MethodOfSteps(DP8()))[end][1]
     
         function f!(F, ρv)
@@ -65,7 +66,7 @@ function precompute_R2sl(TRF_min, TRF_max, T2s_min, T2s_max, α_min, α_max, B1_
     αv = range(B1_min * α_min, B1_max * α_max; length=2^6)
     # A = [calculate_R2sl(τ, α) for τ in τv, α in αv]
     A = Matrix{Float64}(undef, length(τv), length(αv))
-    Threads.@threads for i in CartesianIndices(A)
+    @batch minbatch=8 for i in CartesianIndices(A)
         A[i] = calculate_R2sl(τv[i[1]], αv[i[2]])
     end
 

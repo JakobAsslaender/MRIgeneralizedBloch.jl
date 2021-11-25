@@ -10,6 +10,7 @@ using StaticArrays
 using LinearAlgebra
 using NLsolve
 using ExponentialUtilities
+using Polyester
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_graham_superlorentzian!
@@ -33,7 +34,6 @@ export evaluate_R2sl_vector
 export calculatesignal_linearapprox
 
 export grad_m0s
-export grad_R1 # legacy
 export grad_R1a
 export grad_R1f
 export grad_R1s
@@ -45,7 +45,6 @@ export grad_B1
 
 abstract type grad_param end
 struct grad_m0s <: grad_param end
-struct grad_R1  <: grad_param end # legacy
 struct grad_R1a <: grad_param end
 struct grad_R1f <: grad_param end
 struct grad_R1s <: grad_param end
