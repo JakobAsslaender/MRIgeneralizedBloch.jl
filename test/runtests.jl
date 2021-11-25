@@ -61,6 +61,6 @@ end
     include("Solvers_Gradients.jl")
 end
 
-# TODO: Add OCT tests
-
-# TODO: Change docs to to reflect R1split
+@testset "OCT Gradients" begin
+    include("OCT.jl")
+end
