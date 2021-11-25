@@ -21,7 +21,6 @@ TRF = 500e-6
 N = Inf
 
 ## precomputations
-G = interpolate_greens_function(greens_superlorentzian, 0, 100)
 (R2sl, dR2sldT2s, dR2sldB1) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, minimum(α), maximum(α), 0.7, 1.3)
 
 _R2sl = R2sl(TRF, α, B1, T2s)

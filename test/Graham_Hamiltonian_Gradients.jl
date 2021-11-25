@@ -23,7 +23,6 @@ alg = Tsit5()
 m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
 Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)), alg)
 
-# TODO: Add R1a
 ## Analytical gradients (using ApproxFun)
 grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
 
@@ -264,6 +263,59 @@ for i = 1:length(t)
     dyf[i] = Graham_sol_grad(t[i])[42]
     dzf[i] = Graham_sol_grad(t[i])[43]
     dzs[i] = Graham_sol_grad(t[i])[44]
+end
+
+@test dxf ≈ dxf_fd rtol = max_error
+@test dyf ≈ dyf_fd rtol = max_error
+@test dzf ≈ dzf_fd rtol = max_error
+@test dzs ≈ dzs_fd rtol = max_error
+
+
+## ##############################################################
+# R1a test
+#################################################################
+R1a = 0.8
+# baseline IDE solution
+m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
+Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s)), alg)
+
+## Analytical gradients (using ApproxFun)
+grad_list = [grad_R1a()]
+
+Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s, grad_list)), Tsit5())
+
+## FD derivative wrt. R1a
+dR1a = 1e-6
+Graham_sol_dm0s = solve(
+    ODEProblem(
+        apply_hamiltonian_graham_superlorentzian!,
+        m0,
+        (0.0, TRF),
+        (ω1, B1, ω0, TRF, m0s, R1a + dR1a, R2f, Rx, R1a + dR1a, T2s),
+    ),
+    alg,
+)
+
+t = 0:1e-5:TRF
+dxf = similar(t)
+dyf = similar(t)
+dzf = similar(t)
+dzs = similar(t)
+dxf_fd = similar(t)
+dyf_fd = similar(t)
+dzf_fd = similar(t)
+dzs_fd = similar(t)
+
+for i = 1:length(t)
+    dxf_fd[i] = (Graham_sol_dm0s(t[i])[1] - Graham_sol(t[i])[1]) / dR1a
+    dyf_fd[i] = (Graham_sol_dm0s(t[i])[2] - Graham_sol(t[i])[2]) / dR1a
+    dzf_fd[i] = (Graham_sol_dm0s(t[i])[3] - Graham_sol(t[i])[3]) / dR1a
+    dzs_fd[i] = (Graham_sol_dm0s(t[i])[4] - Graham_sol(t[i])[4]) / dR1a
+
+    dxf[i] = Graham_sol_grad(t[i])[6]
+    dyf[i] = Graham_sol_grad(t[i])[7]
+    dzf[i] = Graham_sol_grad(t[i])[8]
+    dzs[i] = Graham_sol_grad(t[i])[9]
 end
 
 @test dxf ≈ dxf_fd rtol = max_error

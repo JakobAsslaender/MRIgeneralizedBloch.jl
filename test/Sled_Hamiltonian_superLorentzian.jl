@@ -25,22 +25,22 @@ mf = (1 - m0s) * rand()
 ϑ = rand() * π / 2
 φ = rand() * 2π
 
-## Solve Graham's solution
-p = (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)
+## Solve Sled's solution
+g = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
+p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 alg = Tsit5()
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF), p),
+    ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_sled!, m0, (0.0, TRF), p),
     alg,
 )
 
-u_Graham = sol[end]
+u_Sled = sol[end]
 
 ## Solve generalized Bloch-McConnell with super-Lorentzian lineshape
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
-g = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 alg = MethodOfSteps(DP8())
 sol = solve(
@@ -52,8 +52,8 @@ u_gBloch = sol[end]
 
 ## Test!
 max_error = 1e-2
-@test u_gBloch[1] ≈ u_Graham[1] atol = max_error
-@test u_gBloch[2] ≈ u_Graham[2] atol = max_error
-@test u_gBloch[3] ≈ u_Graham[3] atol = max_error
-@test u_gBloch[4] ≈ u_Graham[4] atol = max_error
-@test u_gBloch[5] ≈ u_Graham[5] atol = max_error
+@test u_gBloch[1] ≈ u_Sled[1] atol = max_error
+@test u_gBloch[2] ≈ u_Sled[2] atol = max_error
+@test u_gBloch[3] ≈ u_Sled[3] atol = max_error
+@test u_gBloch[4] ≈ u_Sled[4] atol = max_error
+@test u_gBloch[5] ≈ u_Sled[5] atol = max_error
