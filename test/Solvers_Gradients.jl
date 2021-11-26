@@ -3,7 +3,7 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using StaticArrays
 using Test
-R2slT = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3)
+R2slT = precompute_R2sl()
 
 ## choose random parameters
 Npulse = 500

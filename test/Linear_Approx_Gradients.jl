@@ -21,7 +21,7 @@ TRF = 500e-6
 N = Inf
 
 ## precomputations
-(R2sl, dR2sldT2s, dR2sldB1) = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, minimum(α), maximum(α), 0.7, 1.3)
+(R2sl, dR2sldT2s, dR2sldB1) = precompute_R2sl()
 
 _R2sl = R2sl(TRF, α, B1, T2s)
 _dR2sldT2s = dR2sldT2s(TRF, α, B1, T2s)

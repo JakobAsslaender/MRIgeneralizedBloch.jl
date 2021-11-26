@@ -2,7 +2,6 @@ using MRIgeneralizedBloch
 using Test
 using LinearAlgebra
 using StaticArrays
-R2slT = precompute_R2sl(100e-6, 1e-3, 5e-6, 15e-6, 0, π, 0.7, 1.3)
 include("OCT_finite_difference_gradients.jl")
 
 ##
@@ -13,6 +12,7 @@ TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 TRF[1] = 500e-6
 ω1 = α ./ TRF
 
+R2slT = precompute_R2sl(ω1_max = 1.1 * maximum(ω1))
 TR = 3.5e-3
 
 B1 = 1

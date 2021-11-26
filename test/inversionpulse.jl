@@ -7,7 +7,7 @@ using Test
 T = 500e-6
 T2s = 10e-6
 
-R2slT = precompute_R2sl(0.9 * T, 1.1 * T, T2s, T2s, π, π, .6, 1.3)
+R2slT = precompute_R2sl()
 R2sl = R2slT[1](T, π, 1, T2s)
 
 function simulate_inversion_pulse(M0, ωz, B1, T, m0s, R1f, R2f, Rx, R1s, R2sl)
