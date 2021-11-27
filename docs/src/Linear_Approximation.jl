@@ -23,12 +23,12 @@ Rₓ = 70; # 1/s
 G = interpolate_greens_function(greens_superlorentzian, 0, 1e-3 / 5e-6);
 
 # The function [`precompute_R2sl`](@ref) returns another function, `R₂ˢˡ(Tʳᶠ, α, B1, T₂ˢ)`, that interpolates the linearized relaxation rate, as well as functions that describe its derivatives wrt. ``T_2^s`` and ``B_1``, respectively:
-(R₂ˢˡ, ∂R₂ˢˡ∂T₂ˢ, ∂R₂ˢˡ∂B₁) = precompute_R2sl(100e-6, 1e-3, 5e-6, 20e-6, 0.01π, π, 1-eps(), 1+eps(); greens=G);
+R₂ˢˡ, ∂R₂ˢˡ∂T₂ˢ, ∂R₂ˢˡ∂B₁ = precompute_R2sl(TRF_min=5, TRF_max=100, T2s_min=1, T2s_max=1, ω1_max=π/5, B1_max=1, greens=G);
 # The derivatives are not used here and are just assigned for demonstration purposes. 
 
 # In order to replicate Fig. 7, we plot `R₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ)` for a varying ``α`` and ``T_\text{RF}/T_2^s``:
 α = (0.01:.01:1) * π
-TʳᶠoT₂ˢ = 5:200
+TʳᶠoT₂ˢ = 5:100
 
 TʳᶠoT₂ˢ_m = repeat(reshape(TʳᶠoT₂ˢ, 1, :), length(α), 1)
 α_m = repeat(α, 1, size(TʳᶠoT₂ˢ_m, 2))
@@ -59,7 +59,7 @@ m0_5D = [0,0,m₀ᶠ,m₀ˢ,1]
 mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # intialize history function, here with the ability to just call a single index
 
 # The full generalized Bloch model is solved by
-param = (π/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, T₂ˢ, Rₓ, G)
+param = (π/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 sol_pi_full = solve(prob);
 
@@ -75,7 +75,7 @@ m0_6D = [0,0,m₀ᶠ,0,m₀ˢ,1]
 
 Mpi_appx = similar(Mpi_full)
 for i in eachindex(t)
-    H = exp(hamiltonian_linear(π/Tʳᶠ, 1, 0, t[i], m₀ˢ, R₁, R₂ᶠ, Rₓ, R₂ˢˡ(Tʳᶠ, π, 1, T₂ˢ)))
+    H = exp(hamiltonian_linear(π/Tʳᶠ, 1, 0, t[i], m₀ˢ, R₁, Rₓ, R₁, R₂ᶠ, R₂ˢˡ(Tʳᶠ, π, 1, T₂ˢ)))
     Mpi_appx[i,:] = (H * m0_6D)[[1:3;5]]
 end
 
@@ -98,11 +98,11 @@ plot!(p, t, Mpi_appx[:,4] / m₀ˢ, label="zˢ/m₀ˢ linear approximation")
 M_full = zeros(length(α), 4)
 M_appx = similar(M_full)
 for i in eachindex(α)
-    param = (α[i]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, T₂ˢ, Rₓ, G)
+    param = (α[i]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
     prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
     M_full[i,:] = solve(prob)[end][1:4]
     
-    u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
+    u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
 
@@ -125,12 +125,12 @@ norm(M_appx[:,4] .- M_full[:,4]) / norm(M_full[:,4])
 
 # ## Benchmark
 # We analyze the execution time for solving the full integro-differential equation:
-param = (α[end]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, T₂ˢ, Rₓ, G)
+param = (α[end]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 @benchmark solve($prob)
 
 # The `$` symbol *interpolates* the variable, which improves the accuracy of the timing measurement. We can compare this time to the time it takes to calculate the linear approximation, including the time it takes to evaluate the interpolated `R₂ˢˡ`:
-@benchmark exp(hamiltonian_linear($(α[end]/Tʳᶠ), 1, 0, $Tʳᶠ, $m₀ˢ, $R₁, $R₂ᶠ, $Rₓ, R₂ˢˡ($Tʳᶠ, $α[end], 1, $T₂ˢ))) * $m0_6D
+@benchmark exp(hamiltonian_linear($(α[end]/Tʳᶠ), 1, 0, $Tʳᶠ, $m₀ˢ, $R₁, $R₂ᶠ, $Rₓ, $R₁, R₂ˢˡ($Tʳᶠ, $α[end], 1, $T₂ˢ))) * $m0_6D
 
 # We can see that linear approximation is about 4 orders of magnitude faster compared to the full model. 
 

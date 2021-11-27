@@ -12,7 +12,8 @@ B1 = 0.7 + 0.6 * rand()
 ω0 = 1000 * rand() - 500
 m0s = 0.2 * rand()
 m0f = 1 - m0s
-R1 = 0.7 + 0.6 * rand()
+R1f = 0.5 + 0.2 * rand()
+R1s = 2 + rand()
 R2f = 1 / (40e-3 + 100e-3 * rand())
 T2s = 5e-6 + 10e-6 * rand()
 R2s = 1 / T2s
@@ -26,7 +27,7 @@ mf = (1 - m0s) * rand()
 ## Solve generalized Bloch-McConnell with Lorentzian lineshape
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
-p = (ω1, B1, ω0, m0s, R1, R2f, T2s, Rx, greens_lorentzian)
+p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, greens_lorentzian)
 alg = MethodOfSteps(DP8())
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
@@ -39,12 +40,12 @@ u_gBloch = sol[end]
 
 ## Solve original Bloch-McConnell with Lorentzian lineshape
 H = @SMatrix [
-    -R2f  -ω0      B1*ω1      0          0      0
-      ω0 -R2f          0      0          0      0
-  -B1*ω1    0 -R1-Rx*m0s      0     Rx*m0f R1*m0f
-       0    0          0   -R2s      B1*ω1      0
-       0    0     Rx*m0s -B1*ω1 -R1-Rx*m0f R1*m0s
-       0    0          0      0          0      0
+    -R2f  -ω0       B1*ω1      0           0       0
+      ω0 -R2f           0      0           0       0
+  -B1*ω1    0 -R1f-Rx*m0s      0      Rx*m0f R1f*m0f
+       0    0           0   -R2s       B1*ω1       0
+       0    0      Rx*m0s -B1*ω1 -R1s-Rx*m0f R1s*m0s
+       0    0           0      0           0       0
 ]
 
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, ms, 1]

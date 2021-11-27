@@ -1,6 +1,6 @@
 ##
 """
-    hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s[, dR2sdT2s, dR2sdB1, grad_type])
+    hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s[, dR2sdT2s, dR2sdB1, grad_type])
 
 Calculate the hamiltonian of the linear approximation of the generalized Bloch model. 
 
@@ -13,15 +13,16 @@ If a gradient is supplied, it returns a 11x11 (static) matrix with the dimension
 - `ω0::Number`: Larmor (or off-resonance) frequency in rad/s (rotation about the z-axis)
 - `T::Number`: Time in seconds; this can, e.g., be the RF-pulse duration, or the time of free precession with `ω1=0`
 - `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
-- `R1::Number`: Apparent longitudinal relaxation rate of the free and semi-solid pool in 1/seconds
+- `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
+- `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
 - `R2s::Number`: Transversal relaxationt rate of the semi-solid pool in 1/seconds; this number can be calcualated with the first function returned by [`precompute_R2sl`](@ref) to implement the linear approximation described in the generalized Bloch paper
 
 Optional:
 - `dR2sdT2s::Number`: Derivative of linearized R2sl wrt. the actual T2s; only required if `grad_type = grad_T2s()`; this number can be calcualated with the second function returned by [`precompute_R2sl`](@ref)
 - `dR2sdB1::Number`: Derivative of linearized R2sl wrt. B1; only required if `grad_type = grad_B1()`; this number can be calcualated with the third function returned by [`precompute_R2sl`](@ref)
-- `grad_type::grad_param`: `grad_m0s()`, `grad_R1()`, `grad_R2f()`, `grad_Rx()`, `grad_T2s()`, `grad_ω0()`, or `grad_B1()`; create one hamiltonian for each desired gradient
+- `grad_type::grad_param`: `grad_m0s()`, `grad_R1f()`, `grad_R1s()`, `grad_R2f()`, `grad_Rx()`, `grad_T2s()`, `grad_ω0()`, or `grad_B1()`; create one hamiltonian for each desired gradient
 
 # Examples
 ```jldoctest
@@ -37,157 +38,192 @@ julia> ω0 = 0;
 
 julia> m0s = 0.1;
 
-julia> R1 = 1;
+julia> R1f = 1;
 
 julia> R2f = 15;
 
 julia> Rx = 30;
 
+julia> R1s = 6.5;
+
 julia> R2s = 1e5;
 
 julia> m0 = [0, 0, 1-m0s, 0, m0s, 1];
 
-julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s)) * m0
+julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s)) * m0
 6-element StaticArrays.SVector{6, Float64} with indices SOneTo(6):
-  0.0010646925712316103
+  0.0010647535813059729
   0.0
- -0.8957848933541458
-  0.005125086137871529
-  0.08119617921987109
+ -0.8957848274535016
+  0.005126529591877105
+  0.08122007142111892
   1.0
 ```
 """
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0         0;
                ω0  -R2f               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f R1f * m0f;
                 0     0               0      -R2s         B1 * ω1         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f R1s * m0s;
                 0     0               0         0               0         0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, _, _, _)
-    return hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, _)
+    return hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s)
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, _, _, grad_type::grad_m0s)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, grad_type::grad_m0s)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
                ω0  -R2f               0         0               0        0     0               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f        0     0               0         0               0  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
                 0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        0     0               0         0               0  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
                 0     0               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
                 0     0               0         0               0       ω0  -R2f               0         0               0         0;
-                0     0             -Rx         0             -Rx -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f       -R1;
+                0     0             -Rx         0             -Rx -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f      -R1f;
                 0     0               0         0               0        0     0               0      -R2s         B1 * ω1         0;
-                0     0              Rx         0              Rx        0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        R1;
+                0     0              Rx         0              Rx        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f       R1s;
                 0     0               0         0               0        0     0               0         0               0         0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, _, _, grad_type::grad_R1)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, grad_type::grad_R1f)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
                ω0  -R2f               0         0               0        0     0               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f        0     0               0         0               0  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
                 0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        0     0               0         0               0  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
                 0     0               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
                 0     0               0         0               0       ω0  -R2f               0         0               0         0;
-                0     0              -1         0               0 -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f       m0f;
+                0     0              -1         0               0 -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f       m0f;
                 0     0               0         0               0        0     0               0      -R2s         B1 * ω1         0;
-                0     0               0         0              -1        0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f       m0s;
+                0     0               0         0               0        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f         0;
                 0     0               0         0               0        0     0               0         0               0         0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, _, _, grad_type::grad_R2f)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, grad_type::grad_R1s)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
                ω0  -R2f               0         0               0        0     0               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f        0     0               0         0               0  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
                 0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        0     0               0         0               0  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
+                0     0               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
+                0     0               0         0               0       ω0  -R2f               0         0               0         0;
+                0     0               0         0               0 -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f         0;
+                0     0               0         0               0        0     0               0      -R2s         B1 * ω1         0;
+                0     0               0         0              -1        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f       m0s;
+                0     0               0         0               0        0     0               0         0               0         0]
+    return H * T
+end
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, grad_type::grad_R1a)
+    m0f = 1 - m0s
+    H = @SMatrix [
+             -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
+               ω0  -R2f               0         0               0        0     0               0         0               0         0;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
+                0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
+                0     0               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
+                0     0               0         0               0       ω0  -R2f               0         0               0         0;
+                0     0              -1         0               0 -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f       m0f;
+                0     0               0         0               0        0     0               0      -R2s         B1 * ω1         0;
+                0     0               0         0              -1        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f       m0s;
+                0     0               0         0               0        0     0               0         0               0         0]
+    return H * T
+end
+
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, grad_type::grad_R2f)
+    m0f = 1 - m0s
+    H = @SMatrix [
+             -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
+               ω0  -R2f               0         0               0        0     0               0         0               0         0;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
+                0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
                -1     0               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
                 0    -1               0         0               0       ω0  -R2f               0         0               0         0;
-                0     0               0         0               0 -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f         0;
+                0     0               0         0               0 -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f         0;
                 0     0               0         0               0        0     0               0      -R2s         B1 * ω1         0;
-                0     0               0         0               0        0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f         0;
+                0     0               0         0               0        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f         0;
                 0     0               0         0               0        0     0               0         0               0         0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, _, _, grad_type::grad_Rx)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, grad_type::grad_Rx)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
                ω0  -R2f               0         0               0        0     0               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f        0     0               0         0               0  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
                 0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        0     0               0         0               0  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
                 0     0               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
                 0     0               0         0               0       ω0  -R2f               0         0               0         0;
-                0     0            -m0s         0             m0f -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f         0;
+                0     0            -m0s         0             m0f -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f         0;
                 0     0               0         0               0        0     0               0      -R2s         B1 * ω1         0;
-                0     0             m0s         0            -m0f        0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f         0;
+                0     0             m0s         0            -m0f        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f         0;
                 0     0               0         0               0        0     0               0         0               0         0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, dR2sdT2s, _, grad_type::grad_T2s)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, dR2sdT2s, _, grad_type::grad_T2s)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
                ω0  -R2f               0         0               0        0     0               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f        0     0               0         0               0  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
                 0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        0     0               0         0               0  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
                 0     0               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
                 0     0               0         0               0       ω0  -R2f               0         0               0         0;
-                0     0               0         0               0 -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f         0;
+                0     0               0         0               0 -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f         0;
                 0     0               0 -dR2sdT2s               0        0     0               0      -R2s         B1 * ω1         0;
-                0     0               0         0               0        0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f         0;
+                0     0               0         0               0        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f         0;
                 0     0               0         0               0        0     0               0         0               0         0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, _, _, grad_type::grad_ω0)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, _, grad_type::grad_ω0)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
                ω0  -R2f               0         0               0        0     0               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f        0     0               0         0               0  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
                 0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        0     0               0         0               0  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
                 0    -1               0         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
                 1     0               0         0               0       ω0  -R2f               0         0               0         0;
-                0     0               0         0               0 -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f         0;
+                0     0               0         0               0 -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f         0;
                 0     0               0         0               0        0     0               0      -R2s         B1 * ω1         0;
-                0     0               0         0               0        0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f         0;
+                0     0               0         0               0        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f         0;
                 0     0               0         0               0        0     0               0         0               0         0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1, R2f, Rx, R2s, _, dR2sdB1, grad_type::grad_B1)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, _, dR2sdB1, grad_type::grad_B1)
     m0f = 1 - m0s
     H = @SMatrix [
              -R2f   -ω0         B1 * ω1         0               0        0     0               0         0               0         0;
                ω0  -R2f               0         0               0        0     0               0         0               0         0;
-         -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f        0     0               0         0               0  R1 * m0f;
+         -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f        0     0               0         0               0 R1f * m0f;
                 0     0               0      -R2s         B1 * ω1        0     0               0         0               0         0;
-                0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f        0     0               0         0               0  R1 * m0s;
+                0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f        0     0               0         0               0 R1s * m0s;
                 0     0              ω1         0               0     -R2f   -ω0         B1 * ω1         0               0         0;
                 0     0               0         0               0       ω0  -R2f               0         0               0         0;
-              -ω1     0               0         0               0 -B1 * ω1     0  -R1 - Rx * m0s         0        Rx * m0f         0;
+              -ω1     0               0         0               0 -B1 * ω1     0 -R1f - Rx * m0s         0        Rx * m0f         0;
                 0     0               0  -dR2sdB1              ω1        0     0               0      -R2s         B1 * ω1         0;
-                0     0               0       -ω1               0        0     0        Rx * m0s  -B1 * ω1  -R1 - Rx * m0f         0;
+                0     0               0       -ω1               0        0     0        Rx * m0s  -B1 * ω1 -R1s - Rx * m0f         0;
                 0     0               0         0               0        0     0               0         0               0         0]
     return H * T
 end
@@ -331,7 +367,7 @@ function xs_destructor(grad::grad_param)
         0 0 0 0 0 0 0 0 0 0 1]
 end
 
-function A0(_)
+    function A0(_)
     @SMatrix [
         1 0 0 0 0 0;    
         0 1 0 0 0 0;

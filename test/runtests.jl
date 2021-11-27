@@ -23,6 +23,12 @@ end
     end
 end
 
+@testset "apply_hamiltonian_sled!" begin
+    for i = 1:10 # test different random initializations
+        include("Sled_Hamiltonian_superLorentzian.jl")
+    end
+end
+
 @testset "Linear_Approximation" begin
     include("Linear_Approximation.jl")
 end
@@ -45,4 +51,16 @@ end
 
 @testset "inversionpulse" begin
     include("inversionpulse.jl")
+end
+
+@testset "cf. Solvers" begin
+    include("Solvers_cf.jl")
+end
+
+@testset "Solvers_Gradients" begin
+    include("Solvers_Gradients.jl")
+end
+
+@testset "OCT Gradients" begin
+    include("OCT.jl")
 end
