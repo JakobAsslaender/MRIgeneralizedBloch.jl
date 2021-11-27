@@ -16,7 +16,7 @@ If a gradient is supplied, it returns a 11x11 (static) matrix with the dimension
 - `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
-- `R1f::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
+- `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
 - `R2s::Number`: Transversal relaxationt rate of the semi-solid pool in 1/seconds; this number can be calcualated with the first function returned by [`precompute_R2sl`](@ref) to implement the linear approximation described in the generalized Bloch paper
 
 Optional:

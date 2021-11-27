@@ -26,7 +26,7 @@ Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivativ
     - `zs_idx::Integer`: Index to be used history function to be used in the Green's function; Default is 4 (zs), and for derivatives 9, 14, ... are used
     or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` with
     - `dG_o_dT2s_x_T2s::Function`: Derivative of the Green's function wrt. T2s, multiplied by T2s; of the form `dG_o_dT2s_x_T2s(κ) = dG_o_dT2s_x_T2s((t-τ)/T2s)`
-    - `grad_list::Vector{<:grad_param}`: List of gradients to be calucualted; any subset of `[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`); ; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1s()`
+    - `grad_list::Vector{<:grad_param}`: List of gradients to be calucualted; any subset of `[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`); ; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `t::Number`: Time in seconds
 
 Optional:
