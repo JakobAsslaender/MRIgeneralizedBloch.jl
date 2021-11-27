@@ -4,8 +4,9 @@ using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
 
 m0s = 0.15
-R1 = 1 # 1/s
+R1f = 0.3 # 1/s
 R2f = 15 # 1/s
+R1s = 2 # 1/s
 T2s = 10e-6 # s
 Rx = 30; # 1/s
 
@@ -21,7 +22,7 @@ G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 
 mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? m0[idxs] : m0;
 
-param = (α/TRF, B1, ω0, m0s, R1, R2f, T2s, Rx, G) # defined by apply_hamiltonian_gbloch!
+param = (α/TRF, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G) # defined by apply_hamiltonian_gbloch!
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
 sol = solve(prob)
 
