@@ -7,7 +7,7 @@ Calculate the hamiltonian of the linear approximation of the generalized Bloch m
 If no gradient is supplied, it returns a 6x6 (static) matrix with the dimensions (in this order) `[xf, yf, zf, xs, zs, 1]`; the attached 1 is a mathematical trick to allow for ``T_1`` relaxation to a non-zero thermal equilibrium.
 If a gradient is supplied, it returns a 11x11 (static) matrix with the dimensions (in this order) `[xf, yf, zf, xs, zs, dxf/dθ, dyf/dθ, dzf/dθ, dxs/dθ, dzs/dθ,  1]`, where `θ` is the parameter specified by `grad_type`
 
-# Arguemnts
+# Arguments
 - `ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
 - `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
 - `ω0::Number`: Larmor (or off-resonance) frequency in rad/s (rotation about the z-axis)
