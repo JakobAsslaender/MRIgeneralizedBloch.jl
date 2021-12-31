@@ -5,7 +5,7 @@ Calculate the signal or magnetixation evolution with the full generalized Bloch 
 
 The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. 
 
-# Arguemnts
+# Arguments
 - `α::Vector{<:Number}`: Array of flip angles in radians
 - `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
 - `TR::Number`: Repetition time in seconds
@@ -164,7 +164,7 @@ Calculate the signal or magnetixation evolution with Graham's spectral model ass
 
 The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. 
 
-# Arguemnts
+# Arguments
 - `α::Vector{<:Number}`: Array of flip angles in radians
 - `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
 - `TR::Number`: Repetition time in seconds

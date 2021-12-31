@@ -5,7 +5,7 @@ Pre-compute and interpolate the linearized `R2sl(TRF, α, B1, T2s)` and its deri
 
 The function solves the generalized Bloch equations of an isolated semi-solid pool for values in the specified range, calulates the linearized R2sl that minimizes the error of `zs` at the end of the RF-pulse, and interpolates between the different samples. 
 
-# Optional Arguemnts:
+# Optional Arguments:
 - `TRF_min::Number`: lower bound of the RF-pulse duration range in seconds
 - `TRF_max::Number`: upper bound of the RF-pulse duration range in seconds
 - `T2s_min::Number`: lower bound of the `T2s` range in seconds
