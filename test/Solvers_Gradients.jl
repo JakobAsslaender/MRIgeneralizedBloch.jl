@@ -97,7 +97,7 @@ s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1 + ΔB1, m0s, R1f, R2f, Rx
 
 g = s0[:,1,2]
 gfd = vec(s1 .- s0[:,1,1]) / ΔB1
-@test g ≈ gfd rtol = 5e-3 # not as precise because of the Higham's Complex Step Approximation
+@test g ≈ gfd rtol = 1e-2 # not as precise because of the Higham's Complex Step Approximation
 
 ## R1a
 ΔR1a = 1e-6
