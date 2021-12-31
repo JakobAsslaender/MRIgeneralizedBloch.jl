@@ -21,7 +21,7 @@ R1f = 0.15 + 0.2 * rand()
 R1s = 2 + rand()
 R2f = 1 / (40e-3 + 100e-3 * rand())
 T2s = 5e-6 + 10e-6 * rand()
-Rx = 40 * rand()
+Rx = 10 + 10 * rand()
 
 R1a = 0.5 + rand()
 

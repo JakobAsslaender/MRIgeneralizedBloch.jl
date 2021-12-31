@@ -35,12 +35,12 @@ function readdata(io)
     for _=1:12
         Char.(read(io, Char))
     end
-    if read(io, Int32) != 501; error; end # 500 real; 501 complex; 502 double real; 503 xy_real; 504 xy_complex
+    if read(io, Int32) != 501; error(); end # 500 real; 501 complex; 502 double real; 503 xy_real; 504 xy_complex
 
     size1 = read(io, Int32)
     size2 = read(io, Int32)
-    if read(io, Int32) != 1; error; end
-    if read(io, Int32) != 1; error; end
+    if read(io, Int32) != 1; error(); end
+    if read(io, Int32) != 1; error(); end
 
     data = zeros(ComplexF32, size1, size2)
     for i = 1:length(data)
