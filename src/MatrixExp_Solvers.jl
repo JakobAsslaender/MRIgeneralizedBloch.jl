@@ -136,13 +136,8 @@ function evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, 
     A = u_fp * u_pl * u_rot * u_fp
 
     for i = length(ω1):-1:2
-        if ω1[i] * TRF[i] ≈ π # inversion pulses are accompanied by crusher gradients
-            u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
-            u_pl = propagator_linear_inversion_pulse(ω1[i], TRF[i], B1, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad)
-        else
-            u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
-            u_pl = exp(hamiltonian_linear(ω1[i], B1, ω0, TRF[i], m0s, R1f, R2f, Rx, R1s, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
-        end
+        u_fp, u_pl = pulse_propagators(ω1[i], B1, ω0, TRF[i], TR, m0s, R1f, R2f, Rx, R1s, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad)
+
         A = A * u_fp * u_pl * u_rot * u_fp
     end
     return A
@@ -161,14 +156,23 @@ function propagate_magnetization_linear!(S, ω1, B1, ω0, TRF, TR, m0s, R1f, R2f
     u_rot = z_rotation_propagator(rfphase_increment, grad)
     ms_setindex!(S, m, 1, grad)
     for i = 2:length(ω1)
-        u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
-        u_pl = exp(hamiltonian_linear(ω1[i], B1, ω0, TRF[i], m0s, R1f, R2f, Rx, R1s, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
+        u_fp, u_pl = pulse_propagators(ω1[i], B1, ω0, TRF[i], TR, m0s, R1f, R2f, Rx, R1s, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad)
 
         m = u_fp * (u_pl * (u_rot * (u_fp * m)))
-
         ms_setindex!(S, m, i, grad)
     end
     return S
+end
+
+function pulse_propagators(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad)
+    if ω1 * TRF ≈ π # inversion pulses are accompanied by crusher gradients
+        u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+        u_pl = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2s, _dR2sdT2s, _dR2sdB1, grad)
+    else
+        u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad))
+    end
+    return u_fp, u_pl
 end
 
 function ms_setindex!(S::AbstractArray{<:AbstractVector}, y, i, grad)
