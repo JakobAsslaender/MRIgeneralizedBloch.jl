@@ -6,11 +6,12 @@ include("OCT_finite_difference_gradients.jl")
 
 ##
 Npulse = 100
-α = abs.(π/2 * sin.(π/2 * (1:Npulse) / Npulse))
+α = abs.(π/2 * sin.(π/2 * ((0:Npulse-1) / Npulse) .+ π/2))
 TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 α[1] = π
 TRF[1] = 500e-6
 ω1 = α ./ TRF
+isInversionPulse = α .≈ π
 
 R2slT = precompute_R2sl(ω1_max = 1.1 * maximum(ω1))
 TR = 3.5e-3
@@ -43,10 +44,10 @@ w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 
 
 ## ########################################################################
-# Test OCT gradients
+# Test OCT gradients: single loop
 ###########################################################################
 # OCT_gradient: analytical
-(F0, grad_ω1, grad_TRF) = MRIgeneralizedBloch.OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, w)
+(F0, grad_ω1, grad_TRF) = MRIgeneralizedBloch.OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, w, isInversionPulse = isInversionPulse)
 
 ## Finite Difference gradient: ω1
 _grad_ω1_fd = grad_ω1_fd(w, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
@@ -64,3 +65,22 @@ _grad_TRF_fd = grad_TRF_fd(w, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s
 ## FD gradient: ω1
 _,_grad_ω1_fd = grad_TV_ω1_fd(w, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, λ)
 @test grad_ω1 ≈ _grad_ω1_fd rtol = 1e-1
+
+
+## ########################################################################
+# Test OCT gradients: double loop
+###########################################################################
+α = [α; α]
+ω1 = [ω1; ω1]
+TRF = [TRF; TRF]
+isInversionPulse = [isInversionPulse; isInversionPulse]
+
+##
+(F0, grad_ω1_2, grad_TRF_2) = MRIgeneralizedBloch.OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, w; isInversionPulse = isInversionPulse)
+grad_ω1_2 .*= 4
+grad_TRF_2 .*= 4
+
+@test grad_ω1 ≈ grad_ω1_2[1:end÷2]       rtol = 1e-5
+@test grad_ω1 ≈ grad_ω1_2[end÷2+1:end]   rtol = 1e-5
+@test grad_TRF ≈ grad_TRF_2[1:end÷2]     rtol = 1e-5
+@test grad_TRF ≈ grad_TRF_2[end÷2+1:end] rtol = 1e-5

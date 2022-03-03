@@ -12,17 +12,19 @@ function grad_ω1_fd(w, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2sl
     CRB0 = calc_CRB(s0, w)
 
     for t in eachindex(ω1)
-        α[t] = (ω1[t] + Δω1) * TRF[t]
-        
-        ds = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=grad_list)
-        CRB1 = calc_CRB(ds, w)
+        if α[t] ≈ π
+            _grad_ω1[t] = 0
+        else
+            α[t] = (ω1[t] + Δω1) * TRF[t]
 
-        α[t] = ω1[t] .* TRF[t]
-
-        _grad_ω1[t] = (CRB1 - CRB0) / Δω1
+            ds = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=grad_list)
+            CRB1 = calc_CRB(ds, w)
+            α[t] = ω1[t] .* TRF[t]
+            _grad_ω1[t] = (CRB1 - CRB0) / Δω1
+        end
     end
-    _grad_ω1[1] = 0
-    return _grad_ω1  
+
+    return _grad_ω1
 end
 
 function grad_TRF_fd(w, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
@@ -34,18 +36,21 @@ function grad_TRF_fd(w, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2sl
     CRB0 = calc_CRB(s0, w)
 
     for t in eachindex(ω1)
-        TRF[t] += ΔTRF
-        α[t] = ω1[t] * TRF[t]
-        
-        ds = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=grad_list)
-        CRB1 = calc_CRB(ds, w)
-        _grad_TRF[t] = (CRB1 - CRB0) / ΔTRF
+        if α[t] ≈ π
+            _grad_TRF[t] = 0
+        else
+            TRF[t] += ΔTRF
+            α[t] = ω1[t] * TRF[t]
 
-        TRF[t] -= ΔTRF
-        α[t] = ω1[t] * TRF[t]
+            ds = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=grad_list)
+            CRB1 = calc_CRB(ds, w)
+            _grad_TRF[t] = (CRB1 - CRB0) / ΔTRF
+
+            TRF[t] -= ΔTRF
+            α[t] = ω1[t] * TRF[t]
+        end
     end
-    _grad_TRF[1] = 0
-    return _grad_TRF  
+    return _grad_TRF
 end
 
 
@@ -54,15 +59,15 @@ function dCRBdm_fd(m, w)
     _dCRBdx = similar(m, Float64)
     _dCRBdy = similar(m, Float64)
     Δm = 1e-9
-    
+
     CRB0 = calc_CRB(m, w)
     for i in eachindex(m)
         dm = copy(m)
-        dm[i] = m[i] .+ Δm 
+        dm[i] = m[i] .+ Δm
         _dCRBdx[i] = real(CRB0 - calc_CRB(dm, w)) / Δm
 
         dm = copy(m)
-        dm[i] = m[i] + 1im * Δm 
+        dm[i] = m[i] + 1im * Δm
         _dCRBdy[i] += real(CRB0 - calc_CRB(dm, w)) / Δm
     end
 

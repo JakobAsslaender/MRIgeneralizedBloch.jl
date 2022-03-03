@@ -66,7 +66,5 @@ end
 end
 
 @testset "OCT Gradients" begin
-    for i = 1:10 # test different random initializations
-        include("OCT.jl")
-    end
+    include("OCT.jl")
 end

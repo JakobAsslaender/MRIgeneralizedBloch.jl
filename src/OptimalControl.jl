@@ -105,10 +105,10 @@ end
 
 function calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, _, _)
     u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
-    u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1,
-        R2slT[1](TRF[1], ω1[1] * TRF[1], B1, T2s),
-        R2slT[2](TRF[1], ω1[1] * TRF[1], B1, T2s),
-        R2slT[3](TRF[1], ω1[1] * TRF[1], B1, T2s),
+    u_pl = propagator_linear_inversion_pulse(ω1, TRF, B1,
+        R2slT[1](TRF, ω1 * TRF, B1, T2s),
+        R2slT[2](TRF, ω1 * TRF, B1, T2s),
+        R2slT[3](TRF, ω1 * TRF, B1, T2s),
         grad)
     E[t,r,g] = u_fp * u_pl * u_rot * u_fp
     dEdω1[t,r,g] = @SMatrix zeros(11, 11)
