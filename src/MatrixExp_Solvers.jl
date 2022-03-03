@@ -4,15 +4,15 @@
 """
     calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT[; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal])
 
-Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Loretzian lineshape. 
+Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Loretzian lineshape.
 
-The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. 
+The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
 
 # Arguments
 - `α::Vector{<:Number}`: Array of flip angles in radians
 - `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
 - `TR::Number`: Repetition time in seconds
-- `ω0::Number`: Off-resonance frequency in rad/s 
+- `ω0::Number`: Off-resonance frequency in rad/s
 - `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
 - `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
@@ -24,7 +24,7 @@ The simulation assumes a sequence of rectangluar RF-pulses with varying flip ang
 
 Optional:
 - `grad_list=[undef]`: Vector to indicate which gradients should be calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
-- `rfphase_increment=[π]::Vector{<:Number}`: Increment of the RF phase between consequtive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array. 
+- `rfphase_increment=[π]::Vector{<:Number}`: Increment of the RF phase between consequtive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array.
 - `m0=:antiperiodic`: With the default keyword `:antiperiodic`, the signal and their derivatives are calcualted assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initalization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
 - `output=:complexsignal`: The defaul keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
 
@@ -128,15 +128,21 @@ end
 # helper functions
 ############################################################################
 function evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad=undef, rfphase_increment=π)
-    # put inversion pulse at the end (this defines m as the magnetization at the first TE after the inversion pulse)
     u_rot = z_rotation_propagator(rfphase_increment, grad)
+
+    # put inversion pulse at the end (this defines m as the magnetization at the first TE after the inversion pulse)
     u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
     u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, _R2s[1], _dR2sdT2s[1], _dR2sdB1[1], grad)
     A = u_fp * u_pl * u_rot * u_fp
-    
+
     for i = length(ω1):-1:2
-        u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
-        u_pl = exp(hamiltonian_linear(ω1[i], B1, ω0, TRF[i], m0s, R1f, R2f, Rx, R1s, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
+        if ω1[i] * TRF[i] ≈ π # inversion pulses are accompanied by crusher gradients
+            u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+            u_pl = propagator_linear_inversion_pulse(ω1[i], TRF[i], B1, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad)
+        else
+            u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF[i]) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+            u_pl = exp(hamiltonian_linear(ω1[i], B1, ω0, TRF[i], m0s, R1f, R2f, Rx, R1s, _R2s[i], _dR2sdT2s[i], _dR2sdB1[i], grad))
+        end
         A = A * u_fp * u_pl * u_rot * u_fp
     end
     return A

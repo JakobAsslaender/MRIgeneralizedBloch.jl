@@ -1,5 +1,5 @@
-function OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights)
-    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
+function OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; inv_idx = [true, falses(length(ω1)-1)...])
+    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, inv_idx=inv_idx)
     Q = calcualte_cycle_propgator(E)
     Y = propagate_magnetization(Q, E)
     (CRB, d) = dCRBdm(Y, weights)
@@ -29,7 +29,7 @@ end
 
 
 
-function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list::AbstractArray{T}; rfphase_increment=[π]) where T <: grad_param
+function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list::AbstractArray{T}; rfphase_increment=[π], inv_idx = [true, falses(length(ω1)-1)...]) where T <: grad_param
     E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
@@ -37,23 +37,17 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
     cache = ExponentialUtilities.alloc_mem(zeros(22, 22), ExpMethodHigham2005Base())
     dH = zeros(Float64, 22, 22)
 
-    for r in eachindex(rfphase_increment)
+    for r ∈ eachindex(rfphase_increment)
         u_rot = z_rotation_propagator(rfphase_increment[r], grad_m0s())
-        for g in eachindex(grad_list)
+        for g ∈ eachindex(grad_list)
             grad = grad_list[g]
 
-            u_fp = xs_destructor(grad_list[g]) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad_list[g]))
-            u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, 
-            R2slT[1](TRF[1], ω1[1] * TRF[1], B1, T2s), 
-            R2slT[2](TRF[1], ω1[1] * TRF[1], B1, T2s), 
-            R2slT[3](TRF[1], ω1[1] * TRF[1], B1, T2s), 
-            grad_list[g])
-            E[1,r,g] = u_fp * u_pl * u_rot * u_fp
-            dEdω1[1,r,g] = @SMatrix zeros(11, 11)
-            dEdTRF[1,r,g] = @SMatrix zeros(11, 11)
-
-            for t in 2:length(ω1)
-                calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+            for t ∈ 1:length(ω1)
+                if inv_idx[t]
+                    calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+                else
+                    calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+                end
             end
         end
     end
@@ -67,15 +61,15 @@ function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1,
     u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
 
     H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rx, R1s,
-        R2slT[1](TRF, ω1 * TRF, B1, T2s), 
-        R2slT[2](TRF, ω1 * TRF, B1, T2s), 
-        R2slT[3](TRF, ω1 * TRF, B1, T2s), 
+        R2slT[1](TRF, ω1 * TRF, B1, T2s),
+        R2slT[2](TRF, ω1 * TRF, B1, T2s),
+        R2slT[3](TRF, ω1 * TRF, B1, T2s),
         grad)
 
-    dHdω1 = d_hamiltonian_linear_dω1(B1, 1, 
-        R2slT[4](TRF, ω1 * TRF, B1, T2s), 
-        R2slT[6](TRF, ω1 * TRF, B1, T2s), 
-        R2slT[7](TRF, ω1 * TRF, B1, T2s), 
+    dHdω1 = d_hamiltonian_linear_dω1(B1, 1,
+        R2slT[4](TRF, ω1 * TRF, B1, T2s),
+        R2slT[6](TRF, ω1 * TRF, B1, T2s),
+        R2slT[7](TRF, ω1 * TRF, B1, T2s),
         grad)
 
     @views dH[1:11,1:11]   .= H_pl
@@ -91,10 +85,10 @@ function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1,
     dEdω1[t,r,g] = u_fp * E_pl2 * u_rot * u_fp
 
     # TRF
-    dHdTRF = H_pl + d_hamiltonian_linear_dTRF_add(TRF, 
-        R2slT[5](TRF, ω1 * TRF, B1, T2s), 
-        R2slT[8](TRF, ω1 * TRF, B1, T2s), 
-        R2slT[9](TRF, ω1 * TRF, B1, T2s), 
+    dHdTRF = H_pl + d_hamiltonian_linear_dTRF_add(TRF,
+        R2slT[5](TRF, ω1 * TRF, B1, T2s),
+        R2slT[8](TRF, ω1 * TRF, B1, T2s),
+        R2slT[9](TRF, ω1 * TRF, B1, T2s),
         grad)
     H_pl *= TRF
     @views dH[1:11,1:11]   .= H_pl
@@ -106,6 +100,19 @@ function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1,
     E_pl1 = SMatrix{11,11}(@view E_pl[1:11,1:11])
     E_pl2 = SMatrix{11,11}(@view E_pl[12:end,1:11])
     dEdTRF[t,r,g] = u_fp * ((E_pl2 - (1 / 2 * H_fp * E_pl1)) * u_rot - (1 / 2 * E_pl1 * u_rot * H_fp)) * u_fp
+    return nothing
+end
+
+function calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, _, _)
+    u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+    u_pl = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1,
+        R2slT[1](TRF[1], ω1[1] * TRF[1], B1, T2s),
+        R2slT[2](TRF[1], ω1[1] * TRF[1], B1, T2s),
+        R2slT[3](TRF[1], ω1[1] * TRF[1], B1, T2s),
+        grad)
+    E[t,r,g] = u_fp * u_pl * u_rot * u_fp
+    dEdω1[t,r,g] = @SMatrix zeros(11, 11)
+    dEdTRF[t,r,g] = @SMatrix zeros(11, 11)
     return nothing
 end
 
@@ -124,10 +131,10 @@ end
 
 function propagate_magnetization(Q, E)
     Y = similar(E, SVector{11,Float64})
-    
+
     for r in 1:size(E, 2), g in 1:size(E, 3)
         m = Q[r,g] \ C(grad_m0s())
-    
+
         Y[1,r,g] = m
         for t = 2:size(E, 1)
             m = E[t,r,g] * m
@@ -135,11 +142,11 @@ function propagate_magnetization(Q, E)
         end
     end
     return Y
-    
+
     return S
 end
 
-# the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them. 
+# the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them.
 function calculate_adjoint_state(d, Q, E)
     P = similar(E, Array{Float64})
     λ = @view P[end,:,:]
