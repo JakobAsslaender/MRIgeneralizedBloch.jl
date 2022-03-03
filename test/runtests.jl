@@ -61,6 +61,10 @@ end
     include("Solvers_Gradients.jl")
 end
 
+@testset "MultipleInversion" begin
+    include("MultipleInversion.jl")
+end
+
 @testset "OCT Gradients" begin
     for i = 1:10 # test different random initializations
         include("OCT.jl")
