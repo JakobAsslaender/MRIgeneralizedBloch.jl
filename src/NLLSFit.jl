@@ -24,98 +24,22 @@ function HSFP_fit(data, α, TRF, TR;
     p0   = Float64[reM0[2], imM0[2]]
     pmax = Float64[reM0[3], imM0[3]]
 
-
-    im0s = if isa(m0s, Number)
-        0
-    else
-        push!(grad_list, grad_m0s())
-        push!(pmin, m0s[1])
-        push!(p0  , m0s[2])
-        push!(pmax, m0s[3])
-        length(p0)
+    idx = Vector{Int}(undef, 8)
+    param    = [m0s, R1f, R2f, Rx, R1s, T2s, ω0, B1]
+    grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+    for i ∈ eachindex(param)
+        idx[i] = if isa(param[i], Number)
+            0
+        else
+            push!(grad_list, grad_all[i])
+            push!(pmin, param[i][1])
+            push!(p0  , param[i][2])
+            push!(pmax, param[i][3])
+            length(p0)
+        end
     end
 
-    iR1f = if isa(R1f, Number)
-        0
-    else
-        push!(grad_list, grad_R1f())
-        push!(pmin, R1f[1])
-        push!(p0  , R1f[2])
-        push!(pmax, R1f[3])
-        length(p0)
-    end
-
-    iR2f = if isa(R2f, Number)
-        0
-    else
-        push!(grad_list, grad_R2f())
-        push!(pmin, R2f[1])
-        push!(p0  , R2f[2])
-        push!(pmax, R2f[3])
-        length(p0)
-    end
-
-    iRx = if isa(Rx, Number)
-        0
-    else
-        push!(grad_list, grad_Rx())
-        push!(pmin, Rx[1])
-        push!(p0  , Rx[2])
-        push!(pmax, Rx[3])
-        length(p0)
-    end
-
-    iR1s = if isa(R1s, Number)
-        0
-    else
-        push!(grad_list, grad_R1s())
-        push!(pmin, R1s[1])
-        push!(p0  , R1s[2])
-        push!(pmax, R1s[3])
-        length(p0)
-    end
-
-    iT2s = if isa(T2s, Number)
-        0
-    else
-        push!(grad_list, grad_T2s())
-        push!(pmin, T2s[1])
-        push!(p0  , T2s[2])
-        push!(pmax, T2s[3])
-        length(p0)
-    end
-
-    iω0 = if isa(ω0, Number)
-        0
-    else
-        push!(grad_list, grad_ω0())
-        push!(pmin, ω0[1])
-        push!(p0  , ω0[2])
-        push!(pmax, ω0[3])
-        length(p0)
-    end
-
-    iB1 = if isa(B1, Number)
-        0
-    else
-        push!(grad_list, grad_B1())
-        push!(pmin, B1[1])
-        push!(p0  , B1[2])
-        push!(pmax, B1[3])
-        length(p0)
-    end
-
-
-    getm0s(p) = im0s == 0 ? m0s : p[im0s]
-    getR1f(p) = iR1f == 0 ? R1f : p[iR1f]
-    getR2f(p) = iR2f == 0 ? R2f : p[iR2f]
-    getRx(p)  = iRx  == 0 ? Rx  : p[iRx]
-    getR1s(p) = iR1s == 0 ? R1s : p[iR1s]
-    getT2s(p) = iT2s == 0 ? T2s : p[iT2s]
-    getω0(p)  = iω0  == 0 ? ω0  : p[iω0]
-    getB1(p)  = iB1  == 0 ? B1  : p[iB1]
-
-    getparameters(p) = ((p[1]+1im*p[2]), getm0s(p), getR1f(p), getR2f(p), getRx(p), getR1s(p), getT2s(p), getω0(p), getB1(p))
+    getparameters(p) = ((p[1]+1im*p[2]), ntuple(i-> idx[i] == 0 ? param[i] : p[idx[i]], length(idx))...)
 
     function model!(F, _, p)
         M0, m0s, R1f, R2f, Rx, R1s, T2s, ω0, B1 = getparameters(p)
