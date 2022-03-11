@@ -1,7 +1,7 @@
 using Pkg
 Pkg.activate("docs")
 Pkg.develop(PackageSpec(path=pwd()))
-Pkg.add(url="https://github.com/JuliaNLSolvers/LsqFit.jl", rev="master") # I implemented a bugfix (PR #182) that is merged, but not yet released. This line can be removed once a new version is released. 
+Pkg.add(url="https://github.com/JuliaNLSolvers/LsqFit.jl", rev="master") # I implemented a bugfix (PR #182) that is merged, but not yet released. This line can be removed once a new version is released.
 Pkg.instantiate()
 
 using MRIgeneralizedBloch
@@ -29,20 +29,23 @@ end
 # Notebook hack to display inline math correctly
 function notebook_filter(str)
     re = r"(?<!`)``(?!`)"  # Two backquotes not preceded by nor followed by another
-    replace(str, re => "\$")
+    return replace(str, re => "\$")
 end
 
 # Literate
 OUTPUT = joinpath(@__DIR__, "src/build_literate")
 
 files = [
-    "tutorial.jl",
+    "tutorial_singlepulse.jl",
+    "tutorial_pulsetrain.jl",
     "Greens_functions.jl",
     "Simulation_ContinuousWave.jl",
     "Simulation_Pulse.jl",
     "Analyze_NMR_IR_Data.jl",
     "Analyze_NMR_PreSat_Data.jl",
     "Linear_Approximation.jl",
+    "NLLS.jl",
+    "OCT.jl",
 ]
 
 for file in files
@@ -67,15 +70,20 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Quick Start Tutorial" => "build_literate/tutorial.md",
-        "Generalized Bloch Paper" => Any[
-        "build_literate/Greens_functions.md",
-        "build_literate/Simulation_ContinuousWave.md",
-        "build_literate/Simulation_Pulse.md",
-        "build_literate/Analyze_NMR_IR_Data.md",
-        "build_literate/Analyze_NMR_PreSat_Data.md",
-        "build_literate/Linear_Approximation.md",
+        "Quick Start Tutorial" => Any[
+            "build_literate/tutorial_singlepulse.md",
+            "build_literate/tutorial_pulsetrain.md",
         ],
+        "Generalized Bloch Paper" => Any[
+            "build_literate/Greens_functions.md",
+            "build_literate/Simulation_ContinuousWave.md",
+            "build_literate/Simulation_Pulse.md",
+            "build_literate/Analyze_NMR_IR_Data.md",
+            "build_literate/Analyze_NMR_PreSat_Data.md",
+            "build_literate/Linear_Approximation.md",
+        ],
+        "build_literate/NLLS.md",
+        "build_literate/OCT.md",
         "API" => "api.md",
     ],
 )

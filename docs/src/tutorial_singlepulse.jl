@@ -1,6 +1,6 @@
-#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/tutorial.ipynb)
+#md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/tutorial_singlepulse.ipynb)
 
-# # Quick Start Tutorial
+# # Single RF Pulse
 
 # The core of generalized Bloch model is implemented in the function [`apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p, t)`](@ref), which calculates the derivative `∂m/∂t` for a given magnetization vector `m` and stores it in-place in the the variable `∂m∂t`. The function interface is written in a way that we can directly feed it into a differential equation solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package.
 
@@ -9,7 +9,7 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
- 
+
 # We simulate the dynamics of a coupled spin system with the following parameters:
 m0s = 0.15
 R1f = 0.3 # 1/s
@@ -44,4 +44,4 @@ sol = solve(prob)
 p = plot(sol, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ" "1"], xlabel="t [s]", ylabel="m(t)")
 #md Main.HTMLPlot(p) #hide
 
-# More details on the interface, including the linear approximation of the generalized Bloch model can found in the following scripts that replicate all simulations, data analyses, and figures of the generalized Bloch paper. 
+# More details on the interface, including the linear approximation of the generalized Bloch model can found in the following scripts that replicate all simulations, data analyses, and figures of the generalized Bloch paper.

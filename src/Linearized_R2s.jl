@@ -3,7 +3,7 @@
 
 Pre-compute and interpolate the linearized `R2sl(TRF, α, B1, T2s)` and its derivatives `dR2sldB1(TRF, α, B1, T2s)`, `R2sldT2s(TRF, α, B1, T2s)` etc. in the range specified by the arguments.
 
-The function solves the generalized Bloch equations of an isolated semi-solid pool for values in the specified range, calulates the linearized R2sl that minimizes the error of `zs` at the end of the RF-pulse, and interpolates between the different samples. 
+The function solves the generalized Bloch equations of an isolated semi-solid pool for values in the specified range, calulates the linearized R2sl that minimizes the error of `zs` at the end of the RF-pulse, and interpolates between the different samples.
 
 # Optional Arguments:
 - `TRF_min::Number`: lower bound of the RF-pulse duration range in seconds
@@ -33,16 +33,16 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
 
     function calculate_z(τ, Ω)
         mfun(p, t) = [1.0]
-    
+
         function hamiltonian_1D!(du, u, mfun, p::NTuple{3,Any}, t)
             ω1, T2s, g = p
             du[1] = -ω1^2 * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1], 0.0, t)[1]
         end
-    
+
         z = solve(DDEProblem(hamiltonian_1D!, [1.0], mfun, (0, τ), (Ω, 1, G)), MethodOfSteps(DP8()))
         return z
     end
-    
+
     function calculate_R2sl(z_fun, τ, Ω)
         z = z_fun(τ)[1]
         function f!(F, ρv)
@@ -57,14 +57,14 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
             x = 2 * Ω^2 * exp(-ρ * τ / 2) * (τ * s * cosh(τ * s / 2) - 2sinh(τ * s / 2)) / s^3
             J[1] = real(x)
         end
-    
+
         sol = nlsolve(f!, j!, [0.1])
         return sol.zero[1]
     end
-    
+
     τv = range(TRF_min / T2s_max, TRF_max / T2s_min; length=2^10)
     Ωv = range(0, B1_max * ω1_max * T2s_max; length=2^6)
-    
+
     A = Matrix{Float64}(undef, length(τv), length(Ωv))
     @batch minbatch=8 for iΩ ∈ 2:length(Ωv)
         τmax = min(τv[end], TRF_max * ω1_max / Ωv[iΩ])
@@ -75,7 +75,7 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
         end
     end
     A[:,1] .= A[:,2] # extrapolation hack as the fit does not work with Ω = 0
-    
+
     f = CubicSplineInterpolation((τv, Ωv), A)
     dfdτ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[1]
     dfdΩ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[2]
@@ -84,13 +84,13 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
     d2fdτdΩ(τ, Ω) = Interpolations.hessian( f, τ, Ω)[2,1]
 
     R2sl(TRF, α, B1, T2s) = f(TRF / T2s, B1 * α * T2s / TRF) / T2s
-    
+
     dR2sldT2s(TRF, α, B1, T2s) = -dfdτ(TRF / T2s, B1 * α * T2s / TRF) * TRF / T2s^3 - f(TRF / T2s, B1 * α * T2s / TRF) / T2s^2 + dfdΩ(TRF / T2s, B1 * α * T2s / TRF) * B1 * α / TRF / T2s
     dR2sldB1(TRF, α, B1, T2s)  = dfdΩ(TRF / T2s, B1 * α * T2s / TRF) * α / TRF
-    
+
     dR2sldω1(TRF, α, B1, T2s)  = dfdΩ(TRF / T2s, B1 * α * T2s / TRF) * B1
     dR2sldTRF(TRF, α, B1, T2s) = dfdτ(TRF / T2s, B1 * α * T2s / TRF) / T2s^2
-    
+
 
     dR2sldT2sdω1(TRF, α, B1, T2s) = -d2fdτdΩ(TRF / T2s, B1 * α * T2s / TRF) * B1 * TRF / T2s^2 + d2fdΩ2(TRF / T2s, B1 * α * T2s / TRF) * B1^2 * α / TRF
 
