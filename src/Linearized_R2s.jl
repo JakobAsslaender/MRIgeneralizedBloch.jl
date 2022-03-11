@@ -31,7 +31,7 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
         G = greens
     end
 
-    function calculate_z(τ, Ω)
+    function calculate_z(τ, Ω, G)
         mfun(p, t) = [1.0]
 
         function hamiltonian_1D!(du, u, mfun, p::NTuple{3,Any}, t)
@@ -68,7 +68,7 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
     A = Matrix{Float64}(undef, length(τv), length(Ωv))
     @batch minbatch=8 for iΩ ∈ 2:length(Ωv)
         τmax = min(τv[end], TRF_max * ω1_max / Ωv[iΩ])
-        z_fun = calculate_z(τmax, Ωv[iΩ])
+        z_fun = calculate_z(τmax, Ωv[iΩ], G)
         for iτ in eachindex(τv)
             τ = min(τv[iτ], TRF_max * ω1_max / Ωv[iΩ])
             A[iτ,iΩ] = calculate_R2sl(z_fun, τ, Ωv[iΩ])
