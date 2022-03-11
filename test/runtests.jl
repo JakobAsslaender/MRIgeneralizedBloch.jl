@@ -68,3 +68,7 @@ end
 @testset "OCT Gradients" begin
     include("OCT.jl")
 end
+
+@testset "NLLS" begin
+    include("NLLS.jl")
+end

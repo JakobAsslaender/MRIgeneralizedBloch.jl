@@ -11,6 +11,8 @@ using LinearAlgebra
 using NLsolve
 using ExponentialUtilities
 using Polyester
+using LsqFit
+using LinearAlgebra
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_graham_superlorentzian!
@@ -32,6 +34,7 @@ export calculatesignal_graham_ode
 export precompute_R2sl
 export evaluate_R2sl_vector
 export calculatesignal_linearapprox
+export HSFP_fit
 
 export grad_m0s
 export grad_R1a
@@ -62,5 +65,6 @@ include("Greens_functions.jl")
 include("MatrixExp_Hamiltonians.jl")
 include("OptimalControl.jl")
 include("Gradient_Hamiltonians.jl")
+include("NLLSFit.jl")
 
 end

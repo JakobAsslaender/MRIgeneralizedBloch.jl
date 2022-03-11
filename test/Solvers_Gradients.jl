@@ -7,23 +7,26 @@ R2slT = precompute_R2sl()
 
 ## choose random parameters
 Npulse = 500
-α = π/2 * rand() * sin.(8π * rand() * (1:Npulse) / Npulse)
+α = abs.(π/2 * sin.(π/2 * ((0:Npulse-1) / Npulse) .+ π/2))
+TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 α[1] = π
-TRF = 100e-6 .+ 400e-6 * rand(Npulse)
 TRF[1] = 500e-6
+ω1 = α ./ TRF
+isInversionPulse = α .≈ π
 
+R2slT = precompute_R2sl(ω1_max = 1.1 * maximum(ω1))
 TR = 3.5e-3
 
-B1 = 0.7 + 0.6 * rand()
-ω0 = 1000 * rand()
-m0s = 0.4 * rand()
-R1f = 0.15 + 0.2 * rand()
-R1s = 2 + rand()
-R2f = 1 / (40e-3 + 100e-3 * rand())
-T2s = 5e-6 + 10e-6 * rand()
-Rx = 10 + 10 * rand()
+B1 = 1
+ω0 = 0
+m0s = 0.25
+R1f = 0.3
+R1s = 2
+R2f = 1 / 65e-3
+T2s = 10e-6
+Rx = 20
 
-R1a = 0.5 + rand()
+R1a = 0.7
 
 rtol = 1e-5
 
