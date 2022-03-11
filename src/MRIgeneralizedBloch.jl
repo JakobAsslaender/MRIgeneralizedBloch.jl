@@ -34,7 +34,9 @@ export calculatesignal_graham_ode
 export precompute_R2sl
 export evaluate_R2sl_vector
 export calculatesignal_linearapprox
+
 export HSFP_fit
+export qMTmap
 
 export grad_m0s
 export grad_R1a

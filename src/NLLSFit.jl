@@ -9,7 +9,9 @@ function HSFP_fit(data, α, TRF, TR;
     T2s  = (8e-6,1e-5,12e-6),
     ω0   = (-Inf,   0,  Inf),
     B1   = (   0,   1,  1.5),
+    R1a  = (   0, 0.7,  Inf),
     u=1,
+    fit_apparentR1=false,
     R2slT=undef,
     show_trace=false,
     maxIter=100
@@ -25,11 +27,18 @@ function HSFP_fit(data, α, TRF, TR;
     pmax = Float64[reM0[3], imM0[3]]
 
     idx = Vector{Int}(undef, 8)
-    param    = [m0s, R1f, R2f, Rx, R1s, T2s, ω0, B1]
-    grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+    if fit_apparentR1
+        param    = [m0s, R1a, R2f, Rx, R1a, T2s, ω0, B1]
+        grad_all = [grad_m0s(), grad_R1a(), grad_R2f(), grad_Rx(), nothing, grad_T2s(), grad_ω0(), grad_B1()]
+    else
+        param    = [m0s, R1f, R2f, Rx, R1s, T2s, ω0, B1]
+        grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+    end
     for i ∈ eachindex(param)
         idx[i] = if isa(param[i], Number)
             0
+        elseif grad_all[i] === nothing
+            idx[2] # copy R1a
         else
             push!(grad_list, grad_all[i])
             push!(pmin, param[i][1])
