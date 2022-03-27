@@ -1,5 +1,6 @@
 using Test
 using MRIgeneralizedBloch
+using LinearAlgebra
 R2slT = precompute_R2sl()
 
 ## define control
@@ -39,7 +40,8 @@ qM = HSFP_fit(vec(s), α, TRF, TR; R2slT=R2slT)
 @test qM.B1  ≈ B1  rtol = 1e-3
 
 ## compress with some random u
-u = randn(ComplexF64, length(s), 50)
+u = randn(ComplexF64, length(s), 100)
+u,_,_ = svd(u)
 sc = u' * vec(s)
 
 qM = HSFP_fit(sc, α, TRF, TR; R2slT=R2slT, u=u)
