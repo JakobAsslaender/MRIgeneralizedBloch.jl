@@ -7,7 +7,7 @@ R2slT = precompute_R2sl()
 
 ## choose random parameters
 Npulse = 500
-α = π/2 * rand() * sin.(8π * rand() * (1:Npulse) / Npulse)
+α = π/3 * sin.(4π * (1:Npulse) / Npulse)
 α[1] = π
 # TRF = similar(α)
 # TRF .= 1e-3 # long TRF to make Graham and gBloch match better
@@ -16,14 +16,14 @@ TRF[1] = 500e-6
 
 TR = 3.5e-3
 
-B1 = 0.7 + 0.6 * rand()
-ω0 = 1000 * rand()
-m0s = 0.4 * rand()
-R1f = 0.15 + 0.2 * rand()
-R1s = 2 + rand()
-R2f = 1 / (40e-3 + 100e-3 * rand())
-T2s = 5e-6 + 10e-6 * rand()
-Rx = 40 * rand()
+B1 = 0.9
+ω0 = 300
+m0s = 0.2
+R1f = 0.35
+R1s = 2.5
+R2f = 1 / 65e-3
+T2s = 11e-6
+Rx = 20
 
 
 ## gBloch model with IDE vs Graham vs linear approximation: complex signal
