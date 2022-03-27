@@ -13,6 +13,7 @@ control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../docs/con
 α   = control["alpha"]
 TRF = control["TRF"]
 
+# and setting TR...
 TR = 3.5e-3
 t = TR .* (1:length(TRF))
 
