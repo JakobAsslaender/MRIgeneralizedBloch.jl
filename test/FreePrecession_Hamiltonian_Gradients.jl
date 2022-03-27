@@ -19,10 +19,10 @@ mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(30)
 alg = Tsit5()
 
 ## random initialization
-ms = m0s * rand()
-mf = (1 - m0s) * rand()
-ϑ = rand() * π / 2
-φ = rand() * 2π
+ms = m0s * 0.3
+mf = (1 - m0s) * 0.5
+ϑ = 0.7 * π / 2
+φ = 0.4 * 2π
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 ## baseline ODE solution
