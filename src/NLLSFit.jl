@@ -12,14 +12,10 @@ function HSFP_fit(data, α, TRF, TR;
     R1a  = (   0, 0.7,  Inf),
     u=1,
     fit_apparentR1=false,
-    R2slT=undef,
     show_trace=false,
-    maxIter=100
+    maxIter=100,
+    R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
     )
-
-    if R2slT == undef
-        R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1))
-    end
 
     grad_list = MRIgeneralizedBloch.grad_param[]
     pmin = Float64[reM0[1], imM0[1]]
