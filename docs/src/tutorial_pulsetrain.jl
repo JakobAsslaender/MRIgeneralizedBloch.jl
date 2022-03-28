@@ -1,6 +1,6 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/tutorial_pulsetrain.ipynb)
 
-# # Balanced Hybrid-State Free Precession Pulse Sequence
+# # Simulation of a Balanced Hybrid-State Free Precession Pulse Sequence
 # This section explains the interface for calculating the spin evolution during a train of RF pulses, assuming balanced gradient moments. For this, we need the following packages:
 
 using MRIgeneralizedBloch
