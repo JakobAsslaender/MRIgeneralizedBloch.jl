@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/NLLS.ipynb)
 
 # # Non-Linear Least Square Fitting
-# This section gives a brief overview of the interface to fit the generalized Bloch model to [hybrid-state free precession](https://www.nature.com/articles/s42005-019-0174-0) data. We use the [LsqFit.jl](https://github.com/JuliaNLSolvers/LsqFit.jl) package and supply the algorithm with analytic gradients that are calcualted with the [calculatesignal_linearapprox](@ref) function that implements the linear approximation of the generalized Bloch model for a train of rectangular RF pulses.
+# This section gives a brief overview of the interface to fit the generalized Bloch model to [hybrid-state free precession](https://www.nature.com/articles/s42005-019-0174-0) data. We use the [LsqFit.jl](https://github.com/JuliaNLSolvers/LsqFit.jl) package and supply the algorithm with analytic gradients that are calcualted with the [`calculatesignal_linearapprox`](@ref) function that implements the linear approximation of the generalized Bloch model for a train of rectangular RF pulses.
 
 # ## Basic Interface
 # This tutorial uses the following packages:
@@ -29,12 +29,12 @@ T2s = 12e-6 # s
 ω0 = 100 # rad/s
 B1 = 0.9; # in units of B1_nominal
 
-# precomupte the linear approximation:
+# precomupte the linear approximation
 R2slT = precompute_R2sl();
 
 # and simulate the signal:
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
-s = vec(s);
+s = vec(s)
 
 # To make this example a bit more realistic, we add complex valued Gaussian noise:
 s .+= 0.01 * randn(ComplexF64, size(s));
@@ -42,7 +42,9 @@ s .+= 0.01 * randn(ComplexF64, size(s));
 # Now we can fit the model to the noisy data:
 qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT)
 
-# The last keyword argument is optional. It allows to recycle the precomputed `R2slT`, which improves speed. If not specified, it is re-calculated internally. We can access the fitted parameters with
+# The last keyword argument is optional. It allows to recycle the precomputed `R2sl`, which improves speed. If not specified, it is re-calculated internally.
+
+# We can access the fitted parameters with
 qM.m0s
 #-
 qM.R1f # 1/s
@@ -102,7 +104,7 @@ qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5));
 # starts the fit at `m0s = 0.3` and uses a lower bound of `0.1` and an upper bound of `0.5`. Alternatively, one also fix parameters to specified values:
 qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1);
 
-# In this case, the graients wrt. these parameters are not calculated and the result is accordingly
+# In this case, the graients wrt. `ω0` and `B1` are not calculated and the result is accordingly
 qM.ω0
 #-
 qM.B1

@@ -23,7 +23,7 @@ B1 = 0.9; # in units of B1_nominal
 R2slT = precompute_R2sl();
 
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
-s = vec(s);
+s = vec(s)
 
 s .+= 0.01 * randn(ComplexF64, size(s));
 

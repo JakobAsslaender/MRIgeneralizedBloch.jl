@@ -33,8 +33,8 @@ plot!(p, t, imag.(vec(s_linapp)), label="Im(s); lin. approx.")
 
 s_ide = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s)
 
-plot!(p, t, real.(vec(s_ide)), label="Re(s); IDE", legend=:topleft)
-plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE", legend=:topleft)
+plot!(p, t, real.(vec(s_ide)), label="Re(s); IDE")
+plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE")
 
 m_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT;
     output=:realmagnetization)
@@ -64,7 +64,8 @@ plot!(p, t, real.(s_linapp[:,1,9] .* B1 ), label="Re(∂s/∂B₁ )*B₁ ")
 
 R1a = 1 # 1/s
 grad_list=[grad_R1a()]
-s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT; grad_list=grad_list)
+s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT;
+    grad_list=grad_list)
 
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
 plot!(p, t, real.(s_linapp[:,1,1]       ), label="Re(∂s/∂M₀)/M₀")
