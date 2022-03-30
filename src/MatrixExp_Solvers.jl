@@ -2,7 +2,7 @@
 # main call function
 ############################################################################
 """
-    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT[; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal])
+    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT[; grad_list=[undef], rfphase_increment=[π], m0=:periodic, output=:complexsignal])
 
 Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Loretzian lineshape.
 
@@ -25,7 +25,7 @@ The simulation assumes a sequence of rectangluar RF-pulses with varying flip ang
 Optional:
 - `grad_list=[undef]`: Vector to indicate which gradients should be calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `rfphase_increment=[π]::Vector{<:Number}`: Increment of the RF phase between consequtive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array.
-- `m0=:antiperiodic`: With the default keyword `:antiperiodic`, the signal and their derivatives are calcualted assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initalization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
+- `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calcualted assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initalization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
 - `output=:complexsignal`: The defaul keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
 
 # Examples
@@ -58,14 +58,14 @@ julia> calculatesignal_linearapprox(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 
     0.06223633770306246 + 2.0810405785134972e-18im
 ```
 """
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal)
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list=[undef], rfphase_increment=[π], m0=:periodic, output=:complexsignal)
 
     R2s_vec = evaluate_R2sl_vector(abs.(α), TRF, B1, T2s, R2slT, grad_list)
 
     return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=grad_list, rfphase_increment=rfphase_increment, m0=m0, output=output)
 end
 
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=[undef], rfphase_increment=[π], m0=:antiperiodic, output=:complexsignal)
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=[undef], rfphase_increment=[π], m0=:periodic, output=:complexsignal)
 
     ω1 = α ./ TRF
 
@@ -97,12 +97,12 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R
         else
             error("the m0 vector of length <= 5 w/o gradients or <= 10 with gradients")
         end
-    elseif m0 != :antiperiodic
-        error("m0 must either be :antiperiodic, :IR, :thermal, or a vector")
+    elseif m0 != :periodic
+        error("m0 must either be :periodic, :IR, :thermal, or a vector")
     end
 
     for j in eachindex(grad_list), i in eachindex(rfphase_increment)
-        if m0 == :antiperiodic
+        if m0 == :periodic
             m = antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, R2s_vec[1], R2s_vec[2], R2s_vec[3], grad_list[j], rfphase_increment[i])
         elseif m0 == :thermal || isa(m0, AbstractVector)
             # this implements the α[1]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
