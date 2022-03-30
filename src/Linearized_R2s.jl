@@ -18,6 +18,7 @@ The function solves the generalized Bloch equations of an isolated semi-solid po
 ```jldoctest
 julia> R2slT = precompute_R2sl();
 
+
 julia> R2sl, dR2sldB1, R2sldT2s, _ = precompute_R2sl(TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=15e-6, ω1_max=π/500e-6, B1_max=1.3, greens=greens_gaussian);
 
 ```

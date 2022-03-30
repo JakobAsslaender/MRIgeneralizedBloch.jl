@@ -22,6 +22,7 @@ julia> using MRIgeneralizedBloch
 julia> x = 1000 * randn(2 * 100);
 
 julia> ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x)
+([6283.185307179586, 0.0, 6283.185307179586, 0.0, 6283.185307179586, 0.0, 6283.185307179586, 0.0, 6283.185307179586, 6283.185307179586  …  6283.185307179586, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6283.185307179586, 0.0, 0.0], [0.0005, 0.0005, 0.0005, 0.0001, 0.0005, 0.0001, 0.0001, 0.0005, 0.0005, 0.0005  …  0.0001, 0.0001, 0.0005, 0.0005, 0.0001, 0.0005, 0.0001, 0.0005, 0.0001, 0.0001])
 ```
 """
 function get_bounded_ω1_TRF(x; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
@@ -49,15 +50,32 @@ Bound the controls `ω1` and `TRF` in place and return a vector of length `2Npul
 ```jldoctest
 julia> using MRIgeneralizedBloch
 
-julia> ω1 = 4000π * rand(100)
+julia> ω1 = 4000π * rand(100);
 
-julia> TRF = 500e-6 * rand(100)
+julia> TRF = 500e-6 * rand(100);
 
 julia> x = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF)
-
-julia> ω1
-
-julia> TRF
+200-element Vector{Float64}:
+  Inf
+   0.16123919298957837
+  Inf
+  Inf
+  Inf
+  Inf
+   0.17719147195925186
+   0.33617937553604216
+  -1.1288911659500056
+  Inf
+   ⋮
+ -Inf
+  -0.5475311433614531
+  -0.6572991695812251
+ -Inf
+  -0.5487931795341404
+  -2.097250369053942
+ -Inf
+  -1.1536520473794025
+   0.07161170293075586
 ```
 """
 function bound_ω1_TRF!(ω1, TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
@@ -188,6 +206,7 @@ julia> grad_ω1 = similar(ω1);
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1e-3)
+0.3394498406831758
 ```
 """
 function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1)
@@ -292,6 +311,7 @@ julia> TRF = 500e-6 * rand(100);
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
+1.826335488333797e-5
 ```
 """
 function TRF_TV!(grad_TRF, ω1, TRF; λ = 1)
@@ -347,6 +367,7 @@ julia> grad_ω1 = similar(ω1);
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, Pmax=3e5)
+9.54432950518758e15
 ```
 """
 function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
