@@ -27,7 +27,7 @@ T2s = 12e-6 # s
 B1 = 0.9 # in units of B1_nominal
 
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
-qM = HSFP_fit(vec(s), α, TRF, TR; R2slT=R2slT)
+qM = fit_gBloch(vec(s), α, TRF, TR; R2slT=R2slT)
 
 @test qM.M0  ≈ 1   rtol = 1e-3
 @test qM.m0s ≈ m0s rtol = 1e-3
@@ -44,7 +44,7 @@ u = randn(ComplexF64, length(s), 100)
 u,_,_ = svd(u)
 sc = u' * vec(s)
 
-qM = HSFP_fit(sc, α, TRF, TR; R2slT=R2slT, u=u)
+qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u)
 
 @test qM.M0  ≈ 1   rtol = 1e-3
 @test qM.m0s ≈ m0s rtol = 1e-3
@@ -59,7 +59,7 @@ qM = HSFP_fit(sc, α, TRF, TR; R2slT=R2slT, u=u)
 ## test fit with apparent R1a
 R1a = 1.0 # 1/s
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT)
-qM = HSFP_fit(vec(s), α, TRF, TR; fit_apparentR1=true, R2slT=R2slT)
+qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R2slT=R2slT)
 
 @test qM.R1f ≈ qM.R1s
 

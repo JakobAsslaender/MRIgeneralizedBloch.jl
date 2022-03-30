@@ -40,7 +40,7 @@ s = vec(s)
 s .+= 0.01 * randn(ComplexF64, size(s));
 
 # Now we can fit the model to the noisy data:
-qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT)
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT)
 
 # The last keyword argument is optional. It allows to recycle the precomputed `R2sl`, which improves speed. If not specified, it is re-calculated internally.
 
@@ -99,10 +99,10 @@ plot!(p, t, imag.(s_fitted), label="Im(s_fitted)")
 # where the three entries refer to `(minimum, start_value, maximum)`
 
 # With keywords, one can modify each of these bounds. For example:
-qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5));
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5));
 
 # starts the fit at `m0s = 0.3` and uses a lower bound of `0.1` and an upper bound of `0.5`. Alternatively, one also fix parameters to specified values:
-qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1);
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1);
 
 # In this case, the graients wrt. `ω0` and `B1` are not calculated and the result is accordingly
 qM.ω0
@@ -121,14 +121,14 @@ u = u[:,1:9];
 # where the rank 9 was chosen heuristically. We can compress the noisy signal with
 sc = u' * s
 
-# and fit it by calling `HSFP_fit` with the keyword argument `u=u`:
-qM = HSFP_fit(sc, α, TRF, TR; R2slT=R2slT, u=u)
+# and fit it by calling `fit_gBloch` with the keyword argument `u=u`:
+qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u)
 
 
 # ## Apparent R1
 # Above fits tread `R1f` and `R1s` of the free and the semi-solid as independant parameters. As we discussed in our [paper](http://TODO.org), many publications in the literature assume an apparent `R1a = R1f = R1s`. The corresponding model can be fitted by specifying `fit_apparentR1=true`:
 R1a = 1 # 1/s
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT)
-qM = HSFP_fit(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT)
+qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT)
 
 # Here, we specified the limits of `R1a` explicitely, which is optional.

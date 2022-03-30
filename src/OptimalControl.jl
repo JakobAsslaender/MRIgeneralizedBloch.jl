@@ -1,4 +1,4 @@
-function OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = [true, falses(length(ω1)-1)...])
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = [true, falses(length(ω1)-1)...])
     (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, isInversionPulse=isInversionPulse)
     Q = calcualte_cycle_propgator(E)
     Y = propagate_magnetization(Q, E)

@@ -46,8 +46,8 @@ w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 ## ########################################################################
 # Test OCT gradients: single loop
 ###########################################################################
-# OCT_gradient: analytical
-(F0, grad_ω1, grad_TRF) = MRIgeneralizedBloch.OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, w, isInversionPulse = isInversionPulse)
+# CRB_gradient_OCT: analytical
+(F0, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, w, isInversionPulse = isInversionPulse)
 
 ## Finite Difference gradient: ω1
 _grad_ω1_fd = grad_ω1_fd(w, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
@@ -76,7 +76,7 @@ TRF = [TRF; TRF]
 isInversionPulse = [isInversionPulse; isInversionPulse]
 
 ##
-(F0, grad_ω1_2, grad_TRF_2) = MRIgeneralizedBloch.OCT_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, w; isInversionPulse = isInversionPulse)
+(F0, grad_ω1_2, grad_TRF_2) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, w; isInversionPulse = isInversionPulse)
 grad_ω1_2 .*= 4
 grad_TRF_2 .*= 4
 

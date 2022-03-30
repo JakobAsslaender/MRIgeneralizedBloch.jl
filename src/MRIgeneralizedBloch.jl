@@ -35,7 +35,7 @@ export precompute_R2sl
 export evaluate_R2sl_vector
 export calculatesignal_linearapprox
 
-export HSFP_fit
+export fit_gBloch
 export qMTmap
 
 export grad_m0s
@@ -65,8 +65,9 @@ include("MatrixExp_Solvers.jl")
 include("DiffEq_Sovlers.jl")
 include("Greens_functions.jl")
 include("MatrixExp_Hamiltonians.jl")
-include("OptimalControl.jl")
 include("Gradient_Hamiltonians.jl")
 include("NLLSFit.jl")
+include("OptimalControl.jl")
+include("OptimalControlhelpers.jl")
 
 end

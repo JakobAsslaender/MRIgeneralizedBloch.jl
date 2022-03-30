@@ -8,9 +8,9 @@ Documentation for the [MRIgeneralizedBloch.jl](https://github.com/JakobAsslaende
 
 The package allows to simulate the dynamics of an isolated semi-solid spin pool during RF-pulses, as well as the dynamics of a coupled spin system with a free spin pool, for which we use the Bloch model, and a semi-solid pool, which we describe with the generalized Bloch model.
 
-A bare bone demonstration of the interface can found in the *Quick Start Tutorial*, where the Section [Simulation of a Single RF Pulse](@ref) demonstrates the basic and flexible simulation of the spin dynamics during a single RF pulse and Section [Simulation of a Balanced Hybrid-State Free Precession Pulse Sequence](@ref) demonstrates an efficient simulation of a train of RF pulses.
+A bare bone demonstration of the interface can found in the *Quick Start Tutorial*, where the Section [Simulation of a Single RF Pulse](@ref) demonstrates the basic and flexible simulation of the spin dynamics during a single RF pulse and Section [Balanced Hybrid-State Free Precession Pulse Sequence](@ref) demonstrates an efficient simulation of a train of RF pulses.
 
-More details on the implementation are provided in the Section *Generalized Bloch Paper*, which reproduces all simulations, data analyses, and figures of the [generalized Bloch paper]( https://doi.org/10.1002/mrm.29071):
+More details on the implementation are provided in the Section *Generalized Bloch Paper*, which reproduces all simulations, data analyses, and figures of the [generalized Bloch paper](https://doi.org/10.1002/mrm.29071):
 
 ```@contents
 Pages=[
