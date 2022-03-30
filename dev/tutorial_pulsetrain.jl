@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/tutorial_pulsetrain.ipynb)
 
 # # Balanced Hybrid-State Free Precession Pulse Sequence
-# This section explains the interface for calculating the spin evolution during a train of RF pulses, assuming balanced gradient moments. For this, we need the following packages:
+# This section explains the interface for calculating the spin evolution during a train of RF pulses, assuming balanced gradient moments (cf. [Hybrid-state free precession in nuclear magnetic resonance](https://www.nature.com/articles/s42005-019-0174-0)). For this, we need the following packages:
 
 using MRIgeneralizedBloch
 using MAT
@@ -25,13 +25,13 @@ p = plot(p1, p2, layout=(2,1))
 
 # We simulate the signal for the following biophysical parameters:
 m0s = 0.15
-R1f = 0.5 # 1/s
-R2f = 15 # 1/s
-Rx = 30 # 1/s
-R1s = 3 # 1/s
+R1f = 0.5   # 1/s
+R2f = 15    # 1/s
+Rx = 30     # 1/s
+R1s = 3     # 1/s
 T2s = 10e-6 # s
-ω0 = 0 # rad/s
-B1 = 1; # in units of B1_nominal
+ω0 = 0      # rad/s
+B1 = 1;     # in units of B1_nominal
 
 # For speed purposes, it is advisable to use the linear approximation of the generalized Bloch model, which requires a precomputed ``R_2^{s,l}``
 R2slT = precompute_R2sl();

@@ -15,13 +15,13 @@ p2 = plot(t, TRF, xlabel="t (s)", ylabel="TRF (s)", label=:none)
 p = plot(p1, p2, layout=(2,1))
 
 m0s = 0.15
-R1f = 0.5 # 1/s
-R2f = 15 # 1/s
-Rx = 30 # 1/s
-R1s = 3 # 1/s
+R1f = 0.5   # 1/s
+R2f = 15    # 1/s
+Rx = 30     # 1/s
+R1s = 3     # 1/s
 T2s = 10e-6 # s
-ω0 = 0 # rad/s
-B1 = 1; # in units of B1_nominal
+ω0 = 0      # rad/s
+B1 = 1;     # in units of B1_nominal
 
 R2slT = precompute_R2sl();
 
