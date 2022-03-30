@@ -1,4 +1,36 @@
-function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = [true, falses(length(ω1)-1)...])
+"""
+    CRB, grad_ω1, grad_TRF = CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = falses(length(ω1)))
+
+Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wrt. `ω1` and `TRF`.
+
+# Arguments
+- `ω1::Vector{<:Number}`: Control vector of `length = Npulses`
+- `TRF::Vector{<:Number}`: Control vector of `length = Npulses`
+- `TR::Number`: Repetition time in seconds
+- `ω0::Number`: Off-resonance frequency in rad/s
+- `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
+- `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
+- `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
+- `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
+- `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
+- `R1f::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
+- `T2s::Number`: Transversal relaxationt time of the semi-solid pool in seconds
+- `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
+- `grad_list::Vector{<:grad_param}`: Vector to indicate which gradients should be calculated; the vector elements can either be any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `weights::transpose(Vector{<:Number})`: Row vector of weights given to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in that order. Hence, the Vector `weights` has to have one more entry than `grad_list`
+
+# Optional Keyword Arguments:
+- `isInversionPulse::Vector{Bool}`: Indicates with pulses are inversion pulses. Where `true`, the algorithm will simulate crusher gradients before and after the pulse and `ω1` and `TRF` of those pulses are excluded from the optimization.
+
+# Examples
+```jldoctest
+julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) .* π, rand(100) .* 400e-6 .+ 100e-6, 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 2, 10e-6, precompute_R2sl(), [grad_m0s(), grad_R1f()], transpose([0, 1, 1]); isInversionPulse = [true, falses(99)...])
+(4.326345257791475e20, [0.0, 3.8149138162765024e20, -1.4073464193072628e20, 1.196651310804305e20, -1.9989638164742383e20, 3.6493209787269874e20, -1.5536324770044346e20, 1.7284798914645443e20, -2.0772522228321904e20, 2.7044669618035792e20  …  -6.3928347250126905e19, 1.5671768655962505e20, -1.1080723702078613e20, 5.7454290837437145e19, -7.845659845122268e19, 1.3447202941410777e20, -6.377328799158878e19, 5.1500654841007415e19, -3.97683716404465e19, 1.2714666624472279e20], [0.0, 2.9969441368202493e24, -1.4650231537214497e24, 1.8226585318981564e24, -4.7462030797597407e23, 1.97549455130354e24, -1.5270500210926142e24, 9.099568864141483e23, -1.4811032902868818e24, 1.2220830933233262e24  …  -5.258326682397155e23, 6.918585992930617e23, -2.8293355719514886e23, 4.015546075884712e23, -4.1767064624316516e23, 5.061776753372734e23, -4.1049901738345103e23, 9.311794792265391e23, -4.131984395429261e23, 7.610379029805631e23])
+
+```
+c.f. [Optimal Control](@ref)
+"""
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = falses(length(ω1)))
     (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, isInversionPulse=isInversionPulse)
     Q = calcualte_cycle_propgator(E)
     Y = propagate_magnetization(Q, E)
@@ -223,7 +255,7 @@ function dCRBdm(Y, w)
         F[g1 + 1,g2 + 1] += s1 * s2
     end
     Fi = inv(F)
-    CRB = real.(w * diag(Fi))
+    CRB = w * real.(diag(Fi))
 
     for g1 in 0:size(Y, 3), r in 1:size(Y, 2), t in 1:size(Y, 1)
         # derivative wrt. x
