@@ -1,27 +1,27 @@
 """
     calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s[; grad_list, Ncyc=2, output=:complexsignal])
 
-Calculate the signal or magnetixation evolution with the full generalized Bloch model assuming a super-Lorentzian lineshape (slow).
+Calculate the signal or magnetization evolution with the full generalized Bloch model assuming a super-Lorentzian lineshape (slow).
 
-The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. 
+The simulation assumes a sequence of rectangular RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
 
 # Arguments
 - `α::Vector{<:Number}`: Array of flip angles in radians
 - `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
 - `TR::Number`: Repetition time in seconds
-- `ω0::Number`: Off-resonance frequency in rad/s 
+- `ω0::Number`: Off-resonance frequency in rad/s
 - `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
 - `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
 - `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `T2s::Number`: Transversal relaxationt time of the semi-solid pool in seconds
+- `T2s::Number`: Transversal relaxation time of the semi-solid pool in seconds
 
 Optional:
-- `grad_list=[]`: Vector to indicate which gradients should be calculated; the vector can either be empty `[]` for no gradient, or contain any subset/order of `grad_list=[grad_m0s(), grad_R1s(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
-- `Ncyc=2`: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time. 
-- `output=:complexsignal`: The defaul keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
+- `grad_list=[]`: Vector that specifies the gradients that are calculated; the vector can either be empty `[]` for no gradient, or contain any subset/order of `grad_list=[grad_m0s(), grad_R1s(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `Ncyc=2`: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time.
+- `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
 - `greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian)`: Tuple of a Greens function `G(κ) = G((t-τ)/T2s)` and its partial derivative wrt. T2s, multiplied by T2s `∂G((t-τ)/T2s)/∂T2s * T2s`. This package supplies the three Greens functions `greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian)` (default), `greens=(greens_lorentzian, dG_o_dT2s_x_T2s_lorentzian)`, and `greens=(greens_gaussian, dG_o_dT2s_x_T2s_gaussian)`
 
 # Examples
@@ -94,19 +94,19 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
     m0[5] = 1
     mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
-    # prep pulse 
-    sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)), alg)  
+    # prep pulse
+    sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)), alg)
     m0 = sol[end]
-    
+
     T_FP = (TR - TRF[2]) / 2 - TRF[1] / 2
     sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5())
     m0 = sol[end]
-    
+
     for ic = 0:(Ncyc - 1)
         # free precession for TRF/2
         sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TRF[1] / 2), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5())
         m0 = sol[end]
-        
+
         # inversion pulse with crusher gradients (assumed to be instantanious)
         u00 = m0[1:3]
         m0[1:5:end] .*= -sin(B1 * ω1[1] * TRF[1] / 2)^2
@@ -137,7 +137,7 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
         for ip = 2:length(TRF)
             sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)), alg)
             m0 = sol[end]
-    
+
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2
             TE = TR / 2 - TRF[ip] / 2
             sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
@@ -160,27 +160,27 @@ end
 """
     calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s[; grad_list, Ncyc=2, output=:complexsignal])
 
-Calculate the signal or magnetixation evolution with Graham's spectral model assuming a super-Lorentzian lineshape.
+Calculate the signal or magnetization evolution with Graham's spectral model assuming a super-Lorentzian lineshape.
 
-The simulation assumes a sequence of rectangluar RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments. 
+The simulation assumes a sequence of rectangular RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
 
 # Arguments
 - `α::Vector{<:Number}`: Array of flip angles in radians
 - `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
 - `TR::Number`: Repetition time in seconds
-- `ω0::Number`: Off-resonance frequency in rad/s 
+- `ω0::Number`: Off-resonance frequency in rad/s
 - `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
 - `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
 - `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `T2s::Number`: Transversal relaxationt time of the semi-solid pool in seconds
+- `T2s::Number`: Transversal relaxation time of the semi-solid pool in seconds
 
 Optional:
-- `grad_list=[]`: Vector to indicate which gradients should be calculated; the vector can either be empty `[]` for no gradient, or contain any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1(), grad_R1a()]`
-- `Ncyc=2`: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time. 
-- `output=:complexsignal`: The defaul keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
+- `grad_list=[]`: Vector that specifies the gradients that are calculated; the vector can either be empty `[]` for no gradient, or contain any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1(), grad_R1a()]`
+- `Ncyc=2`: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time.
+- `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
 
 # Examples
 ```jldoctest
@@ -234,7 +234,7 @@ julia> calculatesignal_graham_ode(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.
 function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s; grad_list=[], Ncyc=2, output=:complexsignal)
     ω1 = α ./ TRF
 
-    # initialization and memory allocation 
+    # initialization and memory allocation
     N_s = 5 * (1 + length(grad_list))
     s = zeros(N_s, length(TRF))
     m0 = zeros(N_s)
@@ -242,14 +242,14 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
     m0[4] = m0s
     m0[5] = 1.0
 
-    # prep pulse 
-    sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, TRF[2], m0s, R1f, R2f, Rx, R1s, T2s, grad_list)), Tsit5(), save_everystep=false)    
+    # prep pulse
+    sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, TRF[2], m0s, R1f, R2f, Rx, R1s, T2s, grad_list)), Tsit5(), save_everystep=false)
     m0 = sol[end]
-    
+
     T_FP = TR / 2 - TRF[2] / 2 - TRF[1] / 2
     sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false)
     m0 = sol[end]
-    
+
     for ic = 0:(Ncyc - 1)
         # free precession for TRF/2
         sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, TRF[1] / 2), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false)
@@ -285,7 +285,7 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
         for ip = 2:length(TRF)
             sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, TRF[ip], m0s, R1f, R2f, Rx, R1s, T2s, grad_list)), Tsit5(), save_everystep=false)
             m0 = sol[end]
-    
+
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2
             TE = TR / 2 - TRF[ip] / 2
             sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)

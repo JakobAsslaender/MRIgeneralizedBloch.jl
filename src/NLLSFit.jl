@@ -1,6 +1,6 @@
 
 """
-    fit_gBloch(data, α, TRF, TR;
+    qM = fit_gBloch(data, α, TRF, TR;
         reM0 = (-Inf,   1,  Inf),
         imM0 = (-Inf,   0,  Inf),
         m0s  = (   0, 0.2,    1),
@@ -29,19 +29,19 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 - `ω0::Number`: Off-resonance frequency in rad/s
 
 # Optional Keyword Arguments:
-- `reM0::Union{Number, Tuple{Number, Number, Number}}`: Real part of `M0`; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `imM0::Union{Number, Tuple{Number, Number, Number}}`: Imaginary part of `M0`; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `m0s::Union{Number, Tuple{Number, Number, Number}}`: Fractional size of the semi-solid pool (should be in range of 0 to 1); either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `R1f::Union{Number, Tuple{Number, Number, Number}}`: Longitudinal relaxation rate of the free pool in 1/s; only used in combination with `fit_apparentR1=false`; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `R2f::Union{Number, Tuple{Number, Number, Number}}`: Transversal relaxation rate of the free pool in 1/s; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `Rx::Union{Number, Tuple{Number, Number, Number}}`: Exchange rate between the two spin pools in 1/s; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `R1s::Union{Number, Tuple{Number, Number, Number}}`: Longitudinal relaxation rate of the semi-solid pool in 1/s; only used in combination with `fit_apparentR1=false`; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `T2s::Union{Number, Tuple{Number, Number, Number}}`: Transversal relaxationt time of the semi-solid pool in s; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `ω0::Union{Number, Tuple{Number, Number, Number}}`: Off-resonance frequency in rad/s; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `B1::Union{Number, Tuple{Number, Number, Number}}`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
-- `R1a::Union{Number, Tuple{Number, Number, Number}}`: Apparent longitudinal relaxation rate in 1/s; only used in combination with `fit_apparentR1=true`; either fixed value as a single number or fit limits thereof in the order `(min, start, max)`
+- `reM0::Union{Number, Tuple{Number, Number, Number}}`: Real part of `M0`; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `imM0::Union{Number, Tuple{Number, Number, Number}}`: Imaginary part of `M0`; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `m0s::Union{Number, Tuple{Number, Number, Number}}`: Fractional size of the semi-solid pool (should be in range of 0 to 1); either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `R1f::Union{Number, Tuple{Number, Number, Number}}`: Longitudinal relaxation rate of the free pool in 1/s; only used in combination with `fit_apparentR1=false`; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `R2f::Union{Number, Tuple{Number, Number, Number}}`: Transversal relaxation rate of the free pool in 1/s; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `Rx::Union{Number, Tuple{Number, Number, Number}}`: Exchange rate between the two spin pools in 1/s; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `R1s::Union{Number, Tuple{Number, Number, Number}}`: Longitudinal relaxation rate of the semi-solid pool in 1/s; only used in combination with `fit_apparentR1=false`; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `T2s::Union{Number, Tuple{Number, Number, Number}}`: Transversal relaxation time of the semi-solid pool in s; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `ω0::Union{Number, Tuple{Number, Number, Number}}`: Off-resonance frequency in rad/s; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `B1::Union{Number, Tuple{Number, Number, Number}}`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `R1a::Union{Number, Tuple{Number, Number, Number}}`: Apparent longitudinal relaxation rate in 1/s; only used in combination with `fit_apparentR1=true`; either fixed value as a `Number` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
 - `u::Union{Number, Matrix}`: Compression matrix that transform the simulated time series to a series of coefficients. Set to `1` by default to enable the fitting in the time domain
-- `fit_apparentR1::Bool`: Switch between fitting `R1f` and `R1s` separately (`false`; default) and an apparant `R1a = R1f = R1s` (`true`)
+- `fit_apparentR1::Bool`: Switch between fitting `R1f` and `R1s` separately (`false`; default) and an apparent `R1a = R1f = R1s` (`true`)
 - `show_trace::Bool`: print output during the optimization; `default=false`
 - `maxIter::Int`: Maximum number of iteration; `default=100`
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). By default generated with [`precompute_R2sl`](@ref)

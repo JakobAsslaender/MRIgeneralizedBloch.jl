@@ -2,7 +2,7 @@
 """
     hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s[, dR2sdT2s, dR2sdB1, grad_type])
 
-Calculate the hamiltonian of the linear approximation of the generalized Bloch model. 
+Calculate the hamiltonian of the linear approximation of the generalized Bloch model.
 
 If no gradient is supplied, it returns a 6x6 (static) matrix with the dimensions (in this order) `[xf, yf, zf, xs, zs, 1]`; the attached 1 is a mathematical trick to allow for ``T_1`` relaxation to a non-zero thermal equilibrium.
 If a gradient is supplied, it returns a 11x11 (static) matrix with the dimensions (in this order) `[xf, yf, zf, xs, zs, dxf/dθ, dyf/dθ, dzf/dθ, dxs/dθ, dzs/dθ,  1]`, where `θ` is the parameter specified by `grad_type`
@@ -17,11 +17,11 @@ If a gradient is supplied, it returns a 11x11 (static) matrix with the dimension
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
 - `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `R2s::Number`: Transversal relaxationt rate of the semi-solid pool in 1/seconds; this number can be calcualated with the first function returned by [`precompute_R2sl`](@ref) to implement the linear approximation described in the generalized Bloch paper
+- `R2s::Number`: Transversal relaxation rate of the semi-solid pool in 1/seconds; this number can be calculated with the first function returned by [`precompute_R2sl`](@ref) to implement the linear approximation described in the generalized Bloch paper
 
 Optional:
-- `dR2sdT2s::Number`: Derivative of linearized R2sl wrt. the actual T2s; only required if `grad_type = grad_T2s()`; this number can be calcualated with the second function returned by [`precompute_R2sl`](@ref)
-- `dR2sdB1::Number`: Derivative of linearized R2sl wrt. B1; only required if `grad_type = grad_B1()`; this number can be calcualated with the third function returned by [`precompute_R2sl`](@ref)
+- `dR2sdT2s::Number`: Derivative of linearized R2sl wrt. the actual T2s; only required if `grad_type = grad_T2s()`; this number can be calculated with the second function returned by [`precompute_R2sl`](@ref)
+- `dR2sdB1::Number`: Derivative of linearized R2sl wrt. B1; only required if `grad_type = grad_B1()`; this number can be calculated with the third function returned by [`precompute_R2sl`](@ref)
 - `grad_type::grad_param`: `grad_m0s()`, `grad_R1f()`, `grad_R1s()`, `grad_R2f()`, `grad_Rx()`, `grad_T2s()`, `grad_ω0()`, or `grad_B1()`; create one hamiltonian for each desired gradient
 
 # Examples
@@ -270,7 +270,7 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2s, dR2sdT2s, _, grad_ty
 
     dHsdT2s = @SMatrix [-dR2sdT2s   0;
                                 0   0]
-    
+
     # Higham's Complex Step Approximation:
     h = 1im * eps()
     dU = real.(exp((Hs + h * dHsdT2s) * T) ./ h)
@@ -297,7 +297,7 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_typ
 
     dHsdB1 = @SMatrix [-dR2sdB1  ω1;
                             -ω1   0]
-                            
+
     # Higham's Complex Step Approximation:
     h = 1im * eps()
     dU = real.(exp((Hs + h * dHsdB1) * T) ./ h)
@@ -369,7 +369,7 @@ end
 
     function A0(_)
     @SMatrix [
-        1 0 0 0 0 0;    
+        1 0 0 0 0 0;
         0 1 0 0 0 0;
         0 0 1 0 0 0;
         0 0 0 1 0 0;
@@ -379,7 +379,7 @@ end
 
 function A0(grad::grad_param)
     @SMatrix [
-        1 0 0 0 0 0 0 0 0 0 0;    
+        1 0 0 0 0 0 0 0 0 0 0;
         0 1 0 0 0 0 0 0 0 0 0;
         0 0 1 0 0 0 0 0 0 0 0;
         0 0 0 1 0 0 0 0 0 0 0;
@@ -391,7 +391,7 @@ function A0(grad::grad_param)
         0 0 0 0 0 0 0 0 0 1 0;
         0 0 0 0 0 0 0 0 0 0 0]
 end
-    
+
 function C(_)
     @SVector [0,0,0,0,0,1]
 end

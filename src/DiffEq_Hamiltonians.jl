@@ -1,6 +1,6 @@
 ###################################################
-# generalized Bloch Hamiltonians that can take any 
-# Green's function as an argument. 
+# generalized Bloch Hamiltonians that can take any
+# Green's function as an argument.
 ###################################################
 """
     apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p, t)
@@ -10,27 +10,27 @@ Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivativ
 # Arguments
 - `∂m∂t::Vector{<:Number}`: Vector describing to derivative of `m` wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
 - `m::Vector{<:Number}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
-- `mfun`: History fuction; can be initialized with `mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
-- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)`, with 
+- `mfun`: History function; can be initialized with `mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
+- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)`, with
     -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
     -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
     -`ω0::Number`: Larmor or off-resonance frequency in rad/s
     -`m0s::Number`: Fractional semi-solid spin pool size in the range of 0 to 1
     -`R1f::Number`: Longitudinal spin relaxation rate of the free pool in 1/seconds
-    -`R2f::Number`: Trasversal spin relaxation rate of the free pool in 1/seconds
+    -`R2f::Number`: Transversal spin relaxation rate of the free pool in 1/seconds
     -`Rx::Number`: Exchange rate between the two pools in 1/seconds
     -`R1s::Number`: Longitudinal spin relaxation rate of the semi-solid pool in 1/seconds
-    -`T2s::Number`: Trasversal spin relaxation time of the semi-solid pool in seconds
+    -`T2s::Number`: Transversal spin relaxation time of the semi-solid pool in seconds
     -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
     or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g)` with
     - `zs_idx::Integer`: Index to be used history function to be used in the Green's function; Default is 4 (zs), and for derivatives 9, 14, ... are used
     or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` with
     - `dG_o_dT2s_x_T2s::Function`: Derivative of the Green's function wrt. T2s, multiplied by T2s; of the form `dG_o_dT2s_x_T2s(κ) = dG_o_dT2s_x_T2s((t-τ)/T2s)`
-    - `grad_list::Vector{<:grad_param}`: List of gradients to be calucualted; any subset of `[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`); ; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+    - `grad_list::Vector{<:grad_param}`: List of gradients to be calculated; any subset of `[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`); ; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `t::Number`: Time in seconds
 
 Optional:
-- `pulsetype=:normal`: Use default for a regular RF-pulse; the option `pulsetype=:inversion` should be handled with care as it is only inteded to calculate the saturation of the semi-solid pool and its derivative. 
+- `pulsetype=:normal`: Use default for a regular RF-pulse; the option `pulsetype=:inversion` should be handled with care as it is only intended to calculate the saturation of the semi-solid pool and its derivative.
 
 # Examples
 ```jldoctest
@@ -142,20 +142,20 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{10,Any}, t)
     return apply_hamiltonian_gbloch!(∂m∂t, m, mfun, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, 4, g), t)
 end
 
-# Version for an isolated semi-solid pool 
+# Version for an isolated semi-solid pool
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{6,Any}, t)
     ω1, B1, ω0, R1s, T2s, g = p
-    
+
     yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1] * cos(ω0 * x), 0, t, order=100)[1]
     xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1] * sin(ω0 * x), 0, t, order=100)[1]
-    
+
     ∂m∂t[1] = -B1^2 * ω1^2 * (xt + yt) + R1s * (1 - m[1])
 end
 
 
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{12,Any}, t; pulsetype=:normal)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list = p
-    
+
     # Apply Hamiltonian to M
     u_v1 = @view m[1:5]
     du_v1 = @view ∂m∂t[1:5]
@@ -211,7 +211,7 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{7,Any}, t)
 end
 
 ###################################################
-# implementatoin of the partial derivates for 
+# implementatoin of the partial derivates for
 # calculationg th gradient
 ###################################################
 function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_m0s)
@@ -272,7 +272,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
 
     yt = cos(ω0 * t) * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x) * cos(ω0 * x), 0, t, order=100)[1]
     xt = sin(ω0 * t) * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x) * sin(ω0 * x), 0, t, order=100)[1]
-                      
+
     ∂m∂t[4] -= B1^2 * ω1^2 * (xt + yt)/T2s
     return ∂m∂t
 end
@@ -286,9 +286,9 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
     # ω1, B1,  _,   _,   _,   _,  _,   _, T2s, TRF, _ = p
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
-    
+
     df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0, order=100)[1]
-        
+
     ∂m∂t[4] -= df_PSD(TRF / T2s) * B1^2 * ω1^2 * m[4]
     return ∂m∂t
 end
@@ -322,7 +322,7 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Fun,Any}, t, grad_type::grad_B1)
     # ω1, B1, ω0, _, _, _, T2s, _, g, _ = p
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
-    
+
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
 
@@ -353,8 +353,8 @@ end
 
 
 ###################################################
-# Implementation for comparison: the super-Lorentzian 
-# Green's function is hard coded, which allows to 
+# Implementation for comparison: the super-Lorentzian
+# Green's function is hard coded, which allows to
 # use special solvers for the double integral
 ###################################################
 function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
@@ -372,7 +372,7 @@ function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{
 
     if t > (N * T2s)
         dy2 = T2s * sqrt(2π / 3) * Cubature.pcubature(x -> mfun(p, x[1]; idxs=zs_idx) / (t - x[1]), [0.0], [t - N * T2s])[1]
-        
+
         ∂m∂t[4] = -B1^2 * ω1^2 * ((dy1) + (dy2))
     else
         ∂m∂t[4] = -B1^2 * ω1^2 * (dy1)
@@ -405,18 +405,18 @@ end
 
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{11,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s, grad_list = p
-    
+
     # Apply Hamiltonian to M
     u_v1 = @view m[1:5]
     du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
- 
+
     # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
         du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
         u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_graham_superlorentzian!(du_v, u_v, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
- 
+
         add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, undef), t, grad_list[i])
     end
     return ∂m∂t
@@ -424,18 +424,18 @@ end
 
 function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p::NTuple{11,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s, grad_list = p
-    
+
     # Apply Hamiltonian to M
     u_v1 = @view m[1:5]
     du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
- 
+
     # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
         du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
         u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_graham_superlorentzian!(du_v, u_v, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
- 
+
         if isa(grad_list[i], grad_B1) || isa(grad_list[i], grad_T2s)
             add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, undef), t, grad_list[i])
         end
@@ -446,7 +446,7 @@ end
 
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf = p
-    
+
     apply_hamiltonian_freeprecession!(∂m∂t, m, (ω0, m0s, R1f, R2f, Rx, R1s), t)
 
     ∂m∂t[1] += B1 * ω1 * m[3]
@@ -458,18 +458,18 @@ end
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf_d, grad_list = p
     Rrf = Rrf_d[1]
-    
+
      # Apply Hamiltonian to M
     u_v1 = @view m[1:5]
     du_v1 = @view ∂m∂t[1:5]
     apply_hamiltonian_linear!(du_v1, u_v1, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
- 
+
      # Apply Hamiltonian to M and all its derivatives
     for i = 1:length(grad_list)
         du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
         u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_linear!(du_v, u_v, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
- 
+
         add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, 0, Rx, R1s, Rrf_d, undef), t, grad_list[i])
     end
     return ∂m∂t
@@ -486,15 +486,15 @@ Apply Sled's Hamiltonian to `m` and write the resulting derivative wrt. time int
 # Arguments
 - `∂m∂t::Vector{<:Number}`: Vector of length 1 describing to derivative of `m` wrt. time; this vector can contain any value, which is replaced by `H * m`
 - `m::Vector{<:Number}`: Vector of length 1 describing the `zs` magnetization
-- `p::NTuple{6 or 10, Any}`: `(ω1, B1, ω0, R1s, T2s, g)` for a simulating an isolated semi-solid pool or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)` for simulating a coupled spin system; with 
+- `p::NTuple{6 or 10, Any}`: `(ω1, B1, ω0, R1s, T2s, g)` for a simulating an isolated semi-solid pool or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)` for simulating a coupled spin system; with
     -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
     -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
     -`ω0::Number`: Larmor or off-resonance frequency in rad/s
     -`R1f::Number`: Longitudinal spin relaxation rate of the free pool in 1/seconds
-    -`R2f::Number`: Trasversal spin relaxation rate of the free pool in 1/seconds
+    -`R2f::Number`: Transversal spin relaxation rate of the free pool in 1/seconds
     -`R1s::Number`: Longitudinal spin relaxation rate of the semi-solid in 1/seconds
     -`Rx::Number`: Exchange rate between the two pools in 1/seconds
-    -`T2s::Number`: Trasversal spin relaxation time in seconds
+    -`T2s::Number`: Transversal spin relaxation time in seconds
     -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
 - `t::Number`: Time in seconds
 
@@ -546,7 +546,7 @@ function apply_hamiltonian_sled!(d∂m∂t, m, p::NTuple{6,Any}, t)
 
     xs = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * sin(ω0 * x), 0, t, order=100)[1]
     ys = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * cos(ω0 * x), 0, t, order=100)[1]
-    
+
     d∂m∂t[1] = -B1^2 * ω1^2 * (xs + ys) * m[1] + R1s * (1 - m[1])
 end
 

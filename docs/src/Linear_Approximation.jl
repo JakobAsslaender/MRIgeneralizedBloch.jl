@@ -19,7 +19,7 @@ R₂ᶠ = 1 / 50e-3 # 1/s
 Rₓ = 70; # 1/s
 
 # ## Linearized ``T_2^{s,l}``
-# We demonstrate the linear approximation at the example of the Green's function corresponding to the [super-Lorentzian lineshape](http://dx.doi.org/10.1002/mrm.1910330404), which we interpolate to improve the perfomance:
+# We demonstrate the linear approximation at the example of the Green's function corresponding to the [super-Lorentzian lineshape](http://dx.doi.org/10.1002/mrm.1910330404), which we interpolate to improve the performance:
 G = interpolate_greens_function(greens_superlorentzian, 0, 1e-3 / 5e-6);
 
 # The function [`precompute_R2sl`](@ref) returns another function, `R₂ˢˡ(Tʳᶠ, α, B1, T₂ˢ)`, that interpolates the linearized relaxation rate, as well as functions that describe its derivatives wrt. ``T_2^s`` and ``B_1``, respectively:
@@ -56,7 +56,7 @@ close(io) #src
 Tʳᶠ = 100e-6 # s
 T₂ˢ = 10e-6 # μs
 m0_5D = [0,0,m₀ᶠ,m₀ˢ,1]
-mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # intialize history function, here with the ability to just call a single index
+mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # initialize history function, here with the ability to just call a single index
 
 # The full generalized Bloch model is solved by
 param = (π/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)

@@ -38,14 +38,14 @@ OUTPUT = joinpath(@__DIR__, "src/build_literate")
 files = [
     "tutorial_singlepulse.jl",
     "tutorial_pulsetrain.jl",
+    "NLLS.jl",
+    "OCT.jl",
     "Greens_functions.jl",
     "Simulation_ContinuousWave.jl",
     "Simulation_Pulse.jl",
     "Analyze_NMR_IR_Data.jl",
     "Analyze_NMR_PreSat_Data.jl",
     "Linear_Approximation.jl",
-    "NLLS.jl",
-    "OCT.jl",
 ]
 
 for file in files
@@ -70,10 +70,10 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Quick Start Tutorial" => Any[
-            "build_literate/tutorial_singlepulse.md",
-            "build_literate/tutorial_pulsetrain.md",
-        ],
+        "build_literate/tutorial_singlepulse.md",
+        "build_literate/tutorial_pulsetrain.md",
+        "build_literate/NLLS.md",
+        "build_literate/OCT.md",
         "Generalized Bloch Paper" => Any[
             "build_literate/Greens_functions.md",
             "build_literate/Simulation_ContinuousWave.md",
@@ -82,8 +82,6 @@ makedocs(;
             "build_literate/Analyze_NMR_PreSat_Data.md",
             "build_literate/Linear_Approximation.md",
         ],
-        "build_literate/NLLS.md",
-        "build_literate/OCT.md",
         "API" => "api.md",
     ],
 )

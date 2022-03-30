@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Simulation_Pulse.ipynb)
 
 # # RF-Pulse Simulation
-# The following code replicates the RF-pulse simulation of Fig. 3 and plots the ``z^s``-magnetization at the end of respective pulse. 
+# The following code replicates the RF-pulse simulation of Fig. 3 and plots the ``z^s``-magnetization at the end of respective pulse.
 
 # For these simulations we need the following packages:
 using MRIgeneralizedBloch
@@ -10,7 +10,7 @@ using DifferentialEquations
 using SpecialFunctions
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
- 
+
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 R₁ = 1 # 1/s
 T₂ˢ = 10e-6; # s
@@ -23,20 +23,20 @@ Tʳᶠ = exp.(range(log(2e-7), log(1e-1), length=100)) # s
 # Replace first line with `α = π/4` or `α = π/2` to simulate the other two rows of Fig. 3.
 
 # ## Lorentzian Lineshape
-# In this script, we simulate the three lineshapes separately, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth. 
+# In this script, we simulate the three lineshapes separately, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth.
 
 # ### Bloch Model
-# We can formulate the [Bloch model](http://dx.doi.org/10.1103/PhysRev.70.460) as 
+# We can formulate the [Bloch model](http://dx.doi.org/10.1103/PhysRev.70.460) as
 # ```math
-# \partial_t \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} 
-# -R_2 & -ω_0 & ω_1 & 0 \\ 
-# ω_0 & -R_2 & 0 & 0 \\  
-# -ω_1 & 0 & -R_1 & R_1 \\ 
+# \partial_t \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix}
+# -R_2 & -ω_0 & ω_1 & 0 \\
+# ω_0 & -R_2 & 0 & 0 \\
+# -ω_1 & 0 & -R_1 & R_1 \\
 # 0 & 0 & 0 & 0
 # \end{pmatrix} \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} ,
 # ```
 # where the matrix is the Hamiltonian of the Bloch model. For a constant ``ω_0`` and ``ω_1``, we can evaluate the Bloch model by taking the  matrix exponential of its Hamiltonian:
-H(ω₁, ω₀, R₂, R₁) = [-R₂ -ω₀  ω₁  0; 
+H(ω₁, ω₀, R₂, R₁) = [-R₂ -ω₀  ω₁  0;
                       ω₀ -R₂   0  0;
                      -ω₁   0 -R₁ R₁;
                        0   0   0  0]
@@ -59,7 +59,7 @@ g_Lorentzian(ω₀) = T₂ˢ / π ./ (1 .+ (T₂ˢ .* ω₀).^2)
 Rʳᶠ = @. π * ω₁^2 * g_Lorentzian(ω₀)
 z_Graham_SF_approx_Lorentzian = @. (Rʳᶠ * exp(-Tʳᶠ * (R₁ + Rʳᶠ)) + R₁) / (R₁ + Rʳᶠ);
 
-# where `g_Lorentzian(ω₀)` denotes the Lorentzian lineshape. 
+# where `g_Lorentzian(ω₀)` denotes the Lorentzian lineshape.
 
 # ### Sled's Model
 # [Sled's model](http://dx.doi.org/10.1006/jmre.2000.2059) is given by the ordinary differential equation (ODE)

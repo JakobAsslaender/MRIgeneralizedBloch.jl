@@ -14,13 +14,13 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 - `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
 - `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
 - `R1f::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `T2s::Number`: Transversal relaxationt time of the semi-solid pool in seconds
+- `T2s::Number`: Transversal relaxation time of the semi-solid pool in seconds
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
-- `grad_list::Vector{<:grad_param}`: Vector to indicate which gradients should be calculated; the vector elements can either be any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
-- `weights::transpose(Vector{<:Number})`: Row vector of weights given to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in that order. Hence, the Vector `weights` has to have one more entry than `grad_list`
+- `grad_list::Vector{<:grad_param}`: Vector that specifies the gradients that are calculated; the vector elements can either be any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `weights::transpose(Vector{<:Number})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
 
 # Optional Keyword Arguments:
-- `isInversionPulse::Vector{Bool}`: Indicates with pulses are inversion pulses. Where `true`, the algorithm will simulate crusher gradients before and after the pulse and `ω1` and `TRF` of those pulses are excluded from the optimization.
+- `isInversionPulse::Vector{Bool}`: Indicates all inversion pulses. For pulses with the entry `true`, the algorithm simulates crusher gradients before and after the pulse and `ω1` and `TRF` of the inversion pulses are excluded from the optimization.
 
 # Examples
 ```jldoctest

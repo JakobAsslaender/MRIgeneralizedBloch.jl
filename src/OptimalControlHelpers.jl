@@ -4,21 +4,19 @@
 """
     ω1, TRF = get_bounded_ω1_TRF(x; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
 
-Transform a vector of length `2Npulses` with values in the range `[-Inf, Inf]` into two vectors of length `Npulses` that represent the bounded controls `ω1` and `TRF`.
+Transform a vector of length `2Npulses` with values in the range `[-Inf, Inf]` into two vectors of length `Npulses`, which describe the bounded controls `ω1` and `TRF`.
 
 # Arguments
 - `x::Vector{<:Number}`: Control vector of `length = 2Npulses` with values in the range `[-Inf, Inf]`
 
 # Optional Keyword Arguments:
-- `ω1_min::Number`: lower bound for ω1
-- `ω1_max::Number`: upper bound for ω1
-- `TRF_min::Number`: lower bound for TRF
-- `TRF_max::Number`: upper bound for TRF
+- `ω1_min::Number`: lower bound for ω1 in rad/s
+- `ω1_max::Number`: upper bound for ω1 in rad/s
+- `TRF_min::Number`: lower bound for TRF in s
+- `TRF_max::Number`: upper bound for TRF in s
 
 # Examples
 ```jldoctest
-julia> using MRIgeneralizedBloch
-
 julia> x = 1000 * randn(2 * 100);
 
 julia> ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x)
@@ -34,22 +32,20 @@ end
 """
     x = bound_ω1_TRF!(ω1, TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
 
-Bound the controls `ω1` and `TRF` in place and return a vector of length `2Npulses` with values in the range `[-Inf, Inf]` that relates to the bounded `ω1` and `TRF` via the `tanh` function
+Bound the controls `ω1` and `TRF` (over-written in place) and return a vector of length `2Npulses` with values in the range `[-Inf, Inf]` that relate to the bounded `ω1` and `TRF` via the `tanh` function.
 
 # Arguments
-- `ω1::Vector{<:Number}`: Control vector of `length = Npulses`
-- `TRF::Vector{<:Number}`: Control vector of `length = Npulses`
+- `ω1::Vector{<:Number}`: Control vector of length `Npulses`
+- `TRF::Vector{<:Number}`: Control vector of length `Npulses`
 
-# Optional Keyword Arguments:
-- `ω1_min::Number`: lower bound for ω1
-- `ω1_max::Number`: upper bound for ω1
-- `TRF_min::Number`: lower bound for TRF
-- `TRF_max::Number`: upper bound for TRF
+# Optional Keyword Arguments (see above for defaults):
+- `ω1_min::Number`: lower bound for ω1 in rad/s
+- `ω1_max::Number`: upper bound for ω1 in rad/s
+- `TRF_min::Number`: lower bound for TRF in s
+- `TRF_max::Number`: upper bound for TRF in s
 
 # Examples
 ```jldoctest
-julia> using MRIgeneralizedBloch
-
 julia> ω1 = 4000π * rand(100);
 
 julia> TRF = 500e-6 * rand(100);
@@ -195,8 +191,6 @@ Calculate second order penalty of variations of the flip angle α and over-write
 
 # Examples
 ```jldoctest
-julia> using MRIgeneralizedBloch
-
 julia> ω1 = 4000π * rand(100);
 
 julia> TRF = 500e-6 * rand(100);
@@ -290,7 +284,7 @@ end
 """
     F = TRF_TV!(grad_TRF, ω1, TRF; λ = 1)
 
-Calculate the total variation penalty of `TRF` and over-write the TRF gradient in place.
+Calculate the total variation penalty of `TRF` and over-write `grad_TRF` in place.
 
 # Arguments
 - `grad_TRF::Vector{<:Number}`: Gradient of control, which will be over-written in place
@@ -302,8 +296,6 @@ Calculate the total variation penalty of `TRF` and over-write the TRF gradient i
 
 # Examples
 ```jldoctest
-julia> using MRIgeneralizedBloch
-
 julia> ω1 = 4000π * rand(100);
 
 julia> TRF = 500e-6 * rand(100);
@@ -339,7 +331,7 @@ end
 # SAR Penalty
 ####################################################################
 """
-F = RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
+    F = RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
 
 Calculate RF power penalty and over-write the gradients in place.
 
@@ -351,13 +343,11 @@ Calculate RF power penalty and over-write the gradients in place.
 
 # Optional Keyword Arguments:
 - `λ::Number`: regularization parameter
-- `Pmax::Number`: Maximum average power deposition in (rad/s)²; everything above this value will be penalized and with an appropriate λ, the resulting power should be equal or less than this value.
+- `Pmax::Number`: Maximum average power deposition in (rad/s)²; everything above this value will be penalized and with an appropriate λ, the resulting power will be equal to or less than this value.
 - `TR::Number`: Repetition time of the pulse sequence
 
 # Examples
 ```jldoctest
-julia> using MRIgeneralizedBloch
-
 julia> ω1 = 4000π * rand(100);
 
 julia> TRF = 500e-6 * rand(100);
