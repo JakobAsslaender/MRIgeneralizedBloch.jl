@@ -73,18 +73,18 @@ end;
 result = optimize(Optim.only_fg!(fg!), # cost function
     x0,                                # initialization
     BFGS(),                            # algorithm
-    Optim.Options(show_trace=true,     # show cost function
+    Optim.Options(
         iterations=10_000,             # larger number as we use a time limit
         time_limit=(15*60)             # in seconds
         )
     )
 
+ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(result.minimizer; ω1_min = ω1_min, ω1_max = ω1_max, TRF_min = TRF_min, TRF_max = TRF_max)
+α = ω1 .* TRF;
+
 (CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
 CRBm0s
 
-ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(result.minimizer; ω1_min = ω1_min, ω1_max = ω1_max, TRF_min = TRF_min, TRF_max = TRF_max);
-
-α = ω1 .* TRF
 p1 = plot(TR*(1:Npulse), α ./ π, ylabel="α/π")
 p2 = plot(TR*(1:Npulse), 1e6TRF, ylim=(0, 1e3), xlabel="t (s)", ylabel="TRF (μs)")
 p = plot(p1, p2, layout=(2, 1), legend=:none)
@@ -105,7 +105,7 @@ plot!(p, TR*(1:Npulse), zf ./(1-m0s), label="zᶠ")
 plot!(p, TR*(1:Npulse), xs ./   m0s , label="xˢ")
 plot!(p, TR*(1:Npulse), zs ./   m0s , label="zˢ")
 
-p = plot(xf, zf, xlabel="xf", ylabel="zf")
+p = plot(xf, zf, xlabel="xf", ylabel="zf", framestyle = :zerolines, legend=:none)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 
