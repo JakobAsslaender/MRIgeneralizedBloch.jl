@@ -68,6 +68,6 @@ include("MatrixExp_Hamiltonians.jl")
 include("Gradient_Hamiltonians.jl")
 include("NLLSFit.jl")
 include("OptimalControl.jl")
-include("OptimalControlhelpers.jl")
+include("OptimalControlHelpers.jl")
 
 end
