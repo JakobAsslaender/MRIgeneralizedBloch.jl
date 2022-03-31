@@ -32,7 +32,7 @@ TRF = 300e-6 .* one.(α);
 
 α[1] = π
 TRF[1] = 500e-6
-isInversionPulse = [true, falses(length(α)-1)...];
+isInversionPulse = [true; falses(length(α)-1)];
 
 ω1 = α ./ TRF;
 

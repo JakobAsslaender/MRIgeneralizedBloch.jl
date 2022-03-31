@@ -48,7 +48,7 @@ TRF = 300e-6 .* one.(α);
 # and define the first RF pulse as a 500μs inversion pulse by modifying vectors accordingly and by creating a bit vector that indicates the position of the inversion pulse:
 α[1] = π
 TRF[1] = 500e-6
-isInversionPulse = [true, falses(length(α)-1)...];
+isInversionPulse = [true; falses(length(α)-1)];
 
 # We note that inversion pulses are not optimized by this toolbox. We calculate the initial ``ω_1``
 ω1 = α ./ TRF;
@@ -98,7 +98,7 @@ function fg!(F, G, x)
     return F
 end;
 
-# We perform the optimization with the package [Optim.jl](https://julianlsolvers.github.io/Optim.jl/stable/), which requires the cost function `fg!(F, G, x)` to take the cost, the gradient, and the control as input variables and to over-write the gradient in place. The cost function calculates the gradient of the CRB with above described optimal control code and we, further, add some regularization terms: [`MRIgeneralizedBloch.second_order_α!`](@ref) penalizes the curvature of α, which smoothes the flip angle train and helps ensuring the [hybrid state conditions](https://www.nature.com/articles/s42005-019-0174-0). The penalty [`MRIgeneralizedBloch.RF_power!`](@ref) penalizes the power deposition of the RF-pulse train if ``\Simga_i(ω_1^2[i] ⋅ T_{\text{RF}}[i]) / T_{\text{cycle}} ≥ P_{\max}`` and helps with compliance to safety limits. Assuming a reasonable `λ`, the optimization will converge to an average RF-power deposition equal to or less than `Pmax` in units of (rad/s)². Heuristically, the value `Pmax=3e6` (rad/s)² proofed to be a reasonable choice for 3T systems. The penalty [`MRIgeneralizedBloch.TRF_TV!`](@ref) penalizes fast fluctuations of ``T_\text{RF}``. This penalty is justified by the knowledge that fluctuations of the control have negligible effect if they are fast compared to the biophysical time constants. We note, however, that this penalty is not required and rather ensure *beauty* of the result and speeds up convergence.
+# We perform the optimization with the package [Optim.jl](https://julianlsolvers.github.io/Optim.jl/stable/), which requires the cost function `fg!(F, G, x)` to take the cost, the gradient, and the control as input variables and to over-write the gradient in place. The cost function calculates the gradient of the CRB with above described optimal control code and we, further, add some regularization terms: [`MRIgeneralizedBloch.second_order_α!`](@ref) penalizes the curvature of α, which smoothes the flip angle train and helps ensuring the [hybrid state conditions](https://www.nature.com/articles/s42005-019-0174-0). The penalty [`MRIgeneralizedBloch.RF_power!`](@ref) penalizes the power deposition of the RF-pulse train if ``\Sigma_i(ω_1^2[i] ⋅ T_{\text{RF}}[i]) / T_{\text{cycle}} ≥ P_{\max}`` and helps with compliance to safety limits. Assuming a reasonable `λ`, the optimization will converge to an average RF-power deposition equal to or less than `Pmax` in units of (rad/s)². Heuristically, the value `Pmax=3e6` (rad/s)² proofed to be a reasonable choice for 3T systems. The penalty [`MRIgeneralizedBloch.TRF_TV!`](@ref) penalizes fast fluctuations of ``T_\text{RF}``. This penalty is justified by the knowledge that fluctuations of the control have negligible effect if they are fast compared to the biophysical time constants. We note, however, that this penalty is not required and rather ensure *beauty* of the result and speeds up convergence.
 
 # With all this in place, we can start the actual optimization
 result = optimize(Optim.only_fg!(fg!), # cost function
