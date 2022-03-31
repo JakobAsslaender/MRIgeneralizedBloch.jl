@@ -27,7 +27,7 @@ contour!(p, TʳᶠoT₂ˢ, α ./ π, 1 ./ R₂ˢˡ.(TʳᶠoT₂ˢ_m, α_m, 1, 1)
 Tʳᶠ = 100e-6 # s
 T₂ˢ = 10e-6 # μs
 m0_5D = [0,0,m₀ᶠ,m₀ˢ,1]
-mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # intialize history function, here with the ability to just call a single index
+mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # initialize history function, here with the ability to just call a single index
 
 param = (π/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)

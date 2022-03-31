@@ -14,11 +14,11 @@ T2s = 10e-6 # s
 ω0 = 0      # rad/s
 B1 = 1;     # in units of B1_nominal
 
-Npulse = 200;
+Npulses = 200;
 
 TR = 3.5e-3; # s
 
-Npulse * TR
+Npulses * TR
 
 R2slT = precompute_R2sl();
 
@@ -26,25 +26,25 @@ grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s
 
 weights = transpose([0, 1, 0, 0, 0, 0, 0, 0, 0]);
 
-α = abs.(sin.((1:Npulse) * 2π/Npulse));
+α = abs.(sin.((1:Npulses) * 2π/Npulses));
 
 TRF = 300e-6 .* one.(α);
 
-α[1] = π # first pulse is an inversion pulse
-TRF[1] = 500e-6 # first pulse is an inversion pulse
+α[1] = π
+TRF[1] = 500e-6
 isInversionPulse = [true, falses(length(α)-1)...];
 
 ω1 = α ./ TRF;
 
-p1 = plot(TR*(1:Npulse), α ./ π, ylabel="α/π")
-p2 = plot(TR*(1:Npulse), 1e6TRF, ylim=(0, 1e3), xlabel="t (s)", ylabel="TRF (μs)")
+p1 = plot(TR*(1:Npulses), α ./ π, ylabel="α/π")
+p2 = plot(TR*(1:Npulses), 1e6TRF, ylim=(0, 1e3), xlabel="t (s)", ylabel="TRF (μs)")
 p = plot(p1, p2, layout=(2, 1), legend=:none)
 
 (CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
 CRBm0s
 
-p1 = plot(TR*(1:Npulse), grad_ω1  .* ((-1) .^ (1:Npulse)), ylabel="∂CRB(m0s) / ∂ω1 (s/rad)")
-p2 = plot(TR*(1:Npulse), grad_TRF .* ((-1) .^ (1:Npulse)), ylabel="∂CRB(m0s) / ∂TRF (1/s)", xlabel="t (s)")
+p1 = plot(TR*(1:Npulses), grad_ω1  .* ((-1) .^ (1:Npulses)), ylabel="∂CRB(m0s) / ∂ω1 (s/rad)")
+p2 = plot(TR*(1:Npulses), grad_TRF .* ((-1) .^ (1:Npulses)), ylabel="∂CRB(m0s) / ∂TRF (1/s)", xlabel="t (s)")
 p = plot(p1, p2, layout=(2, 1), legend=:none)
 
 ω1_min  = 0      # rad/s
@@ -85,8 +85,8 @@ result = optimize(Optim.only_fg!(fg!), # cost function
 (CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
 CRBm0s
 
-p1 = plot(TR*(1:Npulse), α ./ π, ylabel="α/π")
-p2 = plot(TR*(1:Npulse), 1e6TRF, ylim=(0, 1e3), xlabel="t (s)", ylabel="TRF (μs)")
+p1 = plot(TR*(1:Npulses), α ./ π, ylabel="α/π")
+p2 = plot(TR*(1:Npulses), 1e6TRF, ylim=(0, 1e3), xlabel="t (s)", ylabel="TRF (μs)")
 p = plot(p1, p2, layout=(2, 1), legend=:none)
 
 m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; output=:realmagnetization)
@@ -99,11 +99,11 @@ xs = [m[i][4] for i=1:length(m)]
 zs = [m[i][5] for i=1:length(m)]
 
 p = plot(xlabel="t (s)", ylabel="m (normalized)")
-plot!(p, TR*(1:Npulse), xf ./(1-m0s), label="xᶠ")
-plot!(p, TR*(1:Npulse), yf ./(1-m0s), label="yᶠ")
-plot!(p, TR*(1:Npulse), zf ./(1-m0s), label="zᶠ")
-plot!(p, TR*(1:Npulse), xs ./   m0s , label="xˢ")
-plot!(p, TR*(1:Npulse), zs ./   m0s , label="zˢ")
+plot!(p, TR*(1:Npulses), xf ./(1-m0s), label="xᶠ")
+plot!(p, TR*(1:Npulses), yf ./(1-m0s), label="yᶠ")
+plot!(p, TR*(1:Npulses), zf ./(1-m0s), label="zᶠ")
+plot!(p, TR*(1:Npulses), xs ./   m0s , label="xˢ")
+plot!(p, TR*(1:Npulses), zs ./   m0s , label="zˢ")
 
 p = plot(xf, zf, xlabel="xf", ylabel="zf", framestyle = :zerolines, legend=:none)
 

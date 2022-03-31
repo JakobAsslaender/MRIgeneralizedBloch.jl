@@ -5,11 +5,11 @@ plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
 
 control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../docs/control_MT_v3p2_TR3p5ms_discretized.mat")))
 α   = control["alpha"]
-TRF = control["TRF"]
+TRF = control["TRF"];
 
-TR = 3.5e-3
+TR = 3.5e-3; # S
+
 t = TR .* (1:length(TRF))
-
 p1 = plot(t, α/π, ylabel="α/π", label=:none)
 p2 = plot(t, TRF, xlabel="t (s)", ylabel="TRF (s)", label=:none)
 p = plot(p1, p2, layout=(2,1))

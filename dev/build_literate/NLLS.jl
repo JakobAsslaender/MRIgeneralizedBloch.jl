@@ -54,9 +54,9 @@ plot!(p, t, imag.(s), label="Im(s)")
 plot!(p, t, real.(s_fitted), label="Re(s_fitted)")
 plot!(p, t, imag.(s_fitted), label="Im(s_fitted)")
 
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5));
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5))
 
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1);
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1)
 
 qM.ω0
 
