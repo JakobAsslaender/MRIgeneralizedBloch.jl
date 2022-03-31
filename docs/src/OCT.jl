@@ -48,7 +48,7 @@ TRF = 300e-6 .* one.(α);
 # and define the first RF pulse as a 500μs inversion pulse by modifying vectors accordingly and by creating a bit vector that indicates the position of the inversion pulse:
 α[1] = π
 TRF[1] = 500e-6
-isInversionPulse = [true, falses(length(α)-1)...];
+isInversionPulse = [true; falses(length(α)-1)];
 
 # We note that inversion pulses are not optimized by this toolbox. We calculate the initial ``ω_1``
 ω1 = α ./ TRF;
