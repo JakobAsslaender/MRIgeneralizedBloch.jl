@@ -345,9 +345,9 @@ version = "0.4.0"
 
 [[DiffEqBase]]
 deps = ["ArrayInterface", "ChainRulesCore", "DEDataArrays", "DataStructures", "Distributions", "DocStringExtensions", "FastBroadcast", "ForwardDiff", "FunctionWrappers", "IterativeSolvers", "LabelledArrays", "LinearAlgebra", "Logging", "MuladdMacro", "NonlinearSolve", "Parameters", "PreallocationTools", "Printf", "RecursiveArrayTools", "RecursiveFactorization", "Reexport", "Requires", "SciMLBase", "Setfield", "SparseArrays", "StaticArrays", "Statistics", "SuiteSparse", "ZygoteRules"]
-git-tree-sha1 = "caada727813396d9402c26e5175a01def8fd89ce"
+git-tree-sha1 = "d1c8d8b645500d7dffec3355d29af6c4f8bfa6df"
 uuid = "2b5f629d-d688-5b77-993f-72d75c75574e"
-version = "6.82.2"
+version = "6.82.3"
 
 [[DiffEqCallbacks]]
 deps = ["DataStructures", "DiffEqBase", "ForwardDiff", "LinearAlgebra", "NLsolve", "OrdinaryDiffEq", "Parameters", "RecipesBase", "RecursiveArrayTools", "SciMLBase", "StaticArrays"]
@@ -584,15 +584,15 @@ uuid = "781609d7-10c4-51f6-84f2-b8444358ff6d"
 
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "RelocatableFolders", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "df5f5b0450c489fe6ed59a6c0a9804159c22684d"
+git-tree-sha1 = "af237c08bda486b74318c8070adb96efa6952530"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.64.1"
+version = "0.64.2"
 
 [[GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "83578392343a7885147726712523c39edc714956"
+git-tree-sha1 = "cd6efcf9dc746b06709df14e462f0a3fe0786b1e"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.64.1+0"
+version = "0.64.2+0"
 
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
@@ -1046,9 +1046,9 @@ uuid = "3a97d323-0669-5f0c-9066-3539efd106a3"
 
 [[MRIgeneralizedBloch]]
 deps = ["ApproxFun", "Cubature", "DifferentialEquations", "ExponentialUtilities", "Interpolations", "LinearAlgebra", "LsqFit", "NLsolve", "Polyester", "QuadGK", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "6149d23cbac7785badc949a4318d89a6536db9c2"
+git-tree-sha1 = "bc6d2805c144b6af29e5480758204f33f293906c"
 uuid = "9689932d-8765-44d0-985b-2d9644d92569"
-version = "0.3.1"
+version = "0.4.0"
 
 [[MacroTools]]
 deps = ["Markdown", "Random"]
