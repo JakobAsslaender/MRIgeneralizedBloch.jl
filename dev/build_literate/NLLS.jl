@@ -23,11 +23,11 @@ B1 = 0.9; # in units of B1_nominal
 R2slT = precompute_R2sl();
 
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
-s = vec(s);
+s = vec(s)
 
 s .+= 0.01 * randn(ComplexF64, size(s));
 
-qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT)
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT)
 
 qM.m0s
 
@@ -54,9 +54,9 @@ plot!(p, t, imag.(s), label="Im(s)")
 plot!(p, t, real.(s_fitted), label="Re(s_fitted)")
 plot!(p, t, imag.(s_fitted), label="Im(s_fitted)")
 
-qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5));
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5))
 
-qM = HSFP_fit(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1);
+qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1)
 
 qM.ω0
 
@@ -71,11 +71,11 @@ u = u[:,1:9];
 
 sc = u' * s
 
-qM = HSFP_fit(sc, α, TRF, TR; R2slT=R2slT, u=u)
+qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u)
 
 R1a = 1 # 1/s
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT)
-qM = HSFP_fit(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT)
+qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
 

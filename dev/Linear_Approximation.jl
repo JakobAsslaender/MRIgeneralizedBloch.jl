@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Linear_Approximation.ipynb)
 
 # # Linear Approximation
-# The following code demonstrates the linear approximation of the generalized Bloch model and replicates Figs. 7 and 8 in the paper. 
+# The following code demonstrates the linear approximation of the generalized Bloch model and replicates Figs. 7 and 8 in the paper.
 
 # For this analysis we need the following packages:
 using DifferentialEquations
@@ -19,12 +19,12 @@ R₂ᶠ = 1 / 50e-3 # 1/s
 Rₓ = 70; # 1/s
 
 # ## Linearized ``T_2^{s,l}``
-# We demonstrate the linear approximation at the example of the Green's function corresponding to the [super-Lorentzian lineshape](http://dx.doi.org/10.1002/mrm.1910330404), which we interpolate to improve the perfomance:
+# We demonstrate the linear approximation at the example of the Green's function corresponding to the [super-Lorentzian lineshape](http://dx.doi.org/10.1002/mrm.1910330404), which we interpolate to improve the performance:
 G = interpolate_greens_function(greens_superlorentzian, 0, 1e-3 / 5e-6);
 
 # The function [`precompute_R2sl`](@ref) returns another function, `R₂ˢˡ(Tʳᶠ, α, B1, T₂ˢ)`, that interpolates the linearized relaxation rate, as well as functions that describe its derivatives wrt. ``T_2^s`` and ``B_1``, respectively:
 R₂ˢˡ, ∂R₂ˢˡ∂T₂ˢ, ∂R₂ˢˡ∂B₁ = precompute_R2sl(TRF_min=5, TRF_max=100, T2s_min=1, T2s_max=1, ω1_max=π/5, B1_max=1, greens=G);
-# The derivatives are not used here and are just assigned for demonstration purposes. 
+# The derivatives are not used here and are just assigned for demonstration purposes.
 
 # In order to replicate Fig. 7, we plot `R₂ˢˡ(Tʳᶠ, α, B₁, T₂ˢ)` for a varying ``α`` and ``T_\text{RF}/T_2^s``:
 α = (0.01:.01:1) * π
@@ -37,7 +37,7 @@ p = plot(xlabel="Tʳᶠ/T₂ˢ", ylabel="α/π", colorbar_title="T₂ˢˡ/T₂ˢ
 contour!(p, TʳᶠoT₂ˢ, α ./ π, 1 ./ R₂ˢˡ.(TʳᶠoT₂ˢ_m, α_m, 1, 1), fill = true)
 #md Main.HTMLPlot(p) #hide
 
-#src export 
+#src export
 using Printf #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Linearized_T2s.txt")), "w") #src
 write(io, "alphaopi TRFoT2s T2sloT2s \n") #src
@@ -51,12 +51,12 @@ end #src
 close(io) #src
 
 
-# ## Single RF Pulse
-# To replicate Fig. 8a, we simulate and plot the dynamics of a coupled spin system during a single π-pulse, starting from thermal equilibrium. 
+# ## Spin Dynamics during a single RF Pulse
+# To replicate Fig. 8a, we simulate and plot the dynamics of a coupled spin system during a single π-pulse, starting from thermal equilibrium.
 Tʳᶠ = 100e-6 # s
 T₂ˢ = 10e-6 # μs
 m0_5D = [0,0,m₀ᶠ,m₀ˢ,1]
-mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # intialize history function, here with the ability to just call a single index
+mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # initialize history function, here with the ability to just call a single index
 
 # The full generalized Bloch model is solved by
 param = (π/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
@@ -89,7 +89,7 @@ plot!(p, t, Mpi_full[:,4] / m₀ˢ, label="zˢ/m₀ˢ original model")
 plot!(p, t, Mpi_appx[:,4] / m₀ˢ, label="zˢ/m₀ˢ linear approximation")
 #md Main.HTMLPlot(p) #hide
 
-# We observe slight deviations of zˢ during the pulse, but a virtually perfect match at the end of the RF pulse. 
+# We observe slight deviations of zˢ during the pulse, but a virtually perfect match at the end of the RF pulse.
 
 # ## RF Pulses with Different Flip Angles
 # To replicate Fig. 8b, we simulate the spin dynamics during multiple RF pulses with different flip angles α, each simulation starting from thermal equilibrium, and analyze the magnetization at the end of each pulse:
@@ -101,7 +101,7 @@ for i in eachindex(α)
     param = (α[i]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
     prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
     M_full[i,:] = solve(prob)[end][1:4]
-    
+
     u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
@@ -132,7 +132,7 @@ prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 # The `$` symbol *interpolates* the variable, which improves the accuracy of the timing measurement. We can compare this time to the time it takes to calculate the linear approximation, including the time it takes to evaluate the interpolated `R₂ˢˡ`:
 @benchmark exp(hamiltonian_linear($(α[end]/Tʳᶠ), 1, 0, $Tʳᶠ, $m₀ˢ, $R₁, $R₂ᶠ, $Rₓ, $R₁, R₂ˢˡ($Tʳᶠ, $α[end], 1, $T₂ˢ))) * $m0_6D
 
-# We can see that linear approximation is about 4 orders of magnitude faster compared to the full model. 
+# We can see that linear approximation is about 4 orders of magnitude faster compared to the full model.
 
 #src export data for t vs. M figure
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Linearized_gBloch_M_during_Pulse.txt")), "w") #src

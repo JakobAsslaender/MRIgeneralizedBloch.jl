@@ -5,23 +5,23 @@ plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
 
 control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../docs/control_MT_v3p2_TR3p5ms_discretized.mat")))
 α   = control["alpha"]
-TRF = control["TRF"]
+TRF = control["TRF"];
 
-TR = 3.5e-3
+TR = 3.5e-3; # S
+
 t = TR .* (1:length(TRF))
-
 p1 = plot(t, α/π, ylabel="α/π", label=:none)
 p2 = plot(t, TRF, xlabel="t (s)", ylabel="TRF (s)", label=:none)
 p = plot(p1, p2, layout=(2,1))
 
 m0s = 0.15
-R1f = 0.5 # 1/s
-R2f = 15 # 1/s
-Rx = 30 # 1/s
-R1s = 3 # 1/s
+R1f = 0.5   # 1/s
+R2f = 15    # 1/s
+Rx = 30     # 1/s
+R1s = 3     # 1/s
 T2s = 10e-6 # s
-ω0 = 0 # rad/s
-B1 = 1; # in units of B1_nominal
+ω0 = 0      # rad/s
+B1 = 1;     # in units of B1_nominal
 
 R2slT = precompute_R2sl();
 
@@ -33,8 +33,8 @@ plot!(p, t, imag.(vec(s_linapp)), label="Im(s); lin. approx.")
 
 s_ide = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s)
 
-plot!(p, t, real.(vec(s_ide)), label="Re(s); IDE", legend=:topleft)
-plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE", legend=:topleft)
+plot!(p, t, real.(vec(s_ide)), label="Re(s); IDE")
+plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE")
 
 m_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT;
     output=:realmagnetization)
@@ -64,7 +64,8 @@ plot!(p, t, real.(s_linapp[:,1,9] .* B1 ), label="Re(∂s/∂B₁ )*B₁ ")
 
 R1a = 1 # 1/s
 grad_list=[grad_R1a()]
-s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT; grad_list=grad_list)
+s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT;
+    grad_list=grad_list)
 
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
 plot!(p, t, real.(s_linapp[:,1,1]       ), label="Re(∂s/∂M₀)/M₀")
