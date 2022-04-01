@@ -14,10 +14,10 @@ B1 = 1;     # in units of B1_nominal</code></pre><p>and we optimize</p><pre><cod
 TRF[1] = 500e-6
 isInversionPulse = [true; falses(length(α)-1)];</code></pre><p>We note that inversion pulses are not optimized by this toolbox. We calculate the initial <span>$ω_1$</span></p><pre><code class="language-julia hljs">ω1 = α ./ TRF;</code></pre><p>and plot the initial control:</p><pre><code class="language-julia hljs">p1 = plot(TR*(1:Npulses), α ./ π, ylabel=&quot;α/π&quot;)
 p2 = plot(TR*(1:Npulses), 1e6TRF, ylim=(0, 1e3), xlabel=&quot;t (s)&quot;, ylabel=&quot;TRF (μs)&quot;)
-p = plot(p1, p2, layout=(2, 1), legend=:none)</code></pre><object type="text/html" data="../../plots/194247333.html" style="width:100%;height:425px;"></object><p>With above defined weights, the function <a href="../../api/#MRIgeneralizedBloch.CRB_gradient_OCT-NTuple{14, Any}"><code>MRIgeneralizedBloch.CRB_gradient_OCT</code></a> returns the CRB</p><pre><code class="language-julia hljs">(CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
+p = plot(p1, p2, layout=(2, 1), legend=:none)</code></pre><object type="text/html" data="../../plots/969628944.html" style="width:100%;height:425px;"></object><p>With above defined weights, the function <a href="../../api/#MRIgeneralizedBloch.CRB_gradient_OCT-NTuple{14, Any}"><code>MRIgeneralizedBloch.CRB_gradient_OCT</code></a> returns the CRB</p><pre><code class="language-julia hljs">(CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
 CRBm0s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6341.950599614932</code></pre><p>along with the gradients:</p><pre><code class="language-julia hljs">p1 = plot(TR*(1:Npulses), grad_ω1  .* ((-1) .^ (1:Npulses)), ylabel=&quot;∂CRB(m0s) / ∂ω1 (s/rad)&quot;)
 p2 = plot(TR*(1:Npulses), grad_TRF .* ((-1) .^ (1:Npulses)), ylabel=&quot;∂CRB(m0s) / ∂TRF (1/s)&quot;, xlabel=&quot;t (s)&quot;)
-p = plot(p1, p2, layout=(2, 1), legend=:none)</code></pre><object type="text/html" data="../../plots/336329407.html" style="width:100%;height:425px;"></object><p>Note that we remove the oscillating nature of the gradient for the display.</p><p>In this example, we limit the control to the following bounds</p><pre><code class="language-julia hljs">ω1_min  = 0      # rad/s
+p = plot(p1, p2, layout=(2, 1), legend=:none)</code></pre><object type="text/html" data="../../plots/616650305.html" style="width:100%;height:425px;"></object><p>Note that we remove the oscillating nature of the gradient for the display.</p><p>In this example, we limit the control to the following bounds</p><pre><code class="language-julia hljs">ω1_min  = 0      # rad/s
 ω1_max  = 2e3π   # rad/s
 TRF_min = 100e-6 # s
 TRF_max = 500e-6; # s</code></pre><p>and the function <a href="../../api/#MRIgeneralizedBloch.bound_ω1_TRF!-Tuple{Any, Any}"><code>MRIgeneralizedBloch.bound_ω1_TRF!</code></a> modifies <code>ω1</code> and <code>TRF</code> to comply with these bounds and returns a single vector in the range <code>[-Inf, Inf]</code> that relates to the bounded control by a <code>tanh</code> transformation:</p><pre><code class="language-julia hljs">x0 = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF; ω1_min = ω1_min, ω1_max = ω1_max, TRF_min = TRF_min, TRF_max = TRF_max)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">400-element Vector{Float64}:
@@ -62,7 +62,7 @@ end;</code></pre><p>We perform the optimization with the package <a href="https:
     )</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"> * Status: failure (exceeded time limit of 900.0)
 
  * Candidate solution
-    Final objective value:     8.494272e+01
+    Final objective value:     8.492725e+01
 
  * Found with
     Algorithm:     BFGS
@@ -70,20 +70,20 @@ end;</code></pre><p>We perform the optimization with the package <a href="https:
  * Convergence measures
     |x - x&#39;|               = NaN ≰ 0.0e+00
     |x - x&#39;|/|x&#39;|          = NaN ≰ 0.0e+00
-    |f(x) - f(x&#39;)|         = 6.37e-05 ≰ 0.0e+00
-    |f(x) - f(x&#39;)|/|f(x&#39;)| = 7.50e-07 ≰ 0.0e+00
-    |g(x)|                 = 3.22e-01 ≰ 1.0e-08
+    |f(x) - f(x&#39;)|         = 6.56e-05 ≰ 0.0e+00
+    |f(x) - f(x&#39;)|/|f(x&#39;)| = 7.72e-07 ≰ 0.0e+00
+    |g(x)|                 = 9.77e-01 ≰ 1.0e-08
 
  * Work counters
     Seconds run:   900  (vs limit 900)
-    Iterations:    1332
-    f(x) calls:    3694
-    ∇f(x) calls:   3694
+    Iterations:    1477
+    f(x) calls:    4073
+    ∇f(x) calls:   4073
 </code></pre><p>After transforming the optimized control back into the space of bounded <span>$ω_1$</span> and <span>$T_\text{RF}$</span> values</p><pre><code class="language-julia hljs">ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(result.minimizer; ω1_min = ω1_min, ω1_max = ω1_max, TRF_min = TRF_min, TRF_max = TRF_max)
 α = ω1 .* TRF;</code></pre><p>we analyze the CRB(m0s):</p><pre><code class="language-julia hljs">(CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
-CRBm0s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">63.1379493913677</code></pre><p>and observe a substantial reduction. Further, we plot the optimized control:</p><pre><code class="language-julia hljs">p1 = plot(TR*(1:Npulses), α ./ π, ylabel=&quot;α/π&quot;)
+CRBm0s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">63.139528168241384</code></pre><p>and observe a substantial reduction. Further, we plot the optimized control:</p><pre><code class="language-julia hljs">p1 = plot(TR*(1:Npulses), α ./ π, ylabel=&quot;α/π&quot;)
 p2 = plot(TR*(1:Npulses), 1e6TRF, ylim=(0, 1e3), xlabel=&quot;t (s)&quot;, ylabel=&quot;TRF (μs)&quot;)
-p = plot(p1, p2, layout=(2, 1), legend=:none)</code></pre><object type="text/html" data="../../plots/401187297.html" style="width:100%;height:425px;"></object><p>To further analyze the results, we can calculate and plot all magnetization components:</p><pre><code class="language-julia hljs">m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; output=:realmagnetization)
+p = plot(p1, p2, layout=(2, 1), legend=:none)</code></pre><object type="text/html" data="../../plots/485913941.html" style="width:100%;height:425px;"></object><p>To further analyze the results, we can calculate and plot all magnetization components:</p><pre><code class="language-julia hljs">m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; output=:realmagnetization)
 m = vec(m)
 
 xf = [m[i][1] for i=1:length(m)]
@@ -97,4 +97,4 @@ plot!(p, TR*(1:Npulses), xf ./(1-m0s), label=&quot;xᶠ&quot;)
 plot!(p, TR*(1:Npulses), yf ./(1-m0s), label=&quot;yᶠ&quot;)
 plot!(p, TR*(1:Npulses), zf ./(1-m0s), label=&quot;zᶠ&quot;)
 plot!(p, TR*(1:Npulses), xs ./   m0s , label=&quot;xˢ&quot;)
-plot!(p, TR*(1:Npulses), zs ./   m0s , label=&quot;zˢ&quot;)</code></pre><object type="text/html" data="../../plots/473545310.html" style="width:100%;height:425px;"></object><p>And we can also plot the dynamics of the free spin pool on the Bloch sphere:</p><pre><code class="language-julia hljs">p = plot(xf, zf, xlabel=&quot;xf&quot;, ylabel=&quot;zf&quot;, framestyle = :zerolines, legend=:none)</code></pre><object type="text/html" data="../../plots/120976446.html" style="width:100%;height:425px;"></object><p>As yᶠ is close to zero in this particular case, we neglect it in this 2D plot.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../NLLS/">« Non-Linear Least Square Fitting</a><a class="docs-footer-nextpage" href="../Greens_functions/">Green&#39;s Functions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.15 on <span class="colophon-date" title="Thursday 31 March 2022 18:10">Thursday 31 March 2022</span>. Using Julia version 1.6.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+plot!(p, TR*(1:Npulses), zs ./   m0s , label=&quot;zˢ&quot;)</code></pre><object type="text/html" data="../../plots/415736478.html" style="width:100%;height:425px;"></object><p>And we can also plot the dynamics of the free spin pool on the Bloch sphere:</p><pre><code class="language-julia hljs">p = plot(xf, zf, xlabel=&quot;xf&quot;, ylabel=&quot;zf&quot;, framestyle = :zerolines, legend=:none)</code></pre><object type="text/html" data="../../plots/369996232.html" style="width:100%;height:425px;"></object><p>As yᶠ is close to zero in this particular case, we neglect it in this 2D plot.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../NLLS/">« Non-Linear Least Square Fitting</a><a class="docs-footer-nextpage" href="../Greens_functions/">Green&#39;s Functions »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.15 on <span class="colophon-date" title="Friday 1 April 2022 00:14">Friday 1 April 2022</span>. Using Julia version 1.6.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
