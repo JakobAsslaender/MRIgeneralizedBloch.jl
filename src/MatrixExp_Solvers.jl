@@ -26,7 +26,7 @@ Optional:
 - `grad_list=[undef]`: Vector that specifies the gradients that are calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `rfphase_increment=[π]::Vector{<:Number}`: Increment of the RF phase between consecutive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array.
 - `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calculated assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initialization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
-- `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
+- `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs, 1]`
 - `isInversionPulse::Vector{Bool}`: Indicates all inversion pulses; must have the same length as α; the `default = [true; falses(length(α)-1)]` indicates that the first pulse is an inversion pulse and all others are not
 
 # Examples
@@ -91,12 +91,10 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R
             _m0 = @SVector [0, 0, 1 - m0s, 0, m0s, 0, 0, 0, 0, 0, 1]
         end
     elseif isa(m0, AbstractVector)
-        if grad_list == [undef] && length(m0) < 6
-            _m0 = SVector{6}([m0; zeros(5 - length(m0)); 1])
-        elseif length(m0) < 11
-            _m0 = SVector{11}([m0; zeros(10 - length(m0)); 1])
+        if grad_list == [undef]
+            _m0 = length(m0) == 6 ? SVector{6}(m0) : SVector{6}([m0; zeros(5 - length(m0)); 1])
         else
-            error("the m0 vector of length <= 5 w/o gradients or <= 10 with gradients")
+            _m0 = length(m0) == 11 ? SVector{11}(m0) : SVector{11}([m0; zeros(10 - length(m0)); 1])
         end
     elseif m0 != :periodic
         error("m0 must either be :periodic, :IR, :thermal, or a vector")
