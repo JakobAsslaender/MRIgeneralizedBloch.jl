@@ -11,7 +11,7 @@ using LinearAlgebra
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
 
-# and we demonstrate the concept at the example of the RF pulse train that we published in the paper [Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model](http://TODO.org):
+# and we demonstrate the concept at the example of the RF pulse train that we published in the paper [Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model](https://arxiv.org/pdf/2207.08259.pdf):
 control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../docs/control_MT_v3p2_TR3p5ms_discretized.mat")))
 α   = control["alpha"]
 TRF = control["TRF"]
@@ -126,7 +126,7 @@ qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u)
 
 
 # ## Apparent ``R_1``
-# Above fits tread `R1f` and `R1s` of the free and the semi-solid as independent parameters. As we discussed in our [paper](http://TODO.org), many publications in the literature assume an apparent `R1a = R1f = R1s`. The corresponding model can be fitted by specifying `fit_apparentR1=true`:
+# Above fits tread `R1f` and `R1s` of the free and the semi-solid as independent parameters. As we discussed in our [paper](https://arxiv.org/pdf/2207.08259.pdf), many publications in the literature assume an apparent `R1a = R1f = R1s`. The corresponding model can be fitted by specifying `fit_apparentR1=true`:
 R1a = 1 # 1/s
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT)
 qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT)
