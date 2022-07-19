@@ -8,7 +8,7 @@ using MAT
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
 
-# and we use the pulse train described in the paper [Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model](http://TODO.org):
+# and we use the pulse train described in the paper [Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model](https://arxiv.org/pdf/2207.08259.pdf):
 control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../docs/control_MT_v3p2_TR3p5ms_discretized.mat")))
 α   = control["alpha"]
 TRF = control["TRF"];
@@ -94,7 +94,7 @@ plot!(p, t, real.(s_linapp[:,1,9] .* B1 ), label="Re(∂s/∂B₁ )*B₁ ")
 # Note that the first row is always the signal itself, which is equivalent to ∂s/∂M₀, as this toolbox always assumes M₀ = 1.
 
 # ### Apparent R₁
-# Above code calculates separate derivatives for ``R_1^f`` and ``R_1^s``. Yet, many publications, including our own paper ["Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model"](http://TODO.org) assumes an apparent longitudinal relaxation rate ``R_1^a = R_1^f = R_1^f``. The derivatives wrt. this apparent relaxation rate can be calculated with
+# Above code calculates separate derivatives for ``R_1^f`` and ``R_1^s``. Yet, many publications, including our own paper ["Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model"](https://arxiv.org/pdf/2207.08259.pdf) assumes an apparent longitudinal relaxation rate ``R_1^a = R_1^f = R_1^f``. The derivatives wrt. this apparent relaxation rate can be calculated with
 
 R1a = 1 # 1/s
 grad_list=[grad_R1a()]
