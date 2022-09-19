@@ -1,7 +1,6 @@
 using Pkg
 Pkg.activate("docs")
 Pkg.develop(PackageSpec(path=pwd()))
-Pkg.add(url="https://github.com/JuliaNLSolvers/LsqFit.jl", rev="master") # I implemented a bugfix (PR #182) that is merged, but not yet released. This line can be removed once a new version is released.
 Pkg.instantiate()
 
 using MRIgeneralizedBloch
