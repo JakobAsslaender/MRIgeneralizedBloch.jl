@@ -77,7 +77,7 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
     end
     A[:,1] .= A[:,2] # extrapolation hack as the fit does not work with Ω = 0
 
-    f = CubicSplineInterpolation((τv, Ωv), A)
+    f = cubic_spline_interpolation((τv, Ωv), A)
     dfdτ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[1]
     dfdΩ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[2]
     d2fdτ2( τ, Ω) = Interpolations.hessian( f, τ, Ω)[1,1]
