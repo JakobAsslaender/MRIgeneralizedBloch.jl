@@ -8,7 +8,7 @@ using MRIgeneralizedBloch:
 max_error = 5e-2
 
 ## set parameters
-f_ω1(t) = π / 500e-6
+ω1 = π / 500e-6
 ω0 = 200.0
 B1 = 1.0
 m0s = 0.15
@@ -35,7 +35,7 @@ gBloch_sol = solve(
         m0,
         mfun,
         (0, TRF),
-        (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, N),
     ),
     alg,
 )
@@ -54,7 +54,7 @@ gBloch_sol_grad = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dGdT2s, grad_list),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dGdT2s, grad_list),
     ),
     alg,
 )
@@ -69,7 +69,7 @@ gBloch_sol_dm0s = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, (m0s + dm0s), R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, B1, ω0, (m0s + dm0s), R1f, R2f, Rx, R1s, T2s, N),
     ),
     alg,
 )
@@ -110,7 +110,7 @@ gBloch_sol_dR1f = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s, N),
+        (ω1, B1, ω0, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s, N),
     ),
     alg,
 )
@@ -141,7 +141,7 @@ gBloch_sol_dR2f = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s, N),
+        (ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s, N),
     ),
     alg,
 )
@@ -171,7 +171,7 @@ gBloch_sol_dRx = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, R1f, R2f, (Rx + dRx), R1s, T2s, N),
+        (ω1, B1, ω0, m0s, R1f, R2f, (Rx + dRx), R1s, T2s, N),
     ),
     alg,
 )
@@ -202,7 +202,7 @@ gBloch_sol_dR1s = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s, N),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s, N),
     ),
     alg,
 )
@@ -233,7 +233,7 @@ gBloch_sol_dT2s = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s), N),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s), N),
     ),
     alg,
 )
@@ -264,7 +264,7 @@ gBloch_sol_dω0 = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rx, R1s, T2s, N),
     ),
     alg,
 )
@@ -294,7 +294,7 @@ gBloch_sol_dB1 = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, (B1 + dB1), ω0, m0s, R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, (B1 + dB1), ω0, m0s, R1f, R2f, Rx, R1s, T2s, N),
     ),
     alg,
 )
@@ -329,7 +329,7 @@ gBloch_sol = solve(
         m0,
         mfun,
         (0, TRF),
-        (f_ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, N),
+        (ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, N),
     ),
     alg,
 )
@@ -348,7 +348,7 @@ gBloch_sol_grad = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, G, dGdT2s, grad_list),
+        (ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, G, dGdT2s, grad_list),
     ),
     alg,
 )
@@ -363,7 +363,7 @@ gBloch_sol_dR1a = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (f_ω1, B1, ω0, m0s, (R1a + dR1a), R2f, Rx, (R1a + dR1a), T2s, N),
+        (ω1, B1, ω0, m0s, (R1a + dR1a), R2f, Rx, (R1a + dR1a), T2s, N),
     ),
     alg,
 )

@@ -58,17 +58,3 @@ max_error = 1e-3
 @test u_gBloch[3] ≈ u_Bloch[3] atol = max_error
 @test u_gBloch[4] ≈ u_Bloch[5] atol = max_error
 @test u_gBloch[5] ≈ u_Bloch[6] atol = max_error
-
-
-## Test arbitrary pulse shape interface
-f_ω1(t) = ω1
-p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, greens_lorentzian)
-m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
-
-sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
-    alg,
-)
-
-u_gBloch_arb = sol[end]
-@test u_gBloch ≈ u_gBloch_arb atol = 1e-6
