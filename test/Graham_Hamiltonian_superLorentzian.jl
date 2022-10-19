@@ -44,7 +44,7 @@ g = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 alg = MethodOfSteps(DP8())
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
+    DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
     alg,
 )
 

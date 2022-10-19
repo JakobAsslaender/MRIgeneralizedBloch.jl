@@ -3,5 +3,6 @@
 docs/build
 docs/src/build*
 docs/Manifest.toml
+test/Manifest.toml
 /Manifest.toml
 .DS_Store

@@ -42,7 +42,7 @@ end
 
 ## benchmark the different solvers (excecute one line at a time to provoke individual results to be printed)
 print("Time to solve the full gene. Bloch IDE for 100us π-pulse:")
-@btime solve(DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))
+@btime solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))
 
 print("Time to solve the linear approximation for 100us π-pulse:")
 @btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2sl(TRF, α[end-1], 1, T2s))) * u0_6D
