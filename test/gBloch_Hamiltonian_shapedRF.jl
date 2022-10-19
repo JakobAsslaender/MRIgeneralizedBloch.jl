@@ -6,7 +6,7 @@ using QuadGK
 using Test
 
 ## Pulse parameters
-α = π
+α = 0.8π
 TRF = 100e-6
 
 # define other parameters
@@ -89,7 +89,6 @@ end
 
 for ω0 ∈ [0, 100randn()]
     local m0 = [0, 0, m0s, 1]
-
     local p = (f_ω1, B1, ω0, R1s, T2s)
     z_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p))[end][3]
 
@@ -100,7 +99,7 @@ for ω0 ∈ [0, 100randn()]
     local p = (f_ω1, B1, ω0, R1s, T2s, G)
     z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end][1]
 
-    @test z_gBloch ≈ z_Bloch rtol = 1e-2
+    @test z_gBloch ≈ z_Bloch atol = 5e-3
 end
 
 

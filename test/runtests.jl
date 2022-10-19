@@ -41,6 +41,10 @@ end
     include("gBloch_Hamiltonian_Gradients.jl")
 end
 
+@testset "apply_hamiltonian_gbloch! shaped-RF gradients" begin
+    include("gBloch_Hamiltonian_shapedRF_Gradients.jl")
+end
+
 @testset "apply_hamiltonian_freeprecession! gradients" begin
     include("FreePrecession_Hamiltonian_Gradients.jl")
 end
