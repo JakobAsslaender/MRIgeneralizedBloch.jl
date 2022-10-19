@@ -6,9 +6,9 @@ using Test
 
 ## choose random parameters
 # this test should only be passed for small α and long TRF
-α = rand() * π/2 
+α = rand() * π/2
 TRF = 500e-6 + 1000e-6 * rand()
-ω1 = α / TRF
+f_ω1(t) = α / TRF
 B1 = 0.7 + 0.6 * rand()
 ω0 = 0 # Graham's spectral model is only implemented for on-resonance pulses
 m0s = 0.2 * rand()
@@ -26,7 +26,7 @@ mf = (1 - m0s) * rand()
 φ = rand() * 2π
 
 ## Solve Graham's solution
-p = (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)
+p = (f_ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)
 alg = Tsit5()
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
@@ -41,7 +41,7 @@ u_Graham = sol[end]
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 g = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
-p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
+p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 alg = MethodOfSteps(DP8())
 sol = solve(
     DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
@@ -51,9 +51,4 @@ sol = solve(
 u_gBloch = sol[end]
 
 ## Test!
-max_error = 1e-2
-@test u_gBloch[1] ≈ u_Graham[1] atol = max_error
-@test u_gBloch[2] ≈ u_Graham[2] atol = max_error
-@test u_gBloch[3] ≈ u_Graham[3] atol = max_error
-@test u_gBloch[4] ≈ u_Graham[4] atol = max_error
-@test u_gBloch[5] ≈ u_Graham[5] atol = max_error
+@test u_gBloch ≈ u_Graham atol = 1e-3

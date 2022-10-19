@@ -136,6 +136,10 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
     ∂m∂t[4] = -B1^2 * ω1^2 * (xs + ys) + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g = p
+    return apply_hamiltonian_gbloch!(∂m∂t, m, mfun, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g), t)
+end
 
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{10,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g = p
@@ -150,6 +154,10 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{6,Any}, t)
     xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1] * sin(ω0 * x), 0, t, order=100)[1]
 
     ∂m∂t[1] = -B1^2 * ω1^2 * (xt + yt) + R1s * (1 - m[1])
+end
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any}, t)
+    ω1, B1, ω0, R1s, T2s, g = p
+    return apply_hamiltonian_gbloch!(∂m∂t, m, mfun, (ω1(t), B1, ω0, R1s, T2s, g), t)
 end
 
 
@@ -214,8 +222,7 @@ end
 # implementatoin of the partial derivates for
 # calculationg th gradient
 ###################################################
-function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_m0s)
-    #  _,  _,  _,   _, R1f,   _, Rx, R1s,   _, _,  _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_m0s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
 
@@ -224,8 +231,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_m0s)
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_R1a)
-    # _, _, _, m0s, _, _, _, _, _, _, _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_R1a)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[3] += - m[3] + (1 - m0s)
@@ -233,15 +239,14 @@ function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_R1a)
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_R1f)
-    # _, _, _, m0s, _, _, _, _, _, _, _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_R1f)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[3] += - m[3] + (1 - m0s)
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_R1s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_R1s)
     # _, _, _, m0s, _, _, _, _, _, _, _ = p
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
@@ -249,14 +254,13 @@ function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_R1s)
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_R2f)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_R2f)
     ∂m∂t[1] -= m[1]
     ∂m∂t[2] -= m[2]
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_Rx)
-    # _, _, _, m0s, _, _, _, _, _, _, _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_Rx)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[3] += - m0s * m[3] + (1 - m0s) * m[4]
@@ -265,8 +269,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_Rx)
 end
 
 # version for gBloch
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_T2s)
-    # ω1, B1, ω0,   _,   _,   _,  _,   _, T2s, _, dG_o_dT2s_x_T2s = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
 
@@ -283,8 +286,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
 end
 
 # version for Graham's model
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
-    # ω1, B1,  _,   _,   _,   _,  _,   _, T2s, TRF, _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
     df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0, order=100)[1]
@@ -294,8 +296,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
 end
 
 # version for gBloch model
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Fun,Fun}, t, grad_type::grad_ω0)
-    # ω1, B1, ω0, _, _, _, T2s, _, g, _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] -= m[2]
@@ -312,15 +313,14 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
 end
 
 # version for free precession & Graham's model
-function add_partial_derivative!(∂m∂t, m, mfun, p, t, grad_type::grad_ω0)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_ω0)
     ∂m∂t[1] -= m[2]
     ∂m∂t[2] += m[1]
     return ∂m∂t
 end
 
 # version for gBloch (using ApproxFun)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Fun,Any}, t, grad_type::grad_B1)
-    # ω1, B1, ω0, _, _, _, T2s, _, g, _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] += ω1 * m[3]
@@ -334,13 +334,12 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
 end
 
 # version for free precession (does nothing)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,UndefInitializer,UndefInitializer}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,UndefInitializer,UndefInitializer}, t, grad_type::grad_B1)
     return ∂m∂t
 end
 
 # version for Graham
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
-    # ω1, B1, _, _, _, _, T2s, _, TRF, _ = p
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
     f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0, order=100)[1]
@@ -349,6 +348,12 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
     ∂m∂t[3] -= ω1 * m[1]
     ∂m∂t[4] -= f_PSD(TRF / T2s) * 2 * B1 * ω1^2 * T2s * m[4]
     return ∂m∂t
+end
+
+# wrapper for all 11-Tuple calls
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g_TRF, dG_o_dT2s_x_T2s = p
+    return add_partial_derivative!(∂m∂t, m, mfun, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g_TRF, dG_o_dT2s_x_T2s), t, grad_type)
 end
 
 
@@ -386,6 +391,11 @@ function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{
     return ∂m∂t
 end
 
+function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, N = p
+    return apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, N), t)
+end
+
 function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{10,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, N = p
     return apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, 4, N), t)
@@ -401,6 +411,11 @@ function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{10,Any
     Rrf = f_PSD(TRF / T2s) * B1^2 * ω1^2 * T2s
 
     return apply_hamiltonian_linear!(∂m∂t, m, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
+end
+
+function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+    ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s = p
+    return apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, (ω1(t), B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
 end
 
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{11,Any}, t)
@@ -453,6 +468,11 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ∂m∂t[3] -= B1 * ω1 * m[1]
     ∂m∂t[4] -= Rrf * m[4]
     return ∂m∂t
+end
+
+function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf = p
+    return apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
 end
 
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{10,Any}, t)
@@ -567,4 +587,14 @@ function apply_hamiltonian_sled!(∂m∂t, m, p::NTuple{10,Any}, t)
 
     ∂m∂t[4] = -B1^2 * ω1^2 * (xs + ys) * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
+end
+
+
+function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Function,Any,Any,Any,Any,Any}, t)
+    ω1, B1, ω0, R1s, T2s, g = p
+    return apply_hamiltonian_sled!(d∂m∂t, m, (ω1(t), B1, ω0, R1s, T2s, g), t)
+end
+function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g = p
+    return apply_hamiltonian_sled!(d∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g), t)
 end
