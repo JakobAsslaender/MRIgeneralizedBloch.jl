@@ -90,4 +90,5 @@ run(`sed -i'.old' 's/var darkPreference = false/var darkPreference = true/g' doc
 
 deploydocs(;
     repo="github.com/JakobAsslaender/MRIgeneralizedBloch.jl",
+    push_preview = true,
 )

@@ -12,17 +12,17 @@ Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivativ
 - `m::Vector{<:Number}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
 - `mfun`: History function; can be initialized with `mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
 - `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)`, with
-    -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis) or
-    -`ω1(t)::Function`: Rabi frequency in rad/s as a function of time for shaped RF-pulses
-    -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
-    -`ω0::Number`: Larmor or off-resonance frequency in rad/s
-    -`m0s::Number`: Fractional semi-solid spin pool size in the range of 0 to 1
-    -`R1f::Number`: Longitudinal spin relaxation rate of the free pool in 1/seconds
-    -`R2f::Number`: Transversal spin relaxation rate of the free pool in 1/seconds
-    -`Rx::Number`: Exchange rate between the two pools in 1/seconds
-    -`R1s::Number`: Longitudinal spin relaxation rate of the semi-solid pool in 1/seconds
-    -`T2s::Number`: Transversal spin relaxation time of the semi-solid pool in seconds
-    -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
+    - `ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis) or
+    - `ω1(t)::Function`: Rabi frequency in rad/s as a function of time for shaped RF-pulses
+    - `B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
+    - `ω0::Number`: Larmor or off-resonance frequency in rad/s
+    - `m0s::Number`: Fractional semi-solid spin pool size in the range of 0 to 1
+    - `R1f::Number`: Longitudinal spin relaxation rate of the free pool in 1/seconds
+    - `R2f::Number`: Transversal spin relaxation rate of the free pool in 1/seconds
+    - `Rx::Number`: Exchange rate between the two pools in 1/seconds
+    - `R1s::Number`: Longitudinal spin relaxation rate of the semi-solid pool in 1/seconds
+    - `T2s::Number`: Transversal spin relaxation time of the semi-solid pool in seconds
+    - `g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
     or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g)` with
     - `zs_idx::Integer`: Index to be used history function to be used in the Green's function; Default is 4 (zs), and for derivatives 9, 14, ... are used
     or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` with
