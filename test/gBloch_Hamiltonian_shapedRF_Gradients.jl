@@ -101,7 +101,7 @@ end
 @test [dxf;dyf;dzf;dzs] ≈ [dxf_fd;dyf_fd;dzf_fd;dzs_fd] rtol = max_error
 
 ## test derivative wrt. R2f
-dR2f = 1e-9
+dR2f = 1e-8
 
 gBloch_sol_dR2f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s, G)))
 
@@ -166,7 +166,7 @@ end
 @test dzs ≈ dzs_fd rtol = max_error
 
 ## test derivative wrt. T2s
-dT2s = 1e-14
+dT2s = 1e-13
 
 gBloch_sol_dT2s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s), G)))
 
