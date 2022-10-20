@@ -256,7 +256,7 @@ end
 @test dzs ≈ dzs_fd rtol = max_error
 
 ## test derivative wrt. ω0
-dω0 = 1
+dω0 = 1e-6
 
 gBloch_sol_dω0 = solve(
     DDEProblem(
@@ -284,6 +284,7 @@ end
 @test dxf ≈ dxf_fd rtol = max_error
 @test dyf ≈ dyf_fd rtol = max_error
 @test dzf ≈ dzf_fd rtol = max_error
+@test [dxf; dyf; dzf; dzs] ≈ [dxf_fd; dyf_fd; dzf_fd; dzs_fd] rtol = max_error
 
 ## test derivative wrt. B1
 dB1 = 1e-9

@@ -188,7 +188,7 @@ end
 @test dzs ≈ dzs_fd rtol = max_error
 
 ## test derivative wrt. ω0
-dω0 = 1
+dω0 = 1e2
 
 gBloch_sol_dω0 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rx, R1s, T2s, G)))
 
@@ -204,11 +204,8 @@ for i = 1:length(t)
     dzs[i] = gBloch_sol_grad(t[i])[39]
 end
 
-@test [dxf;dyf;dzf;dzs] ≈ [dxf_fd;dyf_fd;dzf_fd;dzs_fd] rtol = 2max_error
-# @test dxf ≈ dxf_fd rtol = max_error
+@test [dxf;dyf;dzf;dzs] ≈ [dxf_fd;dyf_fd;dzf_fd;dzs_fd] rtol = max_error
 @test dyf ≈ dyf_fd rtol = max_error
-# @test dzf ≈ dzf_fd rtol = max_error
-# @test dzs ≈ dzs_fd rtol = max_error
 
 ## test derivative wrt. B1
 dB1 = 1e-9
