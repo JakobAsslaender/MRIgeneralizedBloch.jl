@@ -15,7 +15,8 @@ Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivativ
     - `ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis) or
     - `ω1(t)::Function`: Rabi frequency in rad/s as a function of time for shaped RF-pulses
     - `B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
-    - `ω0::Number`: Larmor or off-resonance frequency in rad/s
+    - `ω0::Number`: Larmor or off-resonance frequency in rad/s or
+    - `φ::Function`: RF-phase in rad as a function of time for frequency/phase-sweep pulses (works only in combination with `ω1(t)::Function`)
     - `m0s::Number`: Fractional semi-solid spin pool size in the range of 0 to 1
     - `R1f::Number`: Longitudinal spin relaxation rate of the free pool in 1/seconds
     - `R2f::Number`: Transversal spin relaxation rate of the free pool in 1/seconds
@@ -130,15 +131,15 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
         xs = 0
         ys = quadgk(x -> g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
     else
-        xs = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(p, x; idxs=zs_idx) * sin(ω0 * x), eps(), t, order=100)[1]
-        ys = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(p, x; idxs=zs_idx) * cos(ω0 * x), eps(), t, order=100)[1]
+        xs = sin(ω0 * t) * quadgk(x -> sin(ω0 * x) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
+        ys = cos(ω0 * t) * quadgk(x -> cos(ω0 * x) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
     end
 
     ∂m∂t[4] = -B1^2 * ω1^2 * (xs + ys) + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
 
-function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Any,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g = p
 
     ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1(t) * m[3]
@@ -149,9 +150,22 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,
         xs = 0
         ys = quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
     else
-        xs = sin(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx) * sin(ω0 * x), eps(), t, order=100)[1]
-        ys = cos(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx) * cos(ω0 * x), eps(), t, order=100)[1]
+        xs = sin(ω0 * t) * quadgk(x -> ω1(x) * sin(ω0 * x) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
+        ys = cos(ω0 * t) * quadgk(x -> ω1(x) * cos(ω0 * x) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
     end
+
+    ∂m∂t[4] = -B1^2 * ω1(t) * (xs + ys) + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+end
+
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+    ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g = p
+
+    ∂m∂t[1] = - R2f * m[1] + B1 * ω1(t) * cos(φ(t)) * m[3]
+    ∂m∂t[2] = - R2f * m[2] - B1 * ω1(t) * sin(φ(t)) * m[3]
+    ∂m∂t[3] = - B1 * ω1(t) * cos(φ(t)) * m[1] + B1 * ω1(t) * sin(φ(t)) * m[2] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
+
+    xs = sin(φ(t)) * quadgk(x -> ω1(x) * sin(φ(x)) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
+    ys = cos(φ(t)) * quadgk(x -> ω1(x) * cos(φ(x)) * g((t - x) / T2s) * mfun(p, x; idxs=zs_idx), eps(), t, order=100)[1]
 
     ∂m∂t[4] = -B1^2 * ω1(t) * (xs + ys) + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
 end
@@ -169,23 +183,32 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{6,Any}, t)
         xs = 0
         ys = quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
     else
-        xs = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1] * sin(ω0 * x), 0, t, order=100)[1]
-        ys = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1] * cos(ω0 * x), 0, t, order=100)[1]
+        xs = sin(ω0 * t) * quadgk(x -> sin(ω0 * x) * g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
+        ys = cos(ω0 * t) * quadgk(x -> cos(ω0 * x) * g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
     end
 
     ∂m∂t[1] = -B1^2 * ω1^2 * (xs + ys) + R1s * (1 - m[1])
 end
 
-function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
     if ω0 == 0
         xs = 0
         ys = quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
     else
-        xs = sin(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(p, x)[1] * sin(ω0 * x), 0, t, order=100)[1]
-        ys = cos(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(p, x)[1] * cos(ω0 * x), 0, t, order=100)[1]
+        xs = sin(ω0 * t) * quadgk(x -> ω1(x) * sin(ω0 * x) * g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
+        ys = cos(ω0 * t) * quadgk(x -> ω1(x) * cos(ω0 * x) * g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
     end
+
+    ∂m∂t[1] = -B1^2 * ω1(t) * (xs + ys) + R1s * (1 - m[1])
+end
+
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any}, t)
+    ω1, B1, φ, R1s, T2s, g = p
+
+    xs = sin(φ(t)) * quadgk(x -> ω1(x) * sin(φ(x)) * g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
+    ys = cos(φ(t)) * quadgk(x -> ω1(x) * cos(φ(x)) * g((t - x) / T2s) * mfun(p, x)[1], 0, t, order=100)[1]
 
     ∂m∂t[1] = -B1^2 * ω1(t) * (xs + ys) + R1s * (1 - m[1])
 end
@@ -217,7 +240,7 @@ function apply_hamiltonian_gbloch_inversion!(∂m∂t, m, mfun, p, t)
 end
 
 ###################################################
-# Bloch-McConnel model to simulate free precession
+# Bloch-McConnell model to simulate free precession
 ###################################################
 function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{6,Any}, t)
     ω0, m0s, R1f, R2f, Rx, R1s = p
@@ -248,10 +271,9 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{7,Any}, t)
     return ∂m∂t
 end
 
-###################################################
-# implementatoin of the partial derivates for
-# calculationg th gradient
-###################################################
+#########################################################################
+# implementation of the partial derivatives for calculating the gradients
+#########################################################################
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_m0s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
@@ -296,24 +318,34 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_t
     return ∂m∂t
 end
 
-# version for gBloch
+# versions for gBloch
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
-    yt = cos(ω0 * t) * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x) * cos(ω0 * x), 0, t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x) * sin(ω0 * x), 0, t, order=100)[1]
+    ys = cos(ω0 * t) * quadgk(x -> cos(ω0 * x) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs = sin(ω0 * t) * quadgk(x -> sin(ω0 * x) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    ∂m∂t[4] -= B1^2 * ω1^2 * (xt + yt)/T2s
+    ∂m∂t[4] -= B1^2 * ω1^2 * (xs + ys)/T2s
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
-    yt = cos(ω0 * t) * quadgk(x -> ω1(x) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x) * cos(ω0 * x), 0, t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> ω1(x) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x) * sin(ω0 * x), 0, t, order=100)[1]
+    ys = cos(ω0 * t) * quadgk(x -> ω1(x) * cos(ω0 * x) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs = sin(ω0 * t) * quadgk(x -> ω1(x) * sin(ω0 * x) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    ∂m∂t[4] -= B1^2 * ω1(t) * (xt + yt)/T2s
+    ∂m∂t[4] -= B1^2 * ω1(t) * (xs + ys)/T2s
+    return ∂m∂t
+end
+
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
+    ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
+
+    ys = cos(φ(t)) * quadgk(x -> ω1(x) * cos(φ(x)) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs = sin(φ(t)) * quadgk(x -> ω1(x) * sin(φ(x)) * dG_o_dT2s_x_T2s((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+
+    ∂m∂t[4] -= B1^2 * ω1(t) * (xs + ys)/T2s
     return ∂m∂t
 end
 
@@ -326,81 +358,105 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
-    df_PSD = (τ) -> quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0, order=100)[1]
+    df_PSD(τ) = quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0, order=100)[1]
 
     ∂m∂t[4] -= df_PSD(TRF / T2s) * B1^2 * ω1^2 * m[4]
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
-    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
-    return add_partial_derivative!(∂m∂t, m, mfun, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s), t, grad_type::grad_T2s)
-end
-
-# version for gBloch model
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
+# versions for gBloch model
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Number,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] -= m[2]
     ∂m∂t[2] += m[1]
 
-    yt = -sin(ω0 * t) * t * quadgk(x -> g((t - x) / T2s) * mfun(x) * cos(ω0 * x), 0, t, order=100)[1]
-    yt += cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(x) * (-x) * sin(ω0 * x), 0, t, order=100)[1]
+    xs  = cos(ω0 * t) * t * quadgk(x -> sin(ω0 * x)     * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs += sin(ω0 * t)     * quadgk(x -> cos(ω0 * x) * x * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    xt = cos(ω0 * t) * t * quadgk(x -> g((t - x) / T2s) * mfun(x) * sin(ω0 * x), 0, t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(x) * x * cos(ω0 * x), 0, t, order=100)[1]
+    ys = -sin(ω0 * t) * t * quadgk(x -> cos(ω0 * x)     * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    ys -= cos(ω0 * t)     * quadgk(x -> sin(ω0 * x) * x * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    ∂m∂t[4] -= B1^2 * ω1^2 * (xt + yt)
+    ∂m∂t[4] -= B1^2 * ω1^2 * (xs + ys)
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] -= m[2]
     ∂m∂t[2] += m[1]
 
-    yt = -sin(ω0 * t) * t * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(x) * cos(ω0 * x), 0, t, order=100)[1]
-    yt += cos(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(x) * (-x) * sin(ω0 * x), 0, t, order=100)[1]
+    xs  = cos(ω0 * t) * t * quadgk(x -> ω1(x) * sin(ω0 * x)     * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs += sin(ω0 * t)     * quadgk(x -> ω1(x) * cos(ω0 * x) * x * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    xt = cos(ω0 * t) * t * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(x) * sin(ω0 * x), 0, t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(x) * x * cos(ω0 * x), 0, t, order=100)[1]
+    ys = -sin(ω0 * t) * t * quadgk(x -> ω1(x) * cos(ω0 * x)     * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    ys -= cos(ω0 * t)     * quadgk(x -> ω1(x) * sin(ω0 * x) * x * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    ∂m∂t[4] -= B1^2 * ω1(t) * (xt + yt)
+    ∂m∂t[4] -= B1^2 * ω1(t) * (xs + ys)
+    return ∂m∂t
+end
+
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
+    ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
+
+    ∂m∂t[1] -= m[2]
+    ∂m∂t[2] += m[1]
+
+    xs  = cos(φ(t)) * t * quadgk(x -> ω1(x) * sin(φ(x))     * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs += sin(φ(t))     * quadgk(x -> ω1(x) * cos(φ(x)) * x * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+
+    ys = -sin(φ(t)) * t * quadgk(x -> ω1(x) * cos(φ(x))     * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    ys -= cos(φ(t))     * quadgk(x -> ω1(x) * sin(φ(x)) * x * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+
+    ∂m∂t[4] -= B1^2 * ω1(t) * (xs + ys)
     return ∂m∂t
 end
 
 # version for free precession & Graham's model
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Any,Any}, t, grad_type::grad_ω0)
+function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_ω0)
     ∂m∂t[1] -= m[2]
     ∂m∂t[2] += m[1]
     return ∂m∂t
 end
 
-# version for gBloch (using ApproxFun)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
+# versions for gBloch (using ApproxFun)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Number,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
 
-    yt = cos(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(x) * cos(ω0 * x), 0, t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> g((t - x) / T2s) * mfun(x) * sin(ω0 * x), 0, t, order=100)[1]
+    ys = cos(ω0 * t) * quadgk(x -> cos(ω0 * x) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs = sin(ω0 * t) * quadgk(x -> sin(ω0 * x) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    ∂m∂t[4] -= 2 * B1 * ω1^2 * (xt + yt)
+    ∂m∂t[4] -= 2 * B1 * ω1^2 * (xs + ys)
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] += ω1(t) * m[3]
     ∂m∂t[3] -= ω1(t) * m[1]
 
-    yt = cos(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(x) * cos(ω0 * x), 0, t, order=100)[1]
-    xt = sin(ω0 * t) * quadgk(x -> ω1(x) * g((t - x) / T2s) * mfun(x) * sin(ω0 * x), 0, t, order=100)[1]
+    ys = cos(ω0 * t) * quadgk(x -> ω1(x) * cos(ω0 * x) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs = sin(ω0 * t) * quadgk(x -> ω1(x) * sin(ω0 * x) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
 
-    ∂m∂t[4] -= 2 * B1 * ω1(t) * (xt + yt)
+    ∂m∂t[4] -= 2 * B1 * ω1(t) * (xs + ys)
+    return ∂m∂t
+end
+
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
+    ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
+
+    ∂m∂t[1] += ω1(t) * m[3]
+    ∂m∂t[3] -= ω1(t) * m[1]
+
+    ys = cos(φ(t)) * quadgk(x -> ω1(x) * cos(φ(x)) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+    xs = sin(φ(t)) * quadgk(x -> ω1(x) * sin(φ(x)) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
+
+    ∂m∂t[4] -= 2 * B1 * ω1(t) * (xs + ys)
     return ∂m∂t
 end
 
@@ -413,7 +469,7 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
-    f_PSD = (τ) -> quadgk(ct -> 1.0 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0, order=100)[1]
+    f_PSD = (τ) -> quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0, 1, order=100)[1]
 
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
@@ -421,17 +477,10 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
-    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
-    return add_partial_derivative!(∂m∂t, m, mfun, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s), t, grad_type)
-end
-
-
-###################################################
-# Implementation for comparison: the super-Lorentzian
-# Green's function is hard coded, which allows to
-# use special solvers for the double integral
-###################################################
+##############################################################################
+# Implementation for comparison: the super-Lorentzian Green's function
+# is hard coded, which allows to use special solvers for the double integral
+##############################################################################
 function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, N = p
 
@@ -466,13 +515,15 @@ function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{
     return apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, 4, N), t)
 end
 
+
+
 ###################################################
 # Graham's spectral model
 ###################################################
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s = p
 
-    f_PSD(τ) = quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0.0, 1.0, order=100)[1]
+    f_PSD(τ) = quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0, 1, order=100)[1]
     Rrf = f_PSD(TRF / T2s) * B1^2 * ω1^2 * T2s
 
     return apply_hamiltonian_linear!(∂m∂t, m, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)

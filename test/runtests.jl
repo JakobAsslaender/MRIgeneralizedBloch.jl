@@ -15,6 +15,10 @@ end
     include("gBloch_Hamiltonian_shapedRF.jl")
 end
 
+@testset "apply_hamiltonian_gbloch! ω₀-sweep RF pulses" begin
+    include("gBloch_Hamiltonian_w0SweepRF.jl")
+end
+
 @testset "apply_hamiltonian_freeprecession!" begin
     for i = 1:10 # test different random initializations
         include("FreePrecession_Hamiltonian.jl")

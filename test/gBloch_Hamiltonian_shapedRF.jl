@@ -78,10 +78,10 @@ function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{5,Any}, t)
     R2s = 1/T2s
 
     H = [
-           -R2s  -ω0  B1*ω1(t) 0
-             ω0 -R2s         0 0
-      -B1*ω1(t)    0      -R1s 0
-              0    0         0 0
+           -R2s  -ω0  B1*ω1(t)   0
+             ω0 -R2s         0   0
+      -B1*ω1(t)    0      -R1s R1s
+              0    0         0   0
     ]
     ∂m∂t .= H * m
     return ∂m∂t
@@ -99,7 +99,7 @@ for ω0 ∈ [0, 100randn()]
     local p = (f_ω1, B1, ω0, R1s, T2s, G)
     z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end][1]
 
-    @test z_gBloch ≈ z_Bloch atol = 5e-3
+    @test z_gBloch ≈ z_Bloch atol = 1e-4
 end
 
 
