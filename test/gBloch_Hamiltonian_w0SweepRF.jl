@@ -102,7 +102,7 @@ u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0, TRF), p))
 m0 = [1, 1]
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 p = (f_ω1, B1, f_φ, R1s, 1/R2f, G)
-z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(DP8()))
+z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
 x_gBloch(t) =  B1 * quadgk(x -> f_ω1(x) * cos(f_φ(x)) * G((t - x) * R2f) * z_gBloch(x)[1], 0, t, order=100)[1]
 y_gBloch(t) = -B1 * quadgk(x -> f_ω1(x) * sin(f_φ(x)) * G((t - x) * R2f) * z_gBloch(x)[1], 0, t, order=100)[1]
 mt_gBloch(t) = (x_gBloch(t) + 1im * y_gBloch(t)) * exp(1im * (f_φ(t)))

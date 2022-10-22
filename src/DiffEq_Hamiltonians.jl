@@ -400,8 +400,9 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[1] -= m[2]
-    ∂m∂t[2] += m[1]
+    ∂m∂t[1] -= B1 * ω1(t) * sin(φ(t)) * t * m[3]
+    ∂m∂t[2] -= B1 * ω1(t) * cos(φ(t)) * t * m[3]
+    ∂m∂t[3] += B1 * ω1(t) * sin(φ(t)) * t * m[1] + B1 * ω1(t) * cos(φ(t)) * t * m[2]
 
     xs = -sin(φ(t)) * t * quadgk(x -> ω1(x) * cos(φ(x))     * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
     xs -= cos(φ(t))     * quadgk(x -> ω1(x) * sin(φ(x)) * x * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
@@ -450,8 +451,10 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[1] += ω1(t) * m[3]
-    ∂m∂t[3] -= ω1(t) * m[1]
+
+    ∂m∂t[1] += ω1(t) * cos(φ(t)) * m[3]
+    ∂m∂t[2] -= ω1(t) * sin(φ(t)) * m[3]
+    ∂m∂t[3] += - ω1(t) * cos(φ(t)) * m[1] + ω1(t) * sin(φ(t)) * m[2]
 
     xs = cos(φ(t)) * quadgk(x -> ω1(x) * cos(φ(x)) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
     ys = sin(φ(t)) * quadgk(x -> ω1(x) * sin(φ(x)) * g((t - x) / T2s) * mfun(x), 0, t, order=100)[1]
