@@ -8,30 +8,30 @@
 Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
 
 # Arguments
-- `∂m∂t::Vector{<:Number}`: Vector describing to derivative of `m` wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
-- `m::Vector{<:Number}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
-- `mfun`: History function; can be initialized with `mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
+- `∂m∂t::Vector{<:Real}`: Vector describing to derivative of `m` wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
+- `m::Vector{<:Real}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
+- `mfun`: History function; can be initialized with `mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
 - `p::NTuple{6,Any}`: `(ω1, B1, ω0, R1s, T2s, g)` or
 - `p::NTuple{6,Any}`: `(ω1, B1,  φ, R1s, T2s, g)` or
 - `p::NTuple{10,Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)` or
 - `p::NTuple{10,Any}`: `(ω1, B1,  φ, m0s, R1f, R2f, Rx, R1s, T2s, g)` or
 - `p::NTuple{12,Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` or
 - `p::NTuple{12,Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` with the following entries
-    - `ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis) or
+    - `ω1::Real`: Rabi frequency in rad/s (rotation about the y-axis) or
     - `ω1(t)::Function`: Rabi frequency in rad/s as a function of time for shaped RF-pulses
-    - `B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
-    - `ω0::Number`: Larmor or off-resonance frequency in rad/s or
+    - `B1::Real`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
+    - `ω0::Real`: Larmor or off-resonance frequency in rad/s or
     - `φ::Function`: RF-phase in rad as a function of time for frequency/phase-sweep pulses (works only in combination with `ω1(t)::Function`)
-    - `m0s::Number`: Fractional semi-solid spin pool size in the range of 0 to 1
-    - `R1f::Number`: Longitudinal spin relaxation rate of the free pool in 1/seconds
-    - `R2f::Number`: Transversal spin relaxation rate of the free pool in 1/seconds
-    - `Rx::Number`: Exchange rate between the two pools in 1/seconds
-    - `R1s::Number`: Longitudinal spin relaxation rate of the semi-solid pool in 1/seconds
-    - `T2s::Number`: Transversal spin relaxation time of the semi-solid pool in seconds
+    - `m0s::Real`: Fractional semi-solid spin pool size in the range of 0 to 1
+    - `R1f::Real`: Longitudinal spin relaxation rate of the free pool in 1/seconds
+    - `R2f::Real`: Transversal spin relaxation rate of the free pool in 1/seconds
+    - `Rx::Real`: Exchange rate between the two pools in 1/seconds
+    - `R1s::Real`: Longitudinal spin relaxation rate of the semi-solid pool in 1/seconds
+    - `T2s::Real`: Transversal spin relaxation time of the semi-solid pool in seconds
     - `g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
     - `dG_o_dT2s_x_T2s::Function`: Derivative of the Green's function wrt. T2s, multiplied by T2s; of the form `dG_o_dT2s_x_T2s(κ) = dG_o_dT2s_x_T2s((t-τ)/T2s)`
     - `grad_list::Vector{grad_param}`: List of gradients to be calculated, i.e., any subset of `[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`); the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
-- `t::Number`: Time in seconds
+- `t::Real`: Time in seconds
 
 Optional:
 - `pulsetype=:normal`: Use default for a regular RF-pulse; the option `pulsetype=:inversion` should be handled with care as it is only intended to calculate the saturation of the semi-solid pool and its derivative.
@@ -68,7 +68,7 @@ julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 
 julia> m0 = [0; 0; 1-m0s; m0s; 1];
 
-julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5);
+julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5);
 
 julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)))
 retcode: Success
@@ -110,7 +110,7 @@ julia> grad_list = [grad_R2f(), grad_m0s()];
 julia> m0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];
 
 
-julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5 + 5*length(grad_list));
+julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5 + 5*length(grad_list));
 
 julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)));
 
@@ -141,7 +141,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
     return ∂m∂t
 end
 
-function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real,Integer,Function}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g = p
 
     ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1(t) * m[3]
@@ -159,7 +159,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Numb
     ∂m∂t[4] = -B1^2 * ω1(t) * (xs + ys) + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
 end
 
-function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Any,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real,Integer,Function}, t)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g = p
 
     ∂m∂t[1] = - R2f * m[1] + B1 * ω1(t) * cos(φ(t)) * m[3]
@@ -192,7 +192,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{6,Any}, t)
     ∂m∂t[1] = -B1^2 * ω1^2 * (xs + ys) + R1s * (1 - m[1])
 end
 
-function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Real,Real,Function}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
     if ω0 == 0
@@ -206,7 +206,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Numb
     ∂m∂t[1] = -B1^2 * ω1(t) * (xs + ys) + R1s * (1 - m[1])
 end
 
-function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any}, t)
+function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Real,Real,Function}, t)
     ω1, B1, φ, R1s, T2s, g = p
 
     xs = cos(φ(t)) * quadgk(τ -> ω1(τ) * cos(φ(τ)) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1]
@@ -321,7 +321,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_t
 end
 
 # versions for gBloch
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Real,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     xs = cos(ω0 * t) * quadgk(τ -> cos(ω0 * τ) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1]
@@ -331,7 +331,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     xs = cos(ω0 * t) * quadgk(τ -> ω1(τ) * cos(ω0 * τ) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1]
@@ -341,7 +341,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     xs = cos(φ(t)) * quadgk(τ -> ω1(τ) * cos(φ(τ)) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1]
@@ -357,7 +357,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
 end
 
 # version for Graham's model
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Any,Any,Any,Any,Any,Any,Any,Real,Real,Any}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
     df_PSD(τ) = quadgk(ct -> 8 / τ * (exp(-τ^2 / 8 * (3 * ct^2 - 1)^2) - 1) / (3 * ct^2 - 1)^2 + sqrt(2π) * erf(τ / sqrt(8) * abs(3 * ct^2 - 1)) / abs(3 * ct^2 - 1), 0.0, 1.0, order=7)[1]
@@ -367,7 +367,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,
 end
 
 # versions for gBloch model
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Number,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Real,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_ω0)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] -= m[2]
@@ -383,7 +383,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Number,A
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_ω0)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] -= m[2]
@@ -399,7 +399,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Function}, t, grad_type::grad_ω0)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_ω0)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] -= B1 * ω1(t) * sin(φ(t)) * t * m[3]
@@ -424,7 +424,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_t
 end
 
 # versions for gBloch (using ApproxFun)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Number,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Real,Any,Any,Any,Any,Any,Real,Function,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] += ω1 * m[3]
@@ -437,7 +437,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Number,A
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Any,Any,Any,Any,Any,Real,Function,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
     ∂m∂t[1] += ω1(t) * m[3]
@@ -450,7 +450,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Number
     return ∂m∂t
 end
 
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Any,Function,Any,Any,Any,Any,Any,Any,Function,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Any,Any,Any,Any,Any,Real,Function,Any}, t, grad_type::grad_B1)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
 
@@ -471,7 +471,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
 end
 
 # version for Graham
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Number,Any,Any,Any,Any,Any,Any,Any,Any,Number,Any}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Any,Any,Any,Any,Any,Any,Real,Real,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
     f_PSD = (τ) -> quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0, 1, order=7)[1]
@@ -615,19 +615,20 @@ end
 Apply Sled's Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
 
 # Arguments
-- `∂m∂t::Vector{<:Number}`: Vector of length 1 describing to derivative of `m` wrt. time; this vector can contain any value, which is replaced by `H * m`
-- `m::Vector{<:Number}`: Vector of length 1 describing the `zs` magnetization
+- `∂m∂t::Vector{<:Real}`: Vector of length 1 describing to derivative of `m` wrt. time; this vector can contain any value, which is replaced by `H * m`
+- `m::Vector{<:Real}`: Vector of length 1 describing the `zs` magnetization
 - `p::NTuple{6 or 10, Any}`: `(ω1, B1, ω0, R1s, T2s, g)` for a simulating an isolated semi-solid pool or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)` for simulating a coupled spin system; with
-    -`ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
-    -`B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
-    -`ω0::Number`: Larmor or off-resonance frequency in rad/s
-    -`R1f::Number`: Longitudinal spin relaxation rate of the free pool in 1/seconds
-    -`R2f::Number`: Transversal spin relaxation rate of the free pool in 1/seconds
-    -`R1s::Number`: Longitudinal spin relaxation rate of the semi-solid in 1/seconds
-    -`Rx::Number`: Exchange rate between the two pools in 1/seconds
-    -`T2s::Number`: Transversal spin relaxation time in seconds
-    -`g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
-- `t::Number`: Time in seconds
+    - `ω1::Real`: Rabi frequency in rad/s (rotation about the y-axis) or
+    - `ω1(t)::Function`: Rabi frequency in rad/s as a function of time for shaped RF-pulses
+    - `B1::Real`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
+    - `ω0::Real`: Larmor or off-resonance frequency in rad/s (is only used for the free spin pool)
+    - `R1f::Real`: Longitudinal spin relaxation rate of the free pool in 1/seconds
+    - `R2f::Real`: Transversal spin relaxation rate of the free pool in 1/seconds
+    - `R1s::Real`: Longitudinal spin relaxation rate of the semi-solid in 1/seconds
+    - `Rx::Real`: Exchange rate between the two pools in 1/seconds
+    - `T2s::Real`: Transversal spin relaxation time in seconds
+    - `g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
+- `t::Real`: Time in seconds
 
 # Examples
 ```jldoctest
@@ -672,30 +673,40 @@ julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
 
 ```
 """
-function apply_hamiltonian_sled!(d∂m∂t, m, p::NTuple{6,Any}, t)
+function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,Function}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
-    xs = cos(ω0 * t) * quadgk(τ -> g((t - τ) / T2s) * cos(ω0 * τ), 0, t, order=7)[1]
-    ys = sin(ω0 * t) * quadgk(τ -> g((t - τ) / T2s) * sin(ω0 * τ), 0, t, order=7)[1]
-
-    d∂m∂t[1] = -B1^2 * ω1^2 * (xs + ys) * m[1] + R1s * (1 - m[1])
+    xy = quadgk(τ -> g((t - τ) / T2s), 0, t, order=7)[1]
+    d∂m∂t[1] = -B1^2 * ω1^2 * xy * m[1] + R1s * (1 - m[1])
 end
 
-function apply_hamiltonian_sled!(∂m∂t, m, p::NTuple{10,Any}, t)
+function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Function,Real,Any,Real,Real,Function}, t)
+    ω1, B1, ω0, R1s, T2s, g = p
+
+    xy = quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
+    d∂m∂t[1] = -B1^2 * xy * m[1] + R1s * (1 - m[1])
+end
+
+function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,Real,Real,Real,Real,Function}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g = p
 
     ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
-    if ω0 == 0
-        xs = quadgk(τ -> g((t - τ) / T2s), 0, t, order=7)[1]
-        ys = 0
-    else
-        xs = cos(ω0 * t) * quadgk(τ -> g((t - τ) / T2s) * cos(ω0 * τ), 0, t, order=7)[1]
-        ys = sin(ω0 * t) * quadgk(τ -> g((t - τ) / T2s) * sin(ω0 * τ), 0, t, order=7)[1]
-    end
+    xy = quadgk(τ -> g((t - τ) / T2s), 0, t, order=7)[1]
+    ∂m∂t[4] = -B1^2 * ω1^2 * xy * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    return ∂m∂t
+end
 
-    ∂m∂t[4] = -B1^2 * ω1^2 * (xs + ys) * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real,Function}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g = p
+
+    ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
+    ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
+    ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
+
+    xy = quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
+    ∂m∂t[4] = -B1^2 * xy * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
