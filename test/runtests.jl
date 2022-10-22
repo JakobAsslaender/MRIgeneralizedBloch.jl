@@ -11,6 +11,14 @@ end
     end
 end
 
+@testset "apply_hamiltonian_gbloch! shaped RF pulses" begin
+    include("gBloch_Hamiltonian_shapedRF.jl")
+end
+
+@testset "apply_hamiltonian_gbloch! ω₀-sweep RF pulses" begin
+    include("gBloch_Hamiltonian_w0SweepRF.jl")
+end
+
 @testset "apply_hamiltonian_freeprecession!" begin
     for i = 1:10 # test different random initializations
         include("FreePrecession_Hamiltonian.jl")
@@ -35,6 +43,14 @@ end
 
 @testset "apply_hamiltonian_gbloch! gradients" begin
     include("gBloch_Hamiltonian_Gradients.jl")
+end
+
+@testset "apply_hamiltonian_gbloch! shaped-RF gradients" begin
+    include("gBloch_Hamiltonian_shapedRF_Gradients.jl")
+end
+
+@testset "apply_hamiltonian_gbloch! ω₀-sweep RF gradients" begin
+    include("gBloch_Hamiltonian_w0SweepRF_Gradients.jl")
 end
 
 @testset "apply_hamiltonian_freeprecession! gradients" begin

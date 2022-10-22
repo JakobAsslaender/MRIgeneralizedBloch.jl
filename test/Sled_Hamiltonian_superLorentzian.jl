@@ -6,7 +6,7 @@ using Test
 
 ## choose random parameters
 # this test should only be passed for small α and long TRF
-α = rand() * π/2 
+α = rand() * π/2
 TRF = 500e-6 + 1000e-6 * rand()
 ω1 = α / TRF
 B1 = 0.7 + 0.6 * rand()
@@ -44,16 +44,11 @@ mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 alg = MethodOfSteps(DP8())
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
+    DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
     alg,
 )
 
 u_gBloch = sol[end]
 
 ## Test!
-max_error = 1e-2
-@test u_gBloch[1] ≈ u_Sled[1] atol = max_error
-@test u_gBloch[2] ≈ u_Sled[2] atol = max_error
-@test u_gBloch[3] ≈ u_Sled[3] atol = max_error
-@test u_gBloch[4] ≈ u_Sled[4] atol = max_error
-@test u_gBloch[5] ≈ u_Sled[5] atol = max_error
+@test u_gBloch ≈ u_Sled atol = 1e-2

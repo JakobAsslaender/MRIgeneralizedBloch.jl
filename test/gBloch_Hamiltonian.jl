@@ -32,7 +32,7 @@ alg = MethodOfSteps(DP8())
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
+    DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
     alg,
 )
 

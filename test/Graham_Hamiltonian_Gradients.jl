@@ -3,7 +3,7 @@ using Test
 using MRIgeneralizedBloch
 using MRIgeneralizedBloch: apply_hamiltonian_graham_superlorentzian!
 
-## 
+##
 max_error = 5e-2
 
 ## set parameters

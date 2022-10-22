@@ -6,7 +6,7 @@ using Test
 
 ## choose random parameters
 # this test should only be passed for small α and long TRF
-α = rand() * π/2 
+α = rand() * π/2
 TRF = 500e-6 + 1000e-6 * rand()
 ω1 = α / TRF
 B1 = 0.7 + 0.6 * rand()
@@ -44,16 +44,11 @@ g = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 alg = MethodOfSteps(DP8())
 sol = solve(
-    DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
+    DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
     alg,
 )
 
 u_gBloch = sol[end]
 
 ## Test!
-max_error = 1e-2
-@test u_gBloch[1] ≈ u_Graham[1] atol = max_error
-@test u_gBloch[2] ≈ u_Graham[2] atol = max_error
-@test u_gBloch[3] ≈ u_Graham[3] atol = max_error
-@test u_gBloch[4] ≈ u_Graham[4] atol = max_error
-@test u_gBloch[5] ≈ u_Graham[5] atol = max_error
+@test u_gBloch ≈ u_Graham atol = 1e-2

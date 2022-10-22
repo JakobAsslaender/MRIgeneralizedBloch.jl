@@ -6,7 +6,7 @@ Pkg.instantiate()
 using MRIgeneralizedBloch
 using Documenter
 using Literate
-using Plots # to not capture precompilation output
+using Plots
 
 # HTML Plotting Functionality
 struct HTMLPlot
@@ -90,4 +90,5 @@ run(`sed -i'.old' 's/var darkPreference = false/var darkPreference = true/g' doc
 
 deploydocs(;
     repo="github.com/JakobAsslaender/MRIgeneralizedBloch.jl",
+    push_preview = true,
 )

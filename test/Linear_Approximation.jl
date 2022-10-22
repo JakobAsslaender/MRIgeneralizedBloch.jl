@@ -31,7 +31,7 @@ u0_6D = [0,0,m0f,0,m0s,1]
 ## simulate and plot magnetization at the end of RF-pulses with different flip angles
 M_full = zeros(length(ω1), 4)
 M_appx = similar(M_full)
-# Threads.@threads 
+
 for i in eachindex(ω1)
     M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))[end][1:4]
     u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2sl(TRF, α[i], 1, T2s))) * u0_6D
@@ -42,13 +42,13 @@ end
 
 ## benchmark the different solvers (excecute one line at a time to provoke individual results to be printed)
 print("Time to solve the full gene. Bloch IDE for 100us π-pulse:")
-@btime solve(DDEProblem(MRIgeneralizedBloch.apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))
+@btime solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))
 
 print("Time to solve the linear approximation for 100us π-pulse:")
 @btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2sl(TRF, α[end-1], 1, T2s))) * u0_6D
 
 ## ##########################################################################################################
-# Test gradients 
+# Test gradients
 #############################################################################################################
 R2sl, dR2sldT2s, dR2sldB1, dR2sldω1, dR2sldTRF, dR2sldT2sdω1, dR2sldB1dω1, dR2sldT2sTRF, dR2sldB1dTRF = R2slT
 
