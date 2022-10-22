@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Inversion Recovery Experiments · MRIgeneralizedBloch.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl/build_literate/Analyze_NMR_IR_Data/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">MRIgeneralizedBloch.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../tutorial_singlepulse/">Simulation of a Single RF Pulse</a></li><li><a class="tocitem" href="../tutorial_pulsetrain/">Balanced Hybrid-State Free Precession Pulse Sequence</a></li><li><a class="tocitem" href="../NLLS/">Non-Linear Least Square Fitting</a></li><li><a class="tocitem" href="../OCT/">Optimal Control</a></li><li><span class="tocitem">Generalized Bloch Paper</span><ul><li><a class="tocitem" href="../Greens_functions/">Green&#39;s Functions</a></li><li><a class="tocitem" href="../Simulation_ContinuousWave/">Continuous Wave Simulation</a></li><li><a class="tocitem" href="../Simulation_Pulse/">RF-Pulse Simulation</a></li><li class="is-active"><a class="tocitem" href>Inversion Recovery Experiments</a><ul class="internal"><li><a class="tocitem" href="#MnCl_2-Sample"><span>MnCl<span>$_2$</span> Sample</span></a></li><li><a class="tocitem" href="#Bovine-Serum-Albumin-Sample"><span>Bovine Serum Albumin Sample</span></a></li></ul></li><li><a class="tocitem" href="../Analyze_NMR_PreSat_Data/">Continuous Wave Saturation Experiments</a></li><li><a class="tocitem" href="../Linear_Approximation/">Linear Approximation</a></li></ul></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Generalized Bloch Paper</a></li><li class="is-active"><a href>Inversion Recovery Experiments</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Inversion Recovery Experiments</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/master/docs/src/Analyze_NMR_IR_Data.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><p><a href="https://mybinder.org/v2/gh/JakobAsslaender/MRIgeneralizedBloch.jl/gh-pages?filepath=previews/PR22/build_literate/Analyze_NMR_IR_Data.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a></p><h1 id="Inversion-Recovery-Experiments"><a class="docs-heading-anchor" href="#Inversion-Recovery-Experiments">Inversion Recovery Experiments</a><a id="Inversion-Recovery-Experiments-1"></a><a class="docs-heading-anchor-permalink" href="#Inversion-Recovery-Experiments" title="Permalink"></a></h1><p>The following code replicates the NMR data analysis in Figs. 4-6 and complements the paper with additional analyses that are not shown in the paper in the interest of brevity.</p><p>For this analysis we need the following packages:</p><pre><code class="language-julia hljs">using MRIgeneralizedBloch
+using DifferentialEquations
+using LinearAlgebra
+using LsqFit
+using Statistics
+import Pingouin
+using Printf
+using Formatting
+using Plots</code></pre><p>The raw data is stored in a separate <a href="https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData">github repository</a> and the following functions return the URL to the individual files:</p><pre><code class="language-julia hljs">MnCl2_data(TRF_scale) = string(&quot;https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(&quot;, TRF_scale, &quot;)/1/data.2d?raw=true&quot;)
+BSA_data(TRF_scale)   = string(&quot;https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(&quot;, TRF_scale, &quot;)/1/data.2d?raw=true&quot;);</code></pre><p>which can be loaded with functions implemented in this file:</p><pre><code class="language-julia hljs">include(string(pathof(MRIgeneralizedBloch), &quot;/../../docs/src/load_NMR_data.jl&quot;));</code></pre><h2 id="MnCl_2-Sample"><a class="docs-heading-anchor" href="#MnCl_2-Sample">MnCl<span>$_2$</span> Sample</a><a id="MnCl_2-Sample-1"></a><a class="docs-heading-anchor-permalink" href="#MnCl_2-Sample" title="Permalink"></a></h2><h3 id="T_2{*,f}-Estimation"><a class="docs-heading-anchor" href="#T_2{*,f}-Estimation"><span>$T_2^{*,f}$</span> Estimation</a><a id="T_2{*,f}-Estimation-1"></a><a class="docs-heading-anchor-permalink" href="#T_2{*,f}-Estimation" title="Permalink"></a></h3><p>We estimate <span>$T_2^{*,f}$</span> by fitting a mono-exponential decay curve to the FID of the acquisition with <span>$T_\text{RF} = 22.8$</span>μs and <span>$T_\text{i} = 5$</span>s.</p><pre><code class="language-julia hljs">M = load_Data(MnCl2_data(1))
+M = M[:,1]; # select Tᵢ = 5s</code></pre><p>The data was measured at the following time points in units of seconds:</p><pre><code class="language-julia hljs">T_dwell = 100e-6 # s
+TE = T_dwell * ((1:length(M)) .+ 7) # s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.0008:0.0001:1.6378</code></pre><p>Note that the signal is an FID, so the phrase <em>echo</em> time is a bit misleading.</p><p>The function <a href="https://julianlsolvers.github.io/LsqFit.jl/latest/api/#LsqFit.curve_fit">curve_fit</a> from the <a href="https://julianlsolvers.github.io/LsqFit.jl/latest/">LsqFit.jl</a> package is only implemented for real-valued models. To accommodate this, we need to split the data into its real and imaginary part:</p><pre><code class="language-julia hljs">TEreal = [TE;TE]
+Mreal = [real(M);imag(M)];</code></pre><p>Here, we are using a simple mono-exponential model with a complex-valued scaling factor <code>p[1] + 1im p[2]</code>, the decay time <span>$T_2^{*,f} =$</span> <code>p[3]</code>, and the Larmor frequency <code>p[4]</code>:</p><pre><code class="language-julia hljs">FID_model(t, p) = @. [p[1] * exp(- t[1:end ÷ 2] / p[3]) * cos(p[4] * t[1:end ÷ 2]); p[2] * exp(- t[end ÷ 2 + 1:end] / p[3]) * sin(p[4] * t[end ÷ 2 + 1:end])];</code></pre><p>Fitting this model to the NMR data estimates <span>$T_2^{*,f}$</span>:</p><pre><code class="language-julia hljs">fit = curve_fit(FID_model, TEreal, Mreal, [1, 1, 0.1, 0])
+T₂star_MnCl2 = fit.param[3] # s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.07497933747410088</code></pre><p>seconds and its uncertainty (also in units of seconds)</p><pre><code class="language-julia hljs">stderror(fit)[3] # s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.7377694953692984e-5</code></pre><p>Visually, the plot and the data show good agreement:</p><pre><code class="language-julia hljs">Mfitted = FID_model(TEreal, fit.param)
+Mfitted = Mfitted[1:end÷2] + 1im * Mfitted[end÷2+1:end]
+p = plot(xlabel=&quot;TE [s]&quot;, ylabel=&quot;|FID(TE)| [a.u.]&quot;)
+plot!(p, TE, abs.(M), label=&quot;data&quot;)
+plot!(p, TE, abs.(Mfitted), label=@sprintf(&quot;fit with T₂* = %2.3f ms&quot;, 1e3 * T₂star_MnCl2))</code></pre><object type="text/html" data="../../plots/699326809.html" style="width:100%;height:425px;"></object><p>The relative residual norm of the fit, i.e. <span>$||\text{residual}||_2/||M||_2$</span> is</p><pre><code class="language-julia hljs">norm(fit.resid) / norm(M)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.01350365065641344</code></pre><p>Despite its small <span>$\ell_2$</span>-norm, the Shapiro-Wilk test indicates that the residual is not Gaussian or normal distributed at a significance level of <code>α=0.05</code></p><pre><code class="language-julia hljs">Pingouin.normality(fit.resid, α=0.05)</code></pre><div><div style = "float: left;"><span>1×3 DataFrame</span></div><div style = "clear: both;"></div></div><div class = "data-frame" style = "overflow-x: scroll;"><table class = "data-frame" style = "margin-bottom: 6px;"><thead><tr class = "header"><th class = "rowNumber" style = "font-weight: bold; text-align: right;">Row</th><th style = "text-align: left;">W</th><th style = "text-align: left;">pval</th><th style = "text-align: left;">normal</th></tr><tr class = "subheader headerLastRow"><th class = "rowNumber" style = "font-weight: bold; text-align: right;"></th><th title = "Float64" style = "text-align: left;">Float64</th><th title = "Float64" style = "text-align: left;">Float64</th><th title = "Bool" style = "text-align: left;">Bool</th></tr></thead><tbody><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">1</td><td style = "text-align: right;">0.483365</td><td style = "text-align: right;">6.38071e-131</td><td style = "text-align: right;">false</td></tr></tbody></table></div><p>We note that mono-exponential <span>$T_2^*$</span> decays assume a Lorentzian distributed magnetic field, which is in general an assumption rather than a well-founded theory.</p><h3 id="Mono-Exponential-IR-Model"><a class="docs-heading-anchor" href="#Mono-Exponential-IR-Model">Mono-Exponential IR Model</a><a id="Mono-Exponential-IR-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Mono-Exponential-IR-Model" title="Permalink"></a></h3><p>We performed several experiments in which we inverted the thermal equilibrium magnetization with rectangular π-pulses with the following pulse durations (in seconds):</p><pre><code class="language-julia hljs">Tʳᶠmin = 22.8e-6 # s - shortest Tʳᶠ possible on the NMR
+TRF_scale = [1;2;5:5:40] # scaling factor
+Tʳᶠ = TRF_scale * Tʳᶠmin # s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">10-element Vector{Float64}:
+ 2.28e-5
+ 4.56e-5
+ 0.00011399999999999999
+ 0.00022799999999999999
+ 0.00034199999999999996
+ 0.00045599999999999997
+ 0.00057
+ 0.0006839999999999999
+ 0.000798
+ 0.0009119999999999999</code></pre><p>and acquired inversion recovery data at exponentially spaced inversion times (in seconds):</p><pre><code class="language-julia hljs">Tᵢ = exp.(range(log(3e-3), log(5), length=20)) # s
+Tᵢ .+= 12 * Tʳᶠmin + (13 * 15.065 - 5) * 1e-6 # s - correction factors</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">20-element Vector{Float64}:
+ 0.003464444999999999
+ 0.0048973889644219615
+ 0.007014775730568361
+ 0.010143528025680238
+ 0.014766722559942762
+ 0.02159817666227864
+ 0.03169266107267046
+ 0.046608755653003126
+ 0.06864949280054741
+ 0.10121794370375319
+ 0.1493426496577329
+ 0.22045402459049154
+ 0.32553160469379794
+ 0.4807992795321372
+ 0.7102302468802864
+ 1.049248454199443
+ 1.550198026187646
+ 2.2904251533959354
+ 3.3842202786824003
+ 5.0004644449999995</code></pre><p>We calculate the Rabi frequencies of the RF pulses and a finer grid of <span>$T_\text{i}$</span> to plot the IR model:</p><pre><code class="language-julia hljs">ω₁ = π ./ Tʳᶠ # rad/s
+Tᵢplot = exp.(range(log(Tᵢ[1]), log(Tᵢ[end]), length=500)); # s</code></pre><p>After loading and normalizing the data</p><pre><code class="language-julia hljs">M = zeros(Float64, length(Tᵢ), length(TRF_scale))
+for i = 1:length(TRF_scale)
+    M[:,i] = load_first_datapoint(MnCl2_data(TRF_scale[i]))
+end
+M ./= maximum(M);</code></pre><p>we analyze each inversion recovery curve that corresponds to a different <span>$T_\text{RF}$</span> separately. This allows us to fit a simple mono-exponential model</p><pre><code class="language-julia hljs">standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);</code></pre><p>where <code>p[1]</code> is the thermal equilibrium magnetization, <code>p[2]</code> <span>$= T_1$</span>, and <code>p[1] - p[3]</code> is the magnetization right after the inversion pulse or, equivalently, <code>Minv = p[1] / p[3] - 1</code> is the inversion efficiency, which is 1 for an ideal π-pulse and smaller otherwise. The parameters are initialized with</p><pre><code class="language-julia hljs">p0 = [1.0, 1.0, 2.0];</code></pre><p>and we can loop over <span>$T_\text{RF}$</span> to perform the fits:</p><pre><code class="language-julia hljs">R₁ = similar(M[1,:])
+Minv = similar(R₁)
+residual = similar(R₁)
+p = plot(xlabel=&quot;Tᵢ [s]&quot;, ylabel=&quot;zᶠ(Tʳᶠ, Tᵢ) [a.u.]&quot;)
+for i = 1:length(TRF_scale)
+    Mi = @view M[:,i]
+
+    fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
+
+    R₁[i] = fit.param[2]
+    Minv[i] = fit.param[3] / fit.param[1] - 1
+
+    residual[i] = norm(fit.resid) / norm(Mi)
+
+    scatter!(p, Tᵢ, Mi, label=@sprintf(&quot;Tʳᶠ = %1.2es - data&quot;, Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf(&quot;fit with R₁ = %.3f/s; MInv = %.3f&quot;, R₁[i], Minv[i]), color=i)
+end</code></pre><object type="text/html" data="../../plots/505032979.html" style="width:100%;height:425px;"></object><p>Here, the data measured with different <span>$T_\text{RF}$</span> are indicated by markers in different colors, and the corresponding fits are the line plots in the same color. The fitted parameters are denoted in the legend. In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with <span>$T_\text{RF}=22.8$</span>μs:</p><pre><code class="language-julia hljs">Minv[1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.9303588579055699</code></pre><pre><code class="language-julia hljs">R₁[1] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.4771257294344213</code></pre><p>and of the dataset acquired with <span>$T_\text{RF}=912$</span>μs:</p><pre><code class="language-julia hljs">Minv[end]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.9092660344729475</code></pre><pre><code class="language-julia hljs">R₁[end] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.479057638066805</code></pre><p>The mean value of all R₁ estimates is</p><pre><code class="language-julia hljs">mean(R₁) # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.4787413421310405</code></pre><p>1/s and its standard deviation in units of 1/s is</p><pre><code class="language-julia hljs">std(R₁) # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.001590791184125708</code></pre><p>The relative residual norm of the fits is on average</p><pre><code class="language-julia hljs">mean(residual)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.0013767952719624889</code></pre><h3 id="Global-IR-Fit"><a class="docs-heading-anchor" href="#Global-IR-Fit">Global IR Fit</a><a id="Global-IR-Fit-1"></a><a class="docs-heading-anchor-permalink" href="#Global-IR-Fit" title="Permalink"></a></h3><p>As an alternative to individual fits to the inversion recovery curves with different <span>$T_\text{RF}$</span>, we can also perform a global fit that accounts for the <span>$T_2^{*,f}$</span> decay during the inversion pulse. The model first simulates the <span>$T_2^{*,f}$</span> decay during the inversion pulse, followed by <span>$T_1$</span> recovery:</p><pre><code class="language-julia hljs">function Bloch_IR_model(p, Tʳᶠ, Tᵢ, T2)
+    (m0, m0_inv, R₁) = p
+    R2 = 1 / T2
+
+    M = zeros(Float64, length(Tᵢ), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
+        # simulate inversion pulse
+        ω₁ = π / Tʳᶠ[i]
+        H = [-R2 -ω₁ 0 ;
+              ω₁ -R₁ R₁;
+               0   0 0 ]
+
+        m_inv = m0_inv * (exp(H * Tʳᶠ[i]) * [0,1,1])[2]
+
+        # simulate T1 recovery
+        H = [-R₁ R₁*m0;
+               0     0]
+
+        for j = 1:length(Tᵢ)
+            M[j,i] = m0 * (exp(H .* (Tᵢ[j] - Tʳᶠ[i] / 2)) * [m_inv,1])[1]
+        end
+    end
+    return vec(M)
+end;</code></pre><p>We use the previously estimated <span>$T_2^{*,f}$</span> value for the fit:</p><pre><code class="language-julia hljs">fit = curve_fit((x, p) -&gt; Bloch_IR_model(p, Tʳᶠ, Tᵢ, T₂star_MnCl2), 1:length(M), vec(M), [ 1, .8, 1])
+
+p = plot(xlabel=&quot;Tᵢ [s]&quot;, ylabel=&quot;zᶠ(Tʳᶠ, Tᵢ) [a.u.]&quot;)
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Bloch_IR_model(fit.param, Tʳᶠ[i], Tᵢplot, T₂star_MnCl2), label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+end</code></pre><object type="text/html" data="../../plots/943789002.html" style="width:100%;height:425px;"></object><p>With this global fit, we get a very similar relaxation rate in units of 1/s</p><pre><code class="language-julia hljs">R₁_MnCl2 = fit.param[3] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.4787326527485898</code></pre><p>with an uncertainty (also in units of 1/s) of</p><pre><code class="language-julia hljs">stderror(fit)[3] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.0025253461723242776</code></pre><p>Note that the relative residual norm is somewhat increased compared to individual fits to each inversion recovery curve:</p><pre><code class="language-julia hljs">norm(fit.resid) / norm(M)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.006984281079177433</code></pre><h2 id="Bovine-Serum-Albumin-Sample"><a class="docs-heading-anchor" href="#Bovine-Serum-Albumin-Sample">Bovine Serum Albumin Sample</a><a id="Bovine-Serum-Albumin-Sample-1"></a><a class="docs-heading-anchor-permalink" href="#Bovine-Serum-Albumin-Sample" title="Permalink"></a></h2><h3 id="T_2{*,f}-Estimation-2"><a class="docs-heading-anchor" href="#T_2{*,f}-Estimation-2"><span>$T_2^{*,f}$</span> Estimation</a><a class="docs-heading-anchor-permalink" href="#T_2{*,f}-Estimation-2" title="Permalink"></a></h3><p>We repeat the <span>$T_2^{*,f}$</span> estimation for the bovine serum albumin (BSA) sample by fitting a mono-exponential decay curve to the FID of the acquisition with <span>$T_\text{RF} = 22.8$</span>μs and <span>$T_\text{i} = 5$</span>s.</p><pre><code class="language-julia hljs">M = load_Data(BSA_data(1));
+M = M[:,1] # select Tᵢ = 5s
+Mreal = [real(M);imag(M)]
+
+fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0]);</code></pre><p>The estimated <span>$T_2^{*,f}$</span> of the BSA sample is</p><pre><code class="language-julia hljs">T₂star_BSA = fit.param[3] # s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.05240554904974235</code></pre><p>seconds with an uncertainty of</p><pre><code class="language-julia hljs">stderror(fit)[3] # s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">7.029510435085191e-6</code></pre><p>seconds.</p><p>Visually, the plot and the data align well for the BSA sample, too:</p><pre><code class="language-julia hljs">Mfitted = FID_model(TEreal, fit.param)
+Mfitted = Mfitted[1:end÷2] + 1im * Mfitted[end÷2+1:end]
+p = plot(xlabel=&quot;TE [s]&quot;, ylabel=&quot;|FID(TE)| [a.u.]&quot;)
+plot!(p, TE, abs.(M), label=&quot;data&quot;)
+plot!(p, TE, abs.(Mfitted), label=@sprintf(&quot;fit with T₂* = %2.3f ms&quot;, 1e3 * T₂star_BSA))</code></pre><object type="text/html" data="../../plots/301067798.html" style="width:100%;height:425px;"></object><p>The relative residual norm (<span>$||\text{residual}||_2/||M||_2$</span>) is</p><pre><code class="language-julia hljs">norm(fit.resid) / norm(M)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.006257402534109855</code></pre><p>Despite the small residual, the Shapiro-Wilk test indicates that the residual is not normal distributed for this sample either:</p><pre><code class="language-julia hljs">Pingouin.normality(fit.resid, α=0.05)</code></pre><div><div style = "float: left;"><span>1×3 DataFrame</span></div><div style = "clear: both;"></div></div><div class = "data-frame" style = "overflow-x: scroll;"><table class = "data-frame" style = "margin-bottom: 6px;"><thead><tr class = "header"><th class = "rowNumber" style = "font-weight: bold; text-align: right;">Row</th><th style = "text-align: left;">W</th><th style = "text-align: left;">pval</th><th style = "text-align: left;">normal</th></tr><tr class = "subheader headerLastRow"><th class = "rowNumber" style = "font-weight: bold; text-align: right;"></th><th title = "Float64" style = "text-align: left;">Float64</th><th title = "Float64" style = "text-align: left;">Float64</th><th title = "Bool" style = "text-align: left;">Bool</th></tr></thead><tbody><tr><td class = "rowNumber" style = "font-weight: bold; text-align: right;">1</td><td style = "text-align: right;">0.534965</td><td style = "text-align: right;">7.08004e-128</td><td style = "text-align: right;">false</td></tr></tbody></table></div><h3 id="Mono-Exponential-IR-Model-2"><a class="docs-heading-anchor" href="#Mono-Exponential-IR-Model-2">Mono-Exponential IR Model</a><a class="docs-heading-anchor-permalink" href="#Mono-Exponential-IR-Model-2" title="Permalink"></a></h3><p>We also fit a mono-exponential model to each inversion recovery curve of the BSA data:</p><pre><code class="language-julia hljs">M = zeros(Float64, length(Tᵢ), length(TRF_scale))
+for i = 1:length(TRF_scale)
+    M[:,i] = load_first_datapoint(BSA_data(TRF_scale[i]))
+end
+M ./= maximum(M)
+
+
+p = plot(xlabel=&quot;Tᵢ [s]&quot;, ylabel=&quot;zᶠ(Tʳᶠ, Tᵢ) [a.u.]&quot;)
+for i = 1:length(TRF_scale)
+    Mi = @view M[:,i]
+
+    fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
+
+    R₁[i] = fit.param[2]
+    Minv[i] = fit.param[3] / fit.param[1] - 1
+    residual[i] = norm(fit.resid) / norm(Mi)
+
+    scatter!(p, Tᵢ, Mi, label=@sprintf(&quot;Tʳᶠ = %1.2es - data&quot;, Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, standard_IR_model(Tᵢplot, fit.param), label=@sprintf(&quot;fit with R₁ = %.3f/s; MInv = %.3f&quot;, R₁[i], Minv[i]), color=i)
+end</code></pre><object type="text/html" data="../../plots/631313942.html" style="width:100%;height:425px;"></object><p>Zooming into the early phase of the recovery curve reveals the poor fit quality, in particular for long <span>$T_\text{RF}$</span>. This is also reflected by a substantially larger relative residual norm compared to the MnCl<span>$_2$</span> sample:</p><pre><code class="language-julia hljs">mean(residual)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.019245466901678172</code></pre><p>In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with <span>$T_\text{RF}=22.8$</span>μs</p><pre><code class="language-julia hljs">Minv[1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.9324506389919835</code></pre><pre><code class="language-julia hljs">R₁[1] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.1962243320560306</code></pre><p>and of the dataset acquired with <span>$T_\text{RF}=912$</span>μs</p><pre><code class="language-julia hljs">Minv[end]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.8626963380362689</code></pre><pre><code class="language-julia hljs">R₁[end] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.2614605480338832</code></pre><p>The mean value of all R₁ estimates is</p><pre><code class="language-julia hljs">mean(R₁) # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.241785120301755</code></pre><p>and its standard deviation is substantially larger compared to the same fit of the MnCl<span>$_2$</span> sample:</p><pre><code class="language-julia hljs">std(R₁) # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.023621750304442597</code></pre><h3 id="Global-IR-Fit-Generalized-Bloch-Model"><a class="docs-heading-anchor" href="#Global-IR-Fit-Generalized-Bloch-Model">Global IR Fit - Generalized Bloch Model</a><a id="Global-IR-Fit-Generalized-Bloch-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Global-IR-Fit-Generalized-Bloch-Model" title="Permalink"></a></h3><p>In order to repeat the global fit that includes all <span>$T_\text{RF}$</span> values, we have to account for the spin dynamics in the semi-solid pool during the RF-pulse. First, we do this with the proposed generalized Bloch model:</p><pre><code class="language-julia hljs">function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    m0f = 1 - m0s
+    ω₁ = π ./ Tʳᶠ
+
+    m0vec = [0, 0, m0f, m0s, 1]
+    m_fun(p, t; idxs=nothing) = typeof(idxs) &lt;: Number ? 0.0 : zeros(5)
+
+
+    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
+             m0s*Rx -R₁-m0f*Rx R₁*m0s;
+              0          0         0 ]
+
+    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
+        prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
+        m = solve(prob)[end]
+
+        for j = 1:length(TI)
+            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+        end
+    end
+    return vec(M)
+end;</code></pre><p>Here, we use assume a super-Lorentzian lineshape, whose Green&#39;s function is interpolated to speed up the fitting routine:</p><pre><code class="language-julia hljs">T₂ˢ_min = 5e-6 # s
+G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ)/T₂ˢ_min);</code></pre><p>The fit is initialized with <code>p0 = [m0, m0f_inv, m0_s, R₁, T2_s, Rx]</code> and we set some reasonable bounds to the fitted parameters:</p><pre><code class="language-julia hljs">p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
+pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
+pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
+
+fit_gBloch = curve_fit((x, p) -&gt; gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);</code></pre><p>Visually, the plot and the data align well:</p><pre><code class="language-julia hljs">p = plot(xlabel=&quot;Tᵢ [s]&quot;, ylabel=&quot;zᶠ(Tʳᶠ, Tᵢ) [a.u.]&quot;)
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+end</code></pre><object type="text/html" data="../../plots/285774830.html" style="width:100%;height:425px;"></object><p>which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much smaller compared to the mono-exponential fit:</p><pre><code class="language-julia hljs">norm(fit_gBloch.resid) / norm(M)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.004136056036407064</code></pre><p>The estimated parameters are</p><pre><code class="language-julia hljs">m0 = fit_gBloch.param[1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.0952920882121913</code></pre><pre><code class="language-julia hljs">Minv = fit_gBloch.param[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.9298337875646903</code></pre><pre><code class="language-julia hljs">m0s = fit_gBloch.param[3]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.08544861780164853</code></pre><pre><code class="language-julia hljs">R₁ = fit_gBloch.param[4] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.1977731982311957</code></pre><pre><code class="language-julia hljs">T₂ˢ = 1e6fit_gBloch.param[5] # μs</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12.954305564149381</code></pre><pre><code class="language-julia hljs">Rx = fit_gBloch.param[6] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">71.25330937206117</code></pre><p>with the uncertainties (in the same order)</p><pre><code class="language-julia hljs">stderror(fit_gBloch)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{Float64}:
+ 0.0013859029568485989
+ 0.0012241790475733217
+ 0.0009954679097937194
+ 0.0014821532480776484
+ 6.07295203198071e-7
+ 1.9919618721420327</code></pre><h3 id="Global-IR-Fit-Graham&#39;s-Spectral-Model"><a class="docs-heading-anchor" href="#Global-IR-Fit-Graham&#39;s-Spectral-Model">Global IR Fit - Graham&#39;s Spectral Model</a><a id="Global-IR-Fit-Graham&#39;s-Spectral-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Global-IR-Fit-Graham&#39;s-Spectral-Model" title="Permalink"></a></h3><p>For comparison, we repeat the same fit with <a href="http://dx.doi.org/10.1002/jmri.1880070520">Graham&#39;s spectral model</a>:</p><pre><code class="language-julia hljs">function Graham_IR_model(p, Tʳᶠ, TI, R2f)
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    m0f = 1 - m0s
+    ω₁ = π ./ Tʳᶠ
+
+    m0vec = [0, 0, m0f, m0s, 1]
+
+    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
+             m0s*Rx -R₁-m0f*Rx R₁*m0s;
+              0          0         0 ]
+
+    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
+        param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rx, R₁, T₂ˢ)
+        prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
+        m = solve(prob)[end]
+
+        for j = 1:length(TI)
+            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+        end
+    end
+    return vec(M)
+end
+
+fit_Graham = curve_fit((x, p) -&gt; Graham_IR_model(p, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);</code></pre><p>Visually, the plot and the data align substantially worse:</p><pre><code class="language-julia hljs">p = plot(xlabel=&quot;Tᵢ [s]&quot;, ylabel=&quot;zᶠ(Tʳᶠ, Tᵢ) [a.u.]&quot;)
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+end</code></pre><object type="text/html" data="../../plots/924823304.html" style="width:100%;height:425px;"></object><p>which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is much larger compared to the generalized Bloch fit:</p><pre><code class="language-julia hljs">norm(fit_Graham.resid) / norm(M)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.018328152361256126</code></pre><p>The estimated parameters are</p><pre><code class="language-julia hljs">m0 = fit_Graham.param[1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.0833035828221569</code></pre><pre><code class="language-julia hljs">Minv = fit_Graham.param[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.9405872856797858</code></pre><pre><code class="language-julia hljs">m0s = fit_Graham.param[3]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.06992536790707835</code></pre><pre><code class="language-julia hljs">R₁ = fit_Graham.param[4] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.1790785175348302</code></pre><pre><code class="language-julia hljs">T₂ˢ = 1e6fit_Graham.param[5] # μs</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.8951859811151612</code></pre><pre><code class="language-julia hljs">Rx = fit_Graham.param[6] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">73.86786439868621</code></pre><p>with the uncertainties (in the same order)</p><pre><code class="language-julia hljs">stderror(fit_Graham)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{Float64}:
+ 0.008271770711028859
+ 0.006169342983788937
+ 0.006411507119760351
+ 0.006696597873770872
+ 5.553242915591672e-6
+ 8.551115865235154</code></pre><h3 id="Global-IR-Fit-Sled&#39;s-Model"><a class="docs-heading-anchor" href="#Global-IR-Fit-Sled&#39;s-Model">Global IR Fit - Sled&#39;s Model</a><a id="Global-IR-Fit-Sled&#39;s-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Global-IR-Fit-Sled&#39;s-Model" title="Permalink"></a></h3><p>We also performed the fit with <a href="http://dx.doi.org/10.1006/jmre.2000.2059">Sled&#39;s model</a>:</p><pre><code class="language-julia hljs">function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    m0f = 1 - m0s
+    ω₁ = π ./ Tʳᶠ
+
+    m0vec = [0, 0, m0f, m0s, 1]
+
+    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
+             m0s*Rx -R₁-m0f*Rx R₁*m0s;
+              0          0         0 ]
+
+    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    for i = 1:length(Tʳᶠ)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
+        prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
+        m = solve(prob)[end]
+
+        for j = 1:length(TI)
+            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+        end
+    end
+    return vec(M)
+end
+
+fit_Sled = curve_fit((x, p) -&gt; Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);</code></pre><p>Visually, the plot and the data do not align well either:</p><pre><code class="language-julia hljs">p = plot(xlabel=&quot;Tᵢ [s]&quot;, ylabel=&quot;zᶠ(Tʳᶠ, Tᵢ) [a.u.]&quot;)
+for i=1:length(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:,i], label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf(&quot;Tʳᶠ = %1.2es&quot;, Tʳᶠ[i]), color=i)
+end</code></pre><object type="text/html" data="../../plots/60499758.html" style="width:100%;height:425px;"></object><p>which becomes particularly apparent when zooming into the beginning of the inversion recovery curves. Further, the relative residual norm is also large compared to the generalized Bloch fit:</p><pre><code class="language-julia hljs">norm(fit_Sled.resid) / norm(M)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.019635580999557617</code></pre><p>The estimated parameters are</p><pre><code class="language-julia hljs">m0 = fit_Sled.param[1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.0833069226060874</code></pre><pre><code class="language-julia hljs">Minv = fit_Sled.param[2]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.9368003998762418</code></pre><pre><code class="language-julia hljs">m0s = fit_Sled.param[3]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.0715349932483797</code></pre><pre><code class="language-julia hljs">R₁ = fit_Sled.param[4] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">1.178182352404994</code></pre><pre><code class="language-julia hljs">T₂ˢ = 1e6fit_Sled.param[5] # μs</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">5.026436791221354</code></pre><pre><code class="language-julia hljs">Rx = fit_Sled.param[6] # 1/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">60.01962198560205</code></pre><p>with the uncertainties (in the same order)</p><pre><code class="language-julia hljs">stderror(fit_Sled)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6-element Vector{Float64}:
+ 0.005856521994149672
+ 0.006385156533879436
+ 0.003838771855052766
+ 0.0073798379029438
+ 1.149119770605605e-6
+ 8.07234414146042</code></pre><h3 id="Analysis-of-the-Residuals"><a class="docs-heading-anchor" href="#Analysis-of-the-Residuals">Analysis of the Residuals</a><a id="Analysis-of-the-Residuals-1"></a><a class="docs-heading-anchor-permalink" href="#Analysis-of-the-Residuals" title="Permalink"></a></h3><p>In order to visualize how well the three models align with the data at different <span>$T_\text{RF}$</span>, we calculate the <span>$\ell_2$</span>-norm of the residuals after subtracting the modeled from the measured signal and normalize it by the <span>$\ell_2$</span>-norm of the signal:</p><pre><code class="language-julia hljs">resid_gBlo = similar(Tʳᶠ)
+resid_Sled = similar(Tʳᶠ)
+resid_Grah = similar(Tʳᶠ)
+for i=1:length(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
+    resid_Sled[i] = norm(Sled_IR_model(  fit_Sled.param,   G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+end
+
+p = plot(xlabel=&quot;Tʳᶠ [s]&quot;, ylabel=&quot;relative residual&quot;)
+scatter!(p, Tʳᶠ, resid_gBlo, label=&quot;generalized Bloch model&quot;)
+scatter!(p, Tʳᶠ, resid_Grah, label=&quot;Graham&#39;s spectral model&quot;)
+scatter!(p, Tʳᶠ, resid_Sled, label=&quot;Sled&#39;s model&quot;)</code></pre><object type="text/html" data="../../plots/875625809.html" style="width:100%;height:425px;"></object><p>This analysis examines the residuals from the actual fits, i.e. it uses the biophysical parameters of respective fit to model the signal. The disadvantage of this approach is that residuals at long <span>$T_\text{RF}$</span> are negatively affected by the poor fits of Graham&#39;s and Sled&#39;s models at short <span>$T_\text{RF}$</span>. This problem is overcome by subtracting the measured signal from signal that is simulated with the biophysical parameters that were estimated by fitting the generalized Bloch model:</p><pre><code class="language-julia hljs">for i=1:length(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_gBloch.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
+    resid_Sled[i] = norm(Sled_IR_model(  fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+end
+
+p = plot(xlabel=&quot;Tʳᶠ [s]&quot;, ylabel=&quot;relative residual&quot;)
+scatter!(p, Tʳᶠ, resid_gBlo, label=&quot;generalized Bloch model&quot;)
+scatter!(p, Tʳᶠ, resid_Grah, label=&quot;Graham&#39;s spectral model&quot;)
+scatter!(p, Tʳᶠ, resid_Sled, label=&quot;Sled&#39;s model&quot;)</code></pre><object type="text/html" data="../../plots/948633101.html" style="width:100%;height:425px;"></object><p>One can observe reduced residuals for Graham&#39;s and Sled&#39;s models for long <span>$T_\text{RF}$</span> as a trade off for larger residuals at short <span>$T_\text{RF}$</span>. Yet, the residuals at long <span>$T_\text{RF}$</span> are still substantially larger compared to ones of the generalized Bloch model.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Simulation_Pulse/">« RF-Pulse Simulation</a><a class="docs-footer-nextpage" href="../Analyze_NMR_PreSat_Data/">Continuous Wave Saturation Experiments »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Saturday 22 October 2022 08:26">Saturday 22 October 2022</span>. Using Julia version 1.8.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
