@@ -6,7 +6,7 @@ Pkg.instantiate()
 using MRIgeneralizedBloch
 using Documenter
 using Literate
-using Plots # to not capture precompilation output
+using Plots
 
 # HTML Plotting Functionality
 struct HTMLPlot

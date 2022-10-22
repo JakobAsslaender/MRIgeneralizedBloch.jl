@@ -11,7 +11,12 @@ Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivativ
 - `∂m∂t::Vector{<:Number}`: Vector describing to derivative of `m` wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
 - `m::Vector{<:Number}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
 - `mfun`: History function; can be initialized with `mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
-- `p::NTuple{9,10, or 11, Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)`, with
+- `p::NTuple{6,Any}`: `(ω1, B1, ω0, R1s, T2s, g)` or
+- `p::NTuple{6,Any}`: `(ω1, B1,  φ, R1s, T2s, g)` or
+- `p::NTuple{10,Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)` or
+- `p::NTuple{10,Any}`: `(ω1, B1,  φ, m0s, R1f, R2f, Rx, R1s, T2s, g)` or
+- `p::NTuple{12,Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` or
+- `p::NTuple{12,Any}`: `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` with the following entries
     - `ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis) or
     - `ω1(t)::Function`: Rabi frequency in rad/s as a function of time for shaped RF-pulses
     - `B1::Number`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field
@@ -24,11 +29,8 @@ Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivativ
     - `R1s::Number`: Longitudinal spin relaxation rate of the semi-solid pool in 1/seconds
     - `T2s::Number`: Transversal spin relaxation time of the semi-solid pool in seconds
     - `g::Function`: Green's function of the form `G(κ) = G((t-τ)/T2s)`
-    or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, zs_idx, g)` with
-    - `zs_idx::Integer`: Index to be used history function to be used in the Green's function; Default is 4 (zs), and for derivatives 9, 14, ... are used
-    or `(ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list)` with
     - `dG_o_dT2s_x_T2s::Function`: Derivative of the Green's function wrt. T2s, multiplied by T2s; of the form `dG_o_dT2s_x_T2s(κ) = dG_o_dT2s_x_T2s((t-τ)/T2s)`
-    - `grad_list::Vector{<:grad_param}`: List of gradients to be calculated; any subset of `[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`); ; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+    - `grad_list::Vector{grad_param}`: List of gradients to be calculated, i.e., any subset of `[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; length of the vector must be n (cf. arguments `m` and `∂m∂t`); the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `t::Number`: Time in seconds
 
 Optional:
