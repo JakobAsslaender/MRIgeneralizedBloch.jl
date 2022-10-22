@@ -143,9 +143,9 @@ sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
 p = plot(sol, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 #md Main.HTMLPlot(p) #hide
 
-# While the spin dynamics during the pulse is changed, the final magnetization of the free pool is approximately the same compared for the on-resonant isochromat with `B1 = 1`. The final magnetization of the semi-solid spin pool is, like before, close to zero, but a close look reveals a small negative zˢ-magnetization (double click on zˢ in the plot's legend).
+# While the spin dynamics during the pulse is changed, the final magnetization of the free pool is approximately the same compared to the on-resonant isochromat with `B1 = 1`. The final magnetization of the semi-solid spin pool is, like before, close to zero, but a close look reveals a small negative zˢ-magnetization (double click on zˢ in the plot's legend).
 
-# ## Transversal magnetization of the semi-solid pool
+# ## Transversal Magnetization of the Semi-Solid Spin Pool
 # Throughout this tutorial, we only ever calculated and plotted the longitudinal magnetization of the semi-solid spin pool. This is foremost a result of way we formulate and solve the generalized Bloch equations (cf. Eq. (9) in the [paper](https://doi.org/10.1002/mrm.29071)). But this implementation is also reflective of the standard use-case in magnetization transfer, where we are foremost interested in the longitudinal magnetization of the semi-solid spin pool and its effect on the free spin pool. If required, it is, however, easily possible to calculate the transversal magnetization with Eqs. (4-5) from the paper:
 ωx(t) = -B1 * f_ω1(t) * sin(f_φ_or(t))
 ωy(t) =  B1 * f_ω1(t) * cos(f_φ_or(t))
@@ -160,4 +160,4 @@ plot!(p, zs_gBloch, 0, TRF, label="zˢ")
 #md Main.HTMLPlot(p) #hide
 
 
-# More details on the interface, including the linear approximation of the generalized Bloch model can found in the following scripts that replicate all simulations, data analyses, and figures of the generalized Bloch paper.
+# More details about the interface, including the linear approximation of the generalized Bloch model can found in the following scripts that replicate all simulations, data analyses, and figures of the generalized Bloch paper.
