@@ -47,7 +47,21 @@ prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
 sol = solve(prob)
 
 # The function [`apply_hamiltonian_gbloch!`](@ref) is implemented such that it concludes from `param = (ω1, B1, ω0, R1s, T2s, G)` that you are only supplying the relaxation properties of the semi-solid spin pool and hence it simulates the spin dynamics of an isolated semi-solid spin pool. The DifferentialEquations.jl package also implements a plot function for the solution object, which can use to display the result:
-p = plot(sol, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, labels=:none)
+p = plot(sol, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
+#md Main.HTMLPlot(p) #hide
+
+# For comparison, we can simulate the signal with [Graham's spectral model](https://doi.org/10.1002/jmri.1880070520), which describes an exponential saturation with the rate
+f_ω1(t) -> ω1
+Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
+
+# The function [`graham_saturation_rate`](@ref) calculates the spectral power density S(ω₀,Δω,ω₁(t)) of the RF-pulse, i.e., the squared absolute value of the pulse's Fourier transform, divided by the pulse duration. Thereafter, it takes the integral
+# ```math
+# <Rʳᶠ> = \int_{-∞}^{+∞} dω₀ S(ω₀,Δω,ω₁(t)) g(ω₀, T₂ˢ)
+# ```
+# where `g(ω₀, T₂ˢ)` is the spectral lineshape of the spin pool. Given this saturation rate, we can simply solve the ordinary differential equation `∂z/∂t = R₁ (1 - z) - Rʳᶠ z`, which has the following analytical solution:
+
+z_Graham(t) = m0s * (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
+plot!(p, z_Graham, 0, TRF, label="Graham")
 #md Main.HTMLPlot(p) #hide
 
 
@@ -84,7 +98,14 @@ typeof(f_ω1) <: Function
 # With this definition of `param`, we can use the same function call as we did before:
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
 sol = solve(prob)
-p = plot(sol, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, labels=:none)
+p = plot(sol, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
+#md Main.HTMLPlot(p) #hide
+
+# For comparison, we can simulate the signal with [Graham's spectral model](https://doi.org/10.1002/jmri.1880070520), which describes an exponential saturation with the rate
+Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
+#-
+z_Graham(t) = m0s * (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
+plot!(p, z_Graham, 0, TRF, label="Graham")
 #md Main.HTMLPlot(p) #hide
 
 
