@@ -8,8 +8,8 @@
 Apply the generalized Bloch Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
 
 # Arguments
-- `∂m∂t::Vector{<:Real}`: Vector describing to derivative of `m` wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
-- `m::Vector{<:Real}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
+- `∂m∂t::Vector{Real}`: Vector describing to derivative of `m` wrt. time; this vector has to be of the same size as `m`, but can contain any value, which is replaced by `H * m`
+- `m::Vector{Real}`: Vector the spin ensemble state of the form `[xf, yf, zf, zs, 1]` if now gradient is calculated or of the form `[xf, yf, zf, zs, 1, ∂xf/∂θ1, ∂yf/∂θ1, ∂zf/∂θ1, ∂zs/∂θ1, 0, ..., ∂xf/∂θn, ∂yf/∂θn, ∂zf/∂θn, ∂zs/∂θn, 0]` if n derivatives wrt. `θn` are calculated
 - `mfun`: History function; can be initialized with `mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5n + 5)` for n gradients, and is then updated by the delay differential equation solvers
 - `p::NTuple{6,Any}`: `(ω1, B1, ω0, R1s, T2s, g)` or
 - `p::NTuple{6,Any}`: `(ω1, B1,  φ, R1s, T2s, g)` or
@@ -474,7 +474,7 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Any,Any,Any,Any,Any,Any,Real,Real,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
-    f_PSD = (τ) -> quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0, 1, order=7)[1]
+    f_PSD(τ) = quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0, 1, order=7)[1]
 
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
@@ -604,6 +604,41 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{10,Any}, t)
         add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, 0, Rx, R1s, Rrf_d, undef), t, grad_list[i])
     end
     return ∂m∂t
+end
+
+
+
+
+"""
+    graham_saturation_rate(lineshape, f_ω1, TRF, Δω)
+
+Calculate saturation rate according to Graham's spectral model.
+
+# Arguments
+- `lineshape::Function`: as a function of ω₀. Supply, e.g., the anonymous function `ω₀ -> lineshape_superlorentzian(ω₀, T2s)`. Note that the integral over the lineshape has to be 1.
+- `f_ω1::Function`: ω1 in rad/s as a function of time where the puls shape is defined for t ∈ [0,TRF]
+- `TRF::Real`: duration of the RF pulse in s
+- `Δω::Real`: offset frequency in rad/s
+
+# Examples
+```jldoctest
+julia> T2s = 10e-6;
+
+julia> TRF = 100e-6;
+
+julia> NSideLobes = 1;
+
+julia> f_ω1(t) = sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1));
+
+julia> Δω = 200;
+
+julia> graham_saturation_rate(ω₀ -> lineshape_superlorentzian(ω₀, T2s), f_ω1, TRF, Δω)
+```
+"""
+function graham_saturation_rate(lineshape::Function, f_ω1::Function, TRF::Real, Δω::Real)
+    S(ω, Δω) = abs(quadgk(t -> f_ω1(t) * exp(1im * (ω - Δω) * t), 0, TRF)[1])^2 / (2π*TRF)
+    Rrf = π * quadgk(ω -> S(ω, Δω) * lineshape(ω), -Inf, 0, Inf)[1]
+    return Rrf
 end
 
 ##################################################################
