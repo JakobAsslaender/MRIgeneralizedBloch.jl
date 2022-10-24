@@ -255,7 +255,7 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
         sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, TRF[1] / 2), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false)
         m0 = sol[end]
 
-        # inversion pulse with crusher gradients (assumed to be instantanious)
+        # inversion pulse with crusher gradients (assumed to be instantaneous)
         u00 = m0[1:3]
         m0[1:5:end] .*= -sin(B1 * ω1[1] * TRF[1] / 2)^2
         m0[2:5:end] .*= sin(B1 * ω1[1] * TRF[1] / 2)^2
