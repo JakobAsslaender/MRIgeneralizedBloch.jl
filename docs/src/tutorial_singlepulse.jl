@@ -51,7 +51,7 @@ p = plot(sol, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
 #md Main.HTMLPlot(p) #hide
 
 # For comparison, we can simulate the signal with [Graham's spectral model](https://doi.org/10.1002/jmri.1880070520), which describes an exponential saturation with the rate
-f_ω1(t) -> ω1
+f_ω1(t) = ω1
 Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
 
 # The function [`graham_saturation_rate`](@ref) calculates the spectral power density S(ω₀,Δω,ω₁(t)) of the RF-pulse, i.e., the squared absolute value of the pulse's Fourier transform, divided by the pulse duration. Thereafter, it takes the integral
