@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Continuous Wave Saturation Experiments · MRIgeneralizedBloch.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://JakobAsslaender.github.io/MRIgeneralizedBloch.jl/build_literate/Analyze_NMR_PreSat_Data/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">MRIgeneralizedBloch.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../tutorial_singlepulse/">Simulation of a Single RF Pulse</a></li><li><a class="tocitem" href="../tutorial_pulsetrain/">Balanced Hybrid-State Free Precession Pulse Sequence</a></li><li><a class="tocitem" href="../NLLS/">Non-Linear Least Square Fitting</a></li><li><a class="tocitem" href="../OCT/">Optimal Control</a></li><li><span class="tocitem">Generalized Bloch Paper</span><ul><li><a class="tocitem" href="../Greens_functions/">Green&#39;s Functions</a></li><li><a class="tocitem" href="../Simulation_ContinuousWave/">Continuous Wave Simulation</a></li><li><a class="tocitem" href="../Simulation_Pulse/">RF-Pulse Simulation</a></li><li><a class="tocitem" href="../Analyze_NMR_IR_Data/">Inversion Recovery Experiments</a></li><li class="is-active"><a class="tocitem" href>Continuous Wave Saturation Experiments</a><ul class="internal"><li><a class="tocitem" href="#MnCl_2-Sample"><span>MnCl<span>$_2$</span> Sample</span></a></li><li><a class="tocitem" href="#Bovine-Serum-Albumin-Sample"><span>Bovine Serum Albumin Sample</span></a></li></ul></li><li><a class="tocitem" href="../Linear_Approximation/">Linear Approximation</a></li></ul></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Generalized Bloch Paper</a></li><li class="is-active"><a href>Continuous Wave Saturation Experiments</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Continuous Wave Saturation Experiments</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/master/docs/src/Analyze_NMR_PreSat_Data.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><p><a href="https://mybinder.org/v2/gh/JakobAsslaender/MRIgeneralizedBloch.jl/gh-pages?filepath=previews/PR24/build_literate/Analyze_NMR_PreSat_Data.ipynb"><img src="https://mybinder.org/badge_logo.svg" alt/></a></p><h1 id="Continuous-Wave-Saturation-Experiments"><a class="docs-heading-anchor" href="#Continuous-Wave-Saturation-Experiments">Continuous Wave Saturation Experiments</a><a id="Continuous-Wave-Saturation-Experiments-1"></a><a class="docs-heading-anchor-permalink" href="#Continuous-Wave-Saturation-Experiments" title="Permalink"></a></h1><p>The following code analyzes data from a steady-state experiment similar to the original work of <a href="https://doi.org/10.1002/mrm.1910290607">Henkelman et al</a>. In this experiment, the magnetization of the coupled spin system is saturated with off-resonant continuous waves of the exponentially spaced frequencies:</p><pre><code class="language-julia hljs">Δ = exp.(range(log(0.01e3), log(100e3), length=20)) * 2π # rad/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">20-element Vector{Float64}:
+     62.83185307179588
+    102.02490149810555
+    165.66566187064444
+    269.00404822785634
+    436.8025162599944
+    709.2697655220819
+   1151.6957470645957
+   1870.0967647060686
+   3036.619626561797
+   4930.79231537499
+   8006.5058674764105
+  13000.777989786218
+  21110.360891171575
+  34278.51297096368
+  55660.65201622967
+  90380.47203203167
+ 146757.70816250978
+ 238301.75281093005
+ 386948.8431222893
+ 628318.5307179587</code></pre><p>and the amplitudes:</p><pre><code class="language-julia hljs">ω1_dB = -60:5:-5 # dB
+ω1 = @. 10^(ω1_dB / 20) * π / 2 / 11.4e-6 # rad/s</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">12-element Vector{Float64}:
+   137.78915147323656
+   245.02761099159085
+   435.7275555173729
+   774.845340363136
+  1377.8915147323655
+  2450.276109915909
+  4357.275555173728
+  7748.453403631359
+ 13778.915147323654
+ 24502.76109915909
+ 43572.75555173729
+ 77484.53403631358</code></pre><p>The waves were applied for 7 seconds to ensure a steady state. Thereafter, the magnetization was excited with a π/2-pulse and an FID was acquired. The repetition times was 30s to ensure full recovery to thermal equilibrium.</p><p>We fit the data with Henkelman&#39;s closed form solution to this steady-state problem while assuming a Lorentzian lineshape for the free spin pool, and different lineshapes for the semi-solid spin pool:</p><pre><code class="language-julia hljs">g_Lorentzian(Δ, T2) = T2 / π / (1 + (T2 * Δ)^2)
+g_Gaussian(Δ, T2) = T2 / sqrt(2π) * exp(-(T2 * Δ)^2 / 2)
+g_superLorentzian(Δ, T2) = T2 * sqrt(2 / π) * quadgk(ct -&gt; exp(- 2 *  (T2 * Δ / (3 * ct^2 - 1))^2) / abs(3 * ct^2 - 1), 0, sqrt(1 / 3), 1)[1];</code></pre><p>For this data analysis we need the following packages:</p><pre><code class="language-julia hljs">using MRIgeneralizedBloch
+using QuadGK
+using LsqFit
+using LinearAlgebra
+using Statistics
+using Printf
+using Plots</code></pre><p>The raw data is stored in a separate <a href="https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData">github repository</a> and the following functions return the URL to the individual files:</p><pre><code class="language-julia hljs">MnCl2_data(ω1_dB) = string(&quot;https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_PreSat_v2%20(&quot;, ω1_dB, &quot;)/1/data.2d?raw=true&quot;)
+BSA_data(ω1_dB)   = string(&quot;https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_PreSat_v2%20(&quot;, ω1_dB, &quot;)/1/data.2d?raw=true&quot;);</code></pre><p>which can be loaded with functions implemented in this file:</p><pre><code class="language-julia hljs">include(string(pathof(MRIgeneralizedBloch), &quot;/../../docs/src/load_NMR_data.jl&quot;));</code></pre><p>We store the off-resonance frequencies and wave amplitudes in a single matrix for convenience:</p><pre><code class="language-julia hljs">x = zeros(Float64, length(ω1) * length(Δ), 2)
+x[:,1] = repeat(Δ, length(ω1))
+x[:,2] = vec(repeat(ω1, 1, length(Δ))&#39;);</code></pre><h2 id="MnCl_2-Sample"><a class="docs-heading-anchor" href="#MnCl_2-Sample">MnCl<span>$_2$</span> Sample</a><a id="MnCl_2-Sample-1"></a><a class="docs-heading-anchor-permalink" href="#MnCl_2-Sample" title="Permalink"></a></h2><p>We load the first data point of each FID:</p><pre><code class="language-julia hljs">M = zeros(Float64, length(Δ), length(ω1))
+for i = 1:length(ω1_dB)
+    M[:,i] = load_first_datapoint(MnCl2_data(ω1_dB[i]); set_phase=:abs)
+end
+M ./= maximum(M);</code></pre><p>In contrast to the inversion-recovery experiment, the phase of the signal was not stable. Therefore, we took the absolute value of the signal by setting the flag <code>set_phase=:abs</code>.</p><p>The MnCl<span>$_2$</span>-data can be described with a single compartment model:</p><pre><code class="language-julia hljs">function single_compartment_model(x, p)
+    (m0, R1, T2) = p
+
+    Δ  = @view x[:,1]
+    ω1 = @view x[:,2]
+
+    Rrf = @. π * ω1^2 * g_Lorentzian(Δ, T2)
+    m = @. m0 * R1 / (R1 + Rrf)
+    return m
+end;</code></pre><p>(cf. Eqs. (14) and (15) in the <a href="https://arxiv.org/pdf/2107.11000.pdf">paper</a>).</p><p>As this model is merely a function of the relaxation times T₁ and T₂, we forgo a fitting routine and use the estimates from the <a href="../Analyze_NMR_IR_Data/#Inversion-Recovery-Experiments">Inversion Recovery Experiments</a> instead:</p><pre><code class="language-julia hljs">R1 = 1.479 # 1/s
+T2 = 0.075 # s</code></pre><p>Visually, this model describes the data well:</p><pre><code class="language-julia hljs">p = plot(xlabel=&quot;Δ [rad/s]&quot;, ylabel=&quot;M / max(M)&quot;, xaxis=:log, legend=:none)
+[scatter!(p, Δ, M[:,i], color=i) for i=1:length(ω1)]
+[plot!(p, Δ, reshape(single_compartment_model(x, [1,R1,T2]), length(Δ), length(ω1))[:,i], color=i) for i=1:length(ω1)]</code></pre><object type="text/html" data="../../plots/888038037.html" style="width:100%;height:425px;"></object><h2 id="Bovine-Serum-Albumin-Sample"><a class="docs-heading-anchor" href="#Bovine-Serum-Albumin-Sample">Bovine Serum Albumin Sample</a><a id="Bovine-Serum-Albumin-Sample-1"></a><a class="docs-heading-anchor-permalink" href="#Bovine-Serum-Albumin-Sample" title="Permalink"></a></h2><p>We acquired the same data for the BSA sample, which we load:</p><pre><code class="language-julia hljs">for i = 1:length(ω1_dB)
+    M[:,i] = load_first_datapoint(BSA_data(ω1_dB[i]); set_phase=:abs)
+end
+M ./= maximum(M);</code></pre><p>We model the steady-state magnetization as described by <a href="https://doi.org/10.1002/mrm.1910290607">Henkelman et al.</a>:</p><pre><code class="language-julia hljs">function Henkelman_model(x, p; lineshape=:superLorentzian)
+    (m0, m0s, R1f, R1s, T2f, T2s, Rx) = p
+
+    m0s /= 1 - m0s # switch from m0s + m0f = 1 to m0f = 1 normalization
+
+    Δ  = @view x[:,1]
+    ω1 = @view x[:,2]
+
+    Rrf_f = @. π * ω1^2 * g_Lorentzian(Δ, T2f)
+
+    if lineshape == :Lorentzian
+        Rrf_s = @. π * ω1^2 * g_Lorentzian(Δ, T2s)
+    elseif lineshape == :Gaussian
+        Rrf_s = @. π * ω1^2 * g_Gaussian(Δ, T2s)
+    elseif lineshape == :superLorentzian
+        Rrf_s = @. π * ω1^2 * g_superLorentzian(Δ, T2s)
+    end
+
+    m = @. m0 * (R1s * Rx * m0s + Rrf_s * R1f + R1f * R1s + R1f * Rx) / ((R1f + Rrf_f + Rx * m0s) * (R1s + Rrf_s + Rx) - Rx^2 * m0s)
+    return m
+end;</code></pre><p>Here, we use a fitting routine to demonstrate the best possible fit with each of the three lineshapes. We define an initialization for the fitting routine <code>p0 = [m0, m0s, R1f, R1s, T2f, T2s, Rx]</code> and set some reasonable bounds:</p><pre><code class="language-julia hljs">p0   = [  1,0.01,   1,   5,0.052,  1e-5, 40]
+pmin = [  0,   0,   0,   0,0.052,  1e-6,  1]
+pmax = [Inf,   1, Inf, Inf,0.052, 10e-3,100];</code></pre><p>Note that we fixed T₂ᶠ = 52ms to the value estimated with the <a href="../Analyze_NMR_IR_Data/#Inversion-Recovery-Experiments">Inversion Recovery Experiments</a> as T₂ᶠ is poorly defined by this saturation experiment.</p><h3 id="Super-Lorentzian-Lineshape"><a class="docs-heading-anchor" href="#Super-Lorentzian-Lineshape">Super-Lorentzian Lineshape</a><a id="Super-Lorentzian-Lineshape-1"></a><a class="docs-heading-anchor-permalink" href="#Super-Lorentzian-Lineshape" title="Permalink"></a></h3><p>Fitting the model with a super-Lorentzian lineshape to the data achieves good concordance:</p><pre><code class="language-julia hljs">fit = curve_fit((x, p) -&gt; Henkelman_model(x, p; lineshape=:superLorentzian), x, vec(M), p0, lower=pmin, upper=pmax)
+fit_std = stderror(fit)
+
+p = plot(xlabel=&quot;Δ [rad/s]&quot;, ylabel=&quot;M / max(M)&quot;, xaxis=:log, legend=:none)
+[scatter!(p, Δ, M[:,i], color=i) for i=1:length(ω1)]
+[plot!(p, Δ, reshape(Henkelman_model(x, fit.param), length(Δ), length(ω1))[:,i], color=i) for i=1:length(ω1)]</code></pre><object type="text/html" data="../../plots/675037865.html" style="width:100%;height:425px;"></object><h3 id="Lorentzian-Lineshape"><a class="docs-heading-anchor" href="#Lorentzian-Lineshape">Lorentzian Lineshape</a><a id="Lorentzian-Lineshape-1"></a><a class="docs-heading-anchor-permalink" href="#Lorentzian-Lineshape" title="Permalink"></a></h3><p>The Lorentzian lineshape, on the other hand, does not fit the data well:</p><pre><code class="language-julia hljs">fit = curve_fit((x, p) -&gt; Henkelman_model(x, p; lineshape=:Lorentzian), x, vec(M), p0, lower=pmin, upper=pmax)
+fit_std = stderror(fit)
+
+p = plot(xlabel=&quot;Δ [rad/s]&quot;, ylabel=&quot;M / max(M)&quot;, xaxis=:log, legend=:none)
+[scatter!(p, Δ, M[:,i], color=i) for i=1:length(ω1)]
+[plot!(p, Δ, reshape(Henkelman_model(x, fit.param), length(Δ), length(ω1))[:,i], color=i) for i=1:length(ω1)]</code></pre><object type="text/html" data="../../plots/294945889.html" style="width:100%;height:425px;"></object><h3 id="Gaussian-Lineshape"><a class="docs-heading-anchor" href="#Gaussian-Lineshape">Gaussian Lineshape</a><a id="Gaussian-Lineshape-1"></a><a class="docs-heading-anchor-permalink" href="#Gaussian-Lineshape" title="Permalink"></a></h3><p>And the Gaussian lineshape does not not fit the data well either:</p><pre><code class="language-julia hljs">fit = curve_fit((x, p) -&gt; Henkelman_model(x, p; lineshape=:Lorentzian), x, vec(M), p0, lower=pmin, upper=pmax)
+fit_std = stderror(fit)
+
+p = plot(xlabel=&quot;Δ [rad/s]&quot;, ylabel=&quot;M / max(M)&quot;, xaxis=:log, legend=:none)
+[scatter!(p, Δ, M[:,i], color=i) for i=1:length(ω1)]
+[plot!(p, Δ, reshape(Henkelman_model(x, fit.param), length(Δ), length(ω1))[:,i], color=i) for i=1:length(ω1)]</code></pre><object type="text/html" data="../../plots/912601122.html" style="width:100%;height:425px;"></object><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Analyze_NMR_IR_Data/">« Inversion Recovery Experiments</a><a class="docs-footer-nextpage" href="../Linear_Approximation/">Linear Approximation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Monday 24 October 2022 16:31">Monday 24 October 2022</span>. Using Julia version 1.8.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
