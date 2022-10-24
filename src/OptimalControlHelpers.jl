@@ -7,20 +7,20 @@
 Transform a vector of length `2Npulses` with values in the range `[-Inf, Inf]` into two vectors of length `Npulses`, which describe the bounded controls `ω1` and `TRF`.
 
 # Arguments
-- `x::Vector{<:Number}`: Control vector of `length = 2Npulses` with values in the range `[-Inf, Inf]`
+- `x::Vector{Real}`: Control vector of `length = 2Npulses` with values in the range `[-Inf, Inf]`
 
 # Optional Keyword Arguments:
-- `ω1_min::Number`: lower bound for ω1 in rad/s
-- `ω1_max::Number`: upper bound for ω1 in rad/s
-- `TRF_min::Number`: lower bound for TRF in s
-- `TRF_max::Number`: upper bound for TRF in s
+- `ω1_min::Real`: lower bound for ω1 in rad/s
+- `ω1_max::Real`: upper bound for ω1 in rad/s
+- `TRF_min::Real`: lower bound for TRF in s
+- `TRF_max::Real`: upper bound for TRF in s
 
 # Examples
 ```jldoctest
 julia> x = 1000 * randn(2 * 100);
 
 julia> ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x)
-([0.0, 0.0, 6283.185307179586, 6283.185307179586, 6283.185307179586, 0.0, 0.0, 6283.185307179586, 6283.185307179586, 6283.185307179586  …  6283.185307179586, 6283.185307179586, 6283.185307179586, 0.0, 6283.185307179586, 0.0, 6283.185307179586, 0.0, 0.0, 6283.185307179586], [0.0001, 0.0005, 0.0005, 0.0001, 0.0001, 0.0005, 0.0005, 0.0001, 0.0001, 0.0001  …  0.0001, 0.0001, 0.0001, 0.0005, 0.0001, 0.0001, 0.0005, 0.0005, 0.00010000000000000007, 0.0005])
+([0.0, 6283.185307179586, 0.0, 0.0, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 0.0, 0.0  …  0.0, 0.0, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 0.0, 0.0, 1.4115403811440933e-9, 0.0], [0.0005, 0.0001, 0.0001, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0001, 0.0005  …  0.0005, 0.0005, 0.0001, 0.0001, 0.0001, 0.0004999999277453363, 0.0005, 0.0001, 0.0001, 0.0001])
 ```
 """
 function get_bounded_ω1_TRF(x; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
@@ -35,14 +35,14 @@ end
 Bound the controls `ω1` and `TRF` (over-written in place) and return a vector of length `2Npulses` with values in the range `[-Inf, Inf]` that relate to the bounded `ω1` and `TRF` via the `tanh` function.
 
 # Arguments
-- `ω1::Vector{<:Number}`: Control vector of length `Npulses`
-- `TRF::Vector{<:Number}`: Control vector of length `Npulses`
+- `ω1::Vector{Real}`: Control vector of length `Npulses`
+- `TRF::Vector{Real}`: Control vector of length `Npulses`
 
 # Optional Keyword Arguments (see above for defaults):
-- `ω1_min::Number`: lower bound for ω1 in rad/s
-- `ω1_max::Number`: upper bound for ω1 in rad/s
-- `TRF_min::Number`: lower bound for TRF in s
-- `TRF_max::Number`: upper bound for TRF in s
+- `ω1_min::Real`: lower bound for ω1 in rad/s
+- `ω1_max::Real`: upper bound for ω1 in rad/s
+- `TRF_min::Real`: lower bound for TRF in s
+- `TRF_max::Real`: upper bound for TRF in s
 
 # Examples
 ```jldoctest
@@ -52,26 +52,26 @@ julia> TRF = 500e-6 * rand(100);
 
 julia> x = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF)
 200-element Vector{Float64}:
- Inf
-  0.07002223796632083
-  0.6844677974070863
- -0.7116861191142477
-  0.7447685470818802
- -0.2357195230396574
- Inf
- Inf
- -1.3109326022124932
- Inf
-  ⋮
- -0.253822020651362
- -2.044785468651319
- -0.02137461142339255
-  1.4200115413127061
-  0.506122958359425
- -0.026850012023661624
- -0.023651823561342558
- -0.4752904284285509
-  1.6648514401094228
+  Inf
+   0.3084393995336273
+  -0.222010414402936
+   0.1981882670715111
+  Inf
+  -0.3590504865635206
+  Inf
+  Inf
+  Inf
+  Inf
+   ⋮
+  -1.3069326972020265
+ -Inf
+   4.449542946745821
+   0.06378289522574039
+   0.2699178281115771
+   1.271412541641303
+  -0.46991502137668045
+  -1.4377324062335655
+  -0.9746661706753423
 ```
 """
 function bound_ω1_TRF!(ω1, TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
@@ -181,13 +181,13 @@ end
 Calculate second order penalty of variations of the flip angle α and over-write the gradients in place.
 
 # Arguments
-- `grad_ω1::Vector{<:Number}`: Gradient of control, which will be over-written in place
-- `grad_TRF::Vector{<:Number}`: Gradient of control, which will be over-written in place
-- `ω1::Vector{<:Number}`: Control vector
-- `TRF::Vector{<:Number}`: Control vector
+- `grad_ω1::Vector{Real}`: Gradient of control, which will be over-written in place
+- `grad_TRF::Vector{Real}`: Gradient of control, which will be over-written in place
+- `ω1::Vector{Real}`: Control vector
+- `TRF::Vector{Real}`: Control vector
 
 # Optional Keyword Arguments:
-- `λ::Number`: regularization parameter
+- `λ::Real`: regularization parameter
 
 # Examples
 ```jldoctest
@@ -200,7 +200,7 @@ julia> grad_ω1 = similar(ω1);
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1e-3)
-0.2395323031582853
+0.3272308747790844
 ```
 """
 function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1)
@@ -287,12 +287,12 @@ end
 Calculate the total variation penalty of `TRF` and over-write `grad_TRF` in place.
 
 # Arguments
-- `grad_TRF::Vector{<:Number}`: Gradient of control, which will be over-written in place
-- `ω1::Vector{<:Number}`: Control vector
-- `TRF::Vector{<:Number}`: Control vector
+- `grad_TRF::Vector{Real}`: Gradient of control, which will be over-written in place
+- `ω1::Vector{Real}`: Control vector
+- `TRF::Vector{Real}`: Control vector
 
 # Optional Keyword Arguments:
-- `λ::Number`: regularization parameter
+- `λ::Real`: regularization parameter
 
 # Examples
 ```jldoctest
@@ -303,7 +303,7 @@ julia> TRF = 500e-6 * rand(100);
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
-1.4113230036718817e-5
+1.5456176321183175e-5
 ```
 """
 function TRF_TV!(grad_TRF, ω1, TRF; λ = 1)
@@ -336,15 +336,15 @@ end
 Calculate RF power penalty and over-write the gradients in place.
 
 # Arguments
-- `grad_ω1::Vector{<:Number}`: Gradient of control, which will be over-written in place
-- `grad_TRF::Vector{<:Number}`: Gradient of control, which will be over-written in place
-- `ω1::Vector{<:Number}`: Control vector
-- `TRF::Vector{<:Number}`: Control vector
+- `grad_ω1::Vector{Real}`: Gradient of control, which will be over-written in place
+- `grad_TRF::Vector{Real}`: Gradient of control, which will be over-written in place
+- `ω1::Vector{Real}`: Control vector
+- `TRF::Vector{Real}`: Control vector
 
 # Optional Keyword Arguments:
-- `λ::Number`: regularization parameter
-- `Pmax::Number`: Maximum average power deposition in (rad/s)²; everything above this value will be penalized and with an appropriate λ, the resulting power will be equal to or less than this value.
-- `TR::Number`: Repetition time of the pulse sequence
+- `λ::Real`: regularization parameter
+- `Pmax::Real`: Maximum average power deposition in (rad/s)²; everything above this value will be penalized and with an appropriate λ, the resulting power will be equal to or less than this value.
+- `TR::Real`: Repetition time of the pulse sequence
 
 # Examples
 ```jldoctest
@@ -357,7 +357,7 @@ julia> grad_ω1 = similar(ω1);
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, Pmax=3e5)
-1.1925544538998574e16
+1.2099652735600044e16
 ```
 """
 function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)

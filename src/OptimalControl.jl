@@ -4,20 +4,20 @@
 Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wrt. `ω1` and `TRF`.
 
 # Arguments
-- `ω1::Vector{<:Number}`: Control vector of `length = Npulses`
-- `TRF::Vector{<:Number}`: Control vector of `length = Npulses`
-- `TR::Number`: Repetition time in seconds
-- `ω0::Number`: Off-resonance frequency in rad/s
-- `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
-- `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
-- `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
-- `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
-- `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
-- `R1f::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `T2s::Number`: Transversal relaxation time of the semi-solid pool in seconds
+- `ω1::Vector{Real}`: Control vector of `length = Npulses`
+- `TRF::Vector{Real}`: Control vector of `length = Npulses`
+- `TR::Real`: Repetition time in seconds
+- `ω0::Real`: Off-resonance frequency in rad/s
+- `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
+- `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
+- `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
+- `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
+- `Rx::Real`: Exchange rate between the two spin pools in 1/seconds
+- `R1f::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
+- `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
 - `grad_list::Vector{<:grad_param}`: Vector that specifies the gradients that are calculated; the vector elements can either be any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
-- `weights::transpose(Vector{<:Number})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
+- `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
 
 # Optional Keyword Arguments:
 - `isInversionPulse::Vector{Bool}`: Indicates all inversion pulses; must have the same length as α; the `default = [true; falses(length(ω1)-1)]` indicates that the first pulse is an inversion pulse and all others are not
@@ -25,7 +25,7 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 # Examples
 ```jldoctest
 julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) .* π, rand(100) .* 400e-6 .+ 100e-6, 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 2, 10e-6, precompute_R2sl(), [grad_m0s(), grad_R1f()], transpose([0, 1, 1]); isInversionPulse = [true, falses(99)...])
-(1.4118115531053457e20, [0.0, -4.3198735787958615e18, 1.8580661030810886e19, -1.351170616702498e19, 2.422888744023341e19, -2.9252421132822114e19, 3.837307262709169e19, -2.1699378647495455e19, 1.289297735045638e19, -4.2614222801820934e19  …  1.1324541119447183e19, -8.831436847489943e18, 2.0730289382289986e19, -4.835074553124128e18, 1.988096338100471e19, -4.5009034572311665e18, 1.1581600005966277e19, -1.4939279912925377e19, 1.79546274069049e19, -2.109366517392135e19], [0.0, -6.458301761888295e22, 1.510907650050799e23, -8.250927555280876e21, 1.5584568774545914e23, -1.4709357117030559e23, 1.9219317668314393e23, -1.6123626127536624e23, 3.0148701692987505e23, -2.659150536640135e23  …  9.918455499474851e22, -3.3097295911574684e22, 4.792547488263603e21, -5.413734155870708e22, 1.1045922717956163e23, -2.2449711123882284e22, 1.8401919353638583e23, -7.022925753958942e22, 3.5793257529736304e21, -4.36020946135771e22])
+(2.6266536440386683e20, [0.0, -8.357210433553662e19, 1.8062863407658156e20, -9.181952733568582e19, 2.0889419004304123e20, -1.0127412004909923e20, 1.1472963520187394e20, -6.048455202064828e19, 1.6635577264610125e20, -1.2997982001201938e20  …  -4.0462197701237735e19, 4.4051154836362985e19, -5.703747921741744e19, 1.1580676614266505e20, -1.2930234020298534e20, 1.4073548384507303e20, -9.192708958806614e19, 1.3584033382847213e20, -3.697066939905562e19, 6.313101282386484e19], [0.0, -7.51230331957692e23, 9.811932053428692e23, -1.0734285487552513e24, 6.675582483464475e23, -3.1051435697300785e23, 2.8969707405246626e23, -1.1612336440328984e24, 6.698477560905162e23, -1.8718360662340176e22  …  -2.7429211167215447e23, 2.5368127989367466e23, -6.640000159002342e23, 1.7977260470624765e23, -3.6616011555760077e23, 4.9307219096771845e23, -7.650701790011881e23, 4.5704084508410106e23, -1.0229952455676927e24, 9.526419421729279e23])
 
 ```
 c.f. [Optimal Control](@ref)

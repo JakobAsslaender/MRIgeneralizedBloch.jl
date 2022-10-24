@@ -6,17 +6,17 @@ Calculate the signal or magnetization evolution with the full generalized Bloch 
 The simulation assumes a sequence of rectangular RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
 
 # Arguments
-- `α::Vector{<:Number}`: Array of flip angles in radians
-- `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
-- `TR::Number`: Repetition time in seconds
-- `ω0::Number`: Off-resonance frequency in rad/s
-- `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
-- `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
-- `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
-- `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
-- `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
-- `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `T2s::Number`: Transversal relaxation time of the semi-solid pool in seconds
+- `α::Vector{Real}`: Array of flip angles in radians
+- `TRF::Vector{Real}`: Array of the RF-pulse durations in seconds
+- `TR::Real`: Repetition time in seconds
+- `ω0::Real`: Off-resonance frequency in rad/s
+- `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
+- `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
+- `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
+- `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
+- `Rx::Real`: Exchange rate between the two spin pools in 1/seconds
+- `R1s::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
+- `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 
 Optional:
 - `grad_list=[]`: Vector that specifies the gradients that are calculated; the vector can either be empty `[]` for no gradient, or contain any subset/order of `grad_list=[grad_m0s(), grad_R1s(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
@@ -28,26 +28,26 @@ Optional:
 ```jldoctest
 julia> calculatesignal_gbloch_ide(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6)
 100×1 Matrix{ComplexF64}:
-    -0.0079663164450168 + 0.0im
-  0.0012590590419314664 - 0.0im
-   -0.00608885558812266 + 0.0im
-   0.002418738940417472 - 0.0im
-  -0.004361339395232437 + 0.0im
-   0.003489135821004965 - 0.0im
-   -0.00276337106146514 + 0.0im
-   0.004483217941394386 - 0.0im
- -0.0012812573517352623 + 0.0im
-    0.00540885403467714 - 0.0im
+  -0.007966316445310092 + 0.0im
+  0.0012590590420428192 - 0.0im
+  -0.006088855588249714 + 0.0im
+   0.002418738940913121 - 0.0im
+  -0.004361339394954344 + 0.0im
+  0.0034891358222515403 - 0.0im
+ -0.0027633710605856443 + 0.0im
+   0.004483217942995644 - 0.0im
+ -0.0012812573504847747 + 0.0im
+    0.00540885403652597 - 0.0im
                         ⋮
-   0.017760808273048417 - 0.0im
-   0.017576118974646206 + 0.0im
-   0.017813950945910068 - 0.0im
-   0.017643856335506414 + 0.0im
-   0.017863575855931377 - 0.0im
-   0.017706926033852356 + 0.0im
-    0.01790991493408162 - 0.0im
-   0.017765650373295958 + 0.0im
-     0.0179531848937171 - 0.0im
+   0.017760808273166742 - 0.0im
+    0.01757611897551337 + 0.0im
+    0.01781395094611674 - 0.0im
+    0.01764385633643124 + 0.0im
+   0.017863575856212052 - 0.0im
+   0.017706926034820797 + 0.0im
+   0.017909914934264796 - 0.0im
+    0.01776565037417232 + 0.0im
+   0.017953184893722073 - 0.0im
 
 julia> calculatesignal_gbloch_ide(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6; grad_list=[grad_R1f(), grad_T2s()], output=:realmagnetization)
 100×15 transpose(::Matrix{Float64}) with eltype Float64:
@@ -165,17 +165,17 @@ Calculate the signal or magnetization evolution with Graham's spectral model ass
 The simulation assumes a sequence of rectangular RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
 
 # Arguments
-- `α::Vector{<:Number}`: Array of flip angles in radians
-- `TRF::Vector{<:Number}`: Array of the RF-pulse durations in seconds
-- `TR::Number`: Repetition time in seconds
-- `ω0::Number`: Off-resonance frequency in rad/s
-- `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
-- `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
-- `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
-- `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
-- `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
-- `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `T2s::Number`: Transversal relaxation time of the semi-solid pool in seconds
+- `α::Vector{Real}`: Array of flip angles in radians
+- `TRF::Vector{Real}`: Array of the RF-pulse durations in seconds
+- `TR::Real`: Repetition time in seconds
+- `ω0::Real`: Off-resonance frequency in rad/s
+- `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
+- `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
+- `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
+- `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
+- `Rx::Real`: Exchange rate between the two spin pools in 1/seconds
+- `R1s::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
+- `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 
 Optional:
 - `grad_list=[]`: Vector that specifies the gradients that are calculated; the vector can either be empty `[]` for no gradient, or contain any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1(), grad_R1a()]`
@@ -186,26 +186,26 @@ Optional:
 ```jldoctest
 julia> calculatesignal_graham_ode(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6)
 100×1 Matrix{ComplexF64}:
-   -0.00807345119181356 + 0.0im
-  0.0012686432904829492 - 0.0im
-  -0.006178694437239959 + 0.0im
-  0.0024358658178671093 - 0.0im
- -0.0044374762772014424 + 0.0im
-    0.00351646464984033 - 0.0im
-    -0.0028315542520439 + 0.0im
-   0.004523902250379137 - 0.0im
- -0.0013422299483389802 + 0.0im
+   -0.00807345119181352 + 0.0im
+   0.001268643290482942 - 0.0im
+ -0.0061786944372399285 + 0.0im
+  0.0024358658178670984 - 0.0im
+  -0.004437476277201395 + 0.0im
+   0.003516464649840319 - 0.0im
+ -0.0028315542520438736 + 0.0im
+   0.004523902250379144 - 0.0im
+ -0.0013422299483389865 + 0.0im
    0.005454562034842185 - 0.0im
                         ⋮
-   0.018148222040953746 - 0.0im
-   0.017957696614149875 + 0.0im
-     0.0182048608766618 - 0.0im
-   0.018029363102619093 + 0.0im
-   0.018257820142562827 - 0.0im
-    0.01809616891246815 + 0.0im
-   0.018307337729977703 - 0.0im
-   0.018158444501177474 + 0.0im
-   0.018353636229654698 - 0.0im
+   0.018148222040953822 - 0.0im
+    0.01795769661414946 + 0.0im
+   0.018204860876661903 - 0.0im
+    0.01802936310261858 + 0.0im
+    0.01825782014256292 - 0.0im
+   0.018096168912467753 + 0.0im
+   0.018307337729977783 - 0.0im
+    0.01815844450117701 + 0.0im
+   0.018353636229654767 - 0.0im
 
 julia> calculatesignal_graham_ode(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6; grad_list=[grad_R1f(), grad_T2s()], output=:realmagnetization)
 100×15 transpose(::Matrix{Float64}) with eltype Float64:

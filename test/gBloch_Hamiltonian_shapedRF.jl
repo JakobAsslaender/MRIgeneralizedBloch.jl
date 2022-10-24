@@ -27,7 +27,7 @@ mf = (1 - m0s) * rand()
 φ = rand() * 2π
 
 ## ######################################################################################
-# Compare function implementation (using a constant amplitude) to ω1::Number implementation
+# Compare function implementation (using a constant amplitude) to ω1::Real implementation
 #########################################################################################
 f_ω1(t) = α/TRF
 G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);

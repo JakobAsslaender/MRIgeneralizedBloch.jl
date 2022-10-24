@@ -8,20 +8,20 @@ If no gradient is supplied, it returns a 6x6 (static) matrix with the dimensions
 If a gradient is supplied, it returns a 11x11 (static) matrix with the dimensions (in this order) `[xf, yf, zf, xs, zs, dxf/dθ, dyf/dθ, dzf/dθ, dxs/dθ, dzs/dθ,  1]`, where `θ` is the parameter specified by `grad_type`
 
 # Arguments
-- `ω1::Number`: Rabi frequency in rad/s (rotation about the y-axis)
-- `B1::Number`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
-- `ω0::Number`: Larmor (or off-resonance) frequency in rad/s (rotation about the z-axis)
-- `T::Number`: Time in seconds; this can, e.g., be the RF-pulse duration, or the time of free precession with `ω1=0`
-- `m0s::Number`: Fractional size of the semi-solid pool; should be in range of 0 to 1
-- `R1f::Number`: Longitudinal relaxation rate of the free pool in 1/seconds
-- `R2f::Number`: Transversal relaxation rate of the free pool in 1/seconds
-- `Rx::Number`: Exchange rate between the two spin pools in 1/seconds
-- `R1s::Number`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
-- `R2s::Number`: Transversal relaxation rate of the semi-solid pool in 1/seconds; this number can be calculated with the first function returned by [`precompute_R2sl`](@ref) to implement the linear approximation described in the generalized Bloch paper
+- `ω1::Real`: Rabi frequency in rad/s (rotation about the y-axis)
+- `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
+- `ω0::Real`: Larmor (or off-resonance) frequency in rad/s (rotation about the z-axis)
+- `T::Real`: Time in seconds; this can, e.g., be the RF-pulse duration, or the time of free precession with `ω1=0`
+- `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
+- `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
+- `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
+- `Rx::Real`: Exchange rate between the two spin pools in 1/seconds
+- `R1s::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
+- `R2s::Real`: Transversal relaxation rate of the semi-solid pool in 1/seconds; this number can be calculated with the first function returned by [`precompute_R2sl`](@ref) to implement the linear approximation described in the generalized Bloch paper
 
 Optional:
-- `dR2sdT2s::Number`: Derivative of linearized R2sl wrt. the actual T2s; only required if `grad_type = grad_T2s()`; this number can be calculated with the second function returned by [`precompute_R2sl`](@ref)
-- `dR2sdB1::Number`: Derivative of linearized R2sl wrt. B1; only required if `grad_type = grad_B1()`; this number can be calculated with the third function returned by [`precompute_R2sl`](@ref)
+- `dR2sdT2s::Real`: Derivative of linearized R2sl wrt. the actual T2s; only required if `grad_type = grad_T2s()`; this number can be calculated with the second function returned by [`precompute_R2sl`](@ref)
+- `dR2sdB1::Real`: Derivative of linearized R2sl wrt. B1; only required if `grad_type = grad_B1()`; this number can be calculated with the third function returned by [`precompute_R2sl`](@ref)
 - `grad_type::grad_param`: `grad_m0s()`, `grad_R1f()`, `grad_R1s()`, `grad_R2f()`, `grad_Rx()`, `grad_T2s()`, `grad_ω0()`, or `grad_B1()`; create one hamiltonian for each desired gradient
 
 # Examples
