@@ -30,12 +30,12 @@ G = interpolate_greens_function(greens_superlorentzian, 0, 1000);
 # ## Rectangular RF-Pulses
 # First, we simulate a rectangular RF-pulse with a constant `ω1`:
 α = π # rad
-TRF = 200e-6 # s
-ω1 = α/TRF; # rad/s
+TRF = 500e-6 # s
+ω1 = α/TRF # rad/s
 
 # ### Isolated Semi-Solid Spin Pool
 # The first example demonstrates how to simulate an isolated semi-solid spin pool for which the magnetization vector is defined by `m = [zs; 1]`. The appended `1` facilitates a more compact implementation of longitudinal relaxation to a non-zero thermal equilibrium. Here, we initialize the magnetization with the thermal equilibrium:
-m0 = [m0s; 1];
+m0 = [1; 1];
 
 # The generalized Bloch model is a so-called integro-differential equation where the derivative ``∂m/∂t`` at the time ``t_1`` does not just depend on ``m(t_1)``, but on ``m(t)`` with ``t \in [0, t_1]``. This is solved with a [delay differential equation (DDE) solver](https://diffeq.sciml.ai/stable/tutorials/dde_example/) that stores an interpolated *history function* `mfun(p, t)`, which we use in the [`apply_hamiltonian_gbloch!`](@ref) function to evaluate the integral. This history function has to be initialized with
 mfun(p, t) = m0;
@@ -44,10 +44,10 @@ mfun(p, t) = m0;
 
 param = (ω1, B1, ω0, R1s, T2s, G) # defined by apply_hamiltonian_gbloch!
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
-sol = solve(prob)
+z_gBloch = solve(prob)
 
 # The function [`apply_hamiltonian_gbloch!`](@ref) is implemented such that it concludes from `param = (ω1, B1, ω0, R1s, T2s, G)` that you are only supplying the relaxation properties of the semi-solid spin pool and hence it simulates the spin dynamics of an isolated semi-solid spin pool. The DifferentialEquations.jl package also implements a plot function for the solution object, which can use to display the result:
-p = plot(sol, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
+p = plot(z_gBloch, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
 #md Main.HTMLPlot(p) #hide
 
 # For comparison, we can simulate the signal with [Graham's spectral model](https://doi.org/10.1002/jmri.1880070520), which describes an exponential saturation with the rate
@@ -60,10 +60,14 @@ Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω
 # ```
 # where `g(ω₀, T₂ˢ)` is the spectral lineshape of the spin pool. Given this saturation rate, we can simply solve the ordinary differential equation `∂z/∂t = R₁ (1 - z) - Rʳᶠ z`, which has the following analytical solution:
 
-z_Graham(t) = m0s * (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
+z_Graham(t) = (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
 plot!(p, z_Graham, 0, TRF, label="Graham")
 #md Main.HTMLPlot(p) #hide
 
+# This plot reveals a substantial difference between Graham's spectral model and the generalized Bloch model at the example of a 500μs inversion pulse, as, e.g., used in our [in vivo experiments](https://arxiv.org/pdf/2207.08259.pdf). This also entails a substantial difference in the z-magnetization of the semi-solid spin pool at the end of the RF-pulse:
+z_gBloch(TRF)[1]
+#-
+z_Graham(TRF)
 
 # ### Coupled Spin System
 # For a coupled spin system, the magnetization vector is defined as `m = [xf; yf; zf; zs; 1]` and the thermal equilibrium magnetization is given by:
@@ -74,14 +78,15 @@ param = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G);
 
 # Thereafter, we can use the same function calls as above to simulate the spin dynamics:
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
-sol = solve(prob)
-p = plot(sol, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
+m_gBloch = solve(prob)
+p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 #md Main.HTMLPlot(p) #hide
 
 
 # ## Shaped RF-Pulses
 # The function `apply_hamiltonian_gbloch!` also allows for the simulation of RF-pulses with arbitrary shapes. To this end, ω₁(t) has to be defined as a function that takes time in seconds as an input and returns ω₁ at this particular point in time. For example, we can define a `sinc`-pulse:
 NSideLobes = 1
+TRF = 1e-3 # s
 f_ω1(t) = sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1))
 p = plot(f_ω1, 0, TRF, xlabel="t [s]", ylabel="ω₁(t)", labels=:none)
 #md Main.HTMLPlot(p) #hide
@@ -91,31 +96,36 @@ quadgk(f_ω1, 0, TRF)[1] / α
 
 # ### Isolated Semi-Solid Spin Pool
 # In order to calculate the spin dynamics of an isolated semi-solid spin pool during a shaped RF-pulse, we define the same tuple `param` as we did in Section [Rectangular RF-Pulses](@ref) with the only difference that the first element is a subtype of the abstract type `Function`:
-m0 = [m0s; 1]
+m0 = [1; 1]
 param = (f_ω1, B1, ω0, R1s, T2s, G)
 typeof(f_ω1) <: Function
 
 # With this definition of `param`, we can use the same function call as we did before:
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
-sol = solve(prob)
-p = plot(sol, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
+z_gBloch = solve(prob)
+p = plot(z_gBloch, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
 #md Main.HTMLPlot(p) #hide
 
 # For comparison, we can simulate the signal with [Graham's spectral model](https://doi.org/10.1002/jmri.1880070520), which describes an exponential saturation with the rate
 Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
 #-
-z_Graham(t) = m0s * (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
+z_Graham(t) = (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
 plot!(p, z_Graham, 0, TRF, label="Graham")
 #md Main.HTMLPlot(p) #hide
+#-
+z_gBloch(TRF)[1]
+#-
+z_Graham(TRF)
 
+# The difference between Graham's model and the generalized Bloch model is more pronounced for this 1ms `sinc`-inversion pulse compared to the 500μs rectangular inversion pulse. We note, however, that the peak pulse amplitude of the `sinc`-pulse is higher and potentially too high clinical MRI systems.
 
 # ### Coupled Spin System
 # We can perform the same change to `param` to simulate a coupled spin system:
 param = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
 m0 = [0; 0; 1-m0s; m0s; 1]
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
-sol = solve(prob)
-p = plot(sol, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
+m_gBloch = solve(prob)
+p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 #md Main.HTMLPlot(p) #hide
 
 # Double click on zˢ in the legend to isolate the semi-solid spin pool in the plot and compare the simulation to the last section.
@@ -149,8 +159,8 @@ p = plot(f_φ, 0, TRF, xlabel="t [s]", ylabel="φ(t) [rad]", labels=:none)
 # This interface, of course, also allows for the simulation of an isolated semi-solid spin pool with above described modifications to `param`. For brevity, however, we here directly simulate a coupled spin pool starting from thermal equilibrium:
 m0 = [0, 0, 1-m0s, m0s, 1]
 p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
-sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
-p = plot(sol, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
+m_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
+p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 #md Main.HTMLPlot(p) #hide
 
 # This simulation shows the intended inversion of the free spin pool and a saturation of `m0s` to roughly 7% of its thermal equilibrium magnetization (double click on the corresponding legend entry). The transversal magnetization of the free pool exhibits some oscillations and at this point I should highlight a distinct difference between the implementation for adiabatic RF-pulses the above described implementation for constant ω₀: the latter case uses a frame of references that rotates with the RF-frequency about the z-axis, i.e. the RF-pulses rotate the magnetization  with ω₁ about the y-axis and, additionally, the magnetizations rotates with ω₀ about the z-axis. The implementation of the adiabatic pulses uses a rotating frame of reference that is on resonance with the Larmor frequency of the spin isochromat and angle of the RF-pulse changes with ω₀(t). To simulate off-resonance, we can simply add a static value to above function or, more precisely, add a phase slope to φ:
@@ -160,8 +170,8 @@ f_φ_or(t) = f_φ(t) + Δω0 * t; # rad
 # We can, additionally, change `B1` to demonstrate the robustness of adiabatic pulses:
 B1 = 1.2 # 20% miss-calibration
 p = (f_ω1, B1, f_φ_or, m0s, R1f, R2f, Rx, R1s, T2s, G)
-sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
-p = plot(sol, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
+m_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
+p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 #md Main.HTMLPlot(p) #hide
 
 # While the spin dynamics during the pulse is changed, the final magnetization of the free pool is approximately the same compared to the on-resonant isochromat with `B1 = 1`. The final magnetization of the semi-solid spin pool is, like before, close to zero, but a close look reveals a small negative zˢ-magnetization (double click on zˢ in the plot's legend).
@@ -170,7 +180,7 @@ p = plot(sol, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "z�
 # Throughout this tutorial, we only ever calculated and plotted the longitudinal magnetization of the semi-solid spin pool. This is foremost a result of way we formulate and solve the generalized Bloch equations (cf. Eq. (9) in the [paper](https://doi.org/10.1002/mrm.29071)). But this implementation is also reflective of the standard use-case in magnetization transfer, where we are foremost interested in the longitudinal magnetization of the semi-solid spin pool and its effect on the free spin pool. If required, it is, however, easily possible to calculate the transversal magnetization with Eqs. (4-5) from the paper:
 ωx(t) = -B1 * f_ω1(t) * sin(f_φ_or(t))
 ωy(t) =  B1 * f_ω1(t) * cos(f_φ_or(t))
-zs_gBloch(t) = sol(t)[4]
+zs_gBloch(t) = m_gBloch(t)[4]
 xs_gBloch(t) = quadgk(τ -> G((t - τ) / T2s) * ωx(τ) * zs_gBloch(τ), 0, t)[1]
 ys_gBloch(t) = quadgk(τ -> G((t - τ) / T2s) * ωy(τ) * zs_gBloch(τ), 0, t)[1];
 
