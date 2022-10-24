@@ -612,11 +612,11 @@ end
 """
     graham_saturation_rate(lineshape, f_ω1, TRF, Δω)
 
-Calculate saturation rate according to Graham's spectral model.
+Calculate saturation rate (in units of 1/s) according to Graham's spectral model.
 
 # Arguments
-- `lineshape::Function`: as a function of ω₀. Supply, e.g., the anonymous function `ω₀ -> lineshape_superlorentzian(ω₀, T2s)`. Note that the integral over the lineshape has to be 1.
-- `f_ω1::Function`: ω1 in rad/s as a function of time where the puls shape is defined for t ∈ [0,TRF]
+- `lineshape::Function`: as a function of ω₀ (in rad/s). Supply, e.g., the anonymous function `ω₀ -> lineshape_superlorentzian(ω₀, T2s)`. Note that the integral over the lineshape has to be 1.
+- `f_ω1::Function`: ω1 in rad/s as a function of time (in units of s) where the puls shape is defined for t ∈ [0,TRF]
 - `TRF::Real`: duration of the RF pulse in s
 - `Δω::Real`: offset frequency in rad/s
 
