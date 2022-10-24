@@ -16,6 +16,7 @@ using LinearAlgebra
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_graham_superlorentzian!
+export graham_saturation_rate
 export apply_hamiltonian_sled!
 export hamiltonian_linear
 export d_hamiltonian_linear_dω1
@@ -23,6 +24,9 @@ export d_hamiltonian_linear_dω1
 export greens_lorentzian
 export greens_gaussian
 export greens_superlorentzian
+export lineshape_lorentzian
+export lineshape_gaussian
+export lineshape_superlorentzian
 export dG_o_dT2s_x_T2s_lorentzian
 export dG_o_dT2s_x_T2s_gaussian
 export dG_o_dT2s_x_T2s_superlorentzian

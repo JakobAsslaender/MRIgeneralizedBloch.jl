@@ -15,9 +15,10 @@ julia> greens_lorentzian((t-τ)/T2s)
 4.5399929762484854e-5
 ```
 """
-function greens_lorentzian(κ)
-    exp(-κ)
-end
+greens_lorentzian(κ) = exp(-κ)
+
+lineshape_lorentzian(ω₀, T₂ˢ) = T₂ˢ / π / (1 + (T₂ˢ * ω₀)^2)
+
 
 """
     dG_o_dT2s_x_T2s_lorentzian(κ)
@@ -38,9 +39,7 @@ julia> dGdT2s = dG_o_dT2s_x_T2s_lorentzian((t-τ)/T2s)/T2s
 45.39992976248485
 ```
 """
-function dG_o_dT2s_x_T2s_lorentzian(κ)
-    greens_lorentzian(κ) * κ
-end
+dG_o_dT2s_x_T2s_lorentzian(κ) = greens_lorentzian(κ) * κ
 
 """
     greens_gaussian(κ)
@@ -59,9 +58,9 @@ julia> greens_gaussian((t-τ)/T2s)
 1.9287498479639178e-22
 ```
 """
-function greens_gaussian(κ)
-    exp(-κ^2 / 2)
-end
+greens_gaussian(κ) = exp(-κ^2 / 2)
+
+lineshape_gaussian(ω₀, T₂ˢ) = T₂ˢ / sqrt(2π) * exp(-(T₂ˢ * ω₀)^2 / 2)
 
 """
     dG_o_dT2s_x_T2s_gaussian(κ)
@@ -82,9 +81,7 @@ julia> dGdT2s = dG_o_dT2s_x_T2s_gaussian((t-τ)/T2s)/T2s
 1.9287498479639177e-15
 ```
 """
-function dG_o_dT2s_x_T2s_gaussian(κ)
-    greens_gaussian(κ) * κ^2
-end
+dG_o_dT2s_x_T2s_gaussian(κ) = greens_gaussian(κ) * κ^2
 
 """
     greens_superlorentzian(κ)
@@ -103,9 +100,9 @@ julia> greens_superlorentzian((t-τ)/T2s)
 0.1471246868094442
 ```
 """
-function greens_superlorentzian(κ)
-    quadgk(ζ -> exp(- κ^2 * (3ζ^2 - 1)^2 / 8), 0, sqrt(1/3), 1, order = 100)[1]
-end
+greens_superlorentzian(κ) = quadgk(ζ -> exp(- κ^2 * (3ζ^2 - 1)^2 / 8), 0, sqrt(1/3), 1, order = 100)[1]
+
+lineshape_superlorentzian(ω₀, T₂ˢ) = sqrt(2 / π) * T₂ˢ * quadgk(ct -> exp(-2 * (T₂ˢ * ω₀ / abs(3 * ct^2 - 1))^2) / abs(3 * ct^2 - 1), 0.0, sqrt(1 / 3), 1)[1]
 
 """
     dG_o_dT2s_x_T2s_superlorentzian(κ)
@@ -126,9 +123,7 @@ julia> dGdT2s = dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s
 15253.095033670965
 ```
 """
-function dG_o_dT2s_x_T2s_superlorentzian(κ)
-    quadgk(ζ -> exp(-κ^2 * (3ζ^2 - 1)^2 / 8) * (κ^2 * (3ζ^2 - 1)^2 / 4), 0, sqrt(1/3), 1, order = 100)[1]
-end
+dG_o_dT2s_x_T2s_superlorentzian(κ) = quadgk(ζ -> exp(-κ^2 * (3ζ^2 - 1)^2 / 8) * (κ^2 * (3ζ^2 - 1)^2 / 4), 0, sqrt(1/3), 1, order = 100)[1]
 
 
 """
@@ -136,7 +131,7 @@ end
 
 Interpolate the Green's function f in the range between κmin and κmax.
 
-The interpolation uses the ApproxFun.jl package that incorporates Chebyshev polynomials and ensures an approximation to machine precision. 
+The interpolation uses the ApproxFun.jl package that incorporates Chebyshev polynomials and ensures an approximation to machine precision.
 
 # Examples
 ```jldoctest
