@@ -52,9 +52,9 @@ p = plot(z_gBloch, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
 
 # For comparison, we can simulate the signal with [Graham's spectral model](https://doi.org/10.1002/jmri.1880070520), which describes an exponential saturation with the rate
 f_ω1(t) = ω1
-Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0) # 1/s
+Rʳᶠ = graham_saturation_rate_spectral(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0) # 1/s
 
-# The function [`graham_saturation_rate`](@ref) calculates the spectral power density S(ω₀,Δω,ω₁(t)) of the RF-pulse with an off-resonance frequency Δω and a pulse shape ω₁(t). The spectral power density is the squared absolute value of the pulse's Fourier transform, divided by the pulse duration. Thereafter, the function calculates the integral
+# The function [`graham_saturation_rate_spectral`](@ref) calculates the spectral power density S(ω₀,Δω,ω₁(t)) of the RF-pulse with an off-resonance frequency Δω and a pulse shape ω₁(t). The spectral power density is the squared absolute value of the pulse's Fourier transform, divided by the pulse duration. Thereafter, the function calculates the integral
 # ```math
 # <Rʳᶠ> = \int_{-∞}^{+∞} dω₀ S(ω₀,Δω,ω₁(t)) g(ω₀, T₂ˢ) .
 # ```
@@ -107,7 +107,7 @@ p = plot(z_gBloch, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
 #md Main.HTMLPlot(p) #hide
 
 # For comparison, we can simulate the signal with [Graham's spectral model](https://doi.org/10.1002/jmri.1880070520), which describes an exponential saturation with the rate
-Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
+Rʳᶠ = graham_saturation_rate_spectral(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
 #-
 z_Graham(t) = (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
 plot!(p, z_Graham, 0, TRF, label="Graham")

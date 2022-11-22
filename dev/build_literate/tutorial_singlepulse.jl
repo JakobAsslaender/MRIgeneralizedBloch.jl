@@ -32,7 +32,7 @@ z_gBloch = solve(prob)
 p = plot(z_gBloch, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
 
 f_ω1(t) = ω1
-Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0) # 1/s
+Rʳᶠ = graham_saturation_rate_spectral(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0) # 1/s
 
 z_Graham(t) = (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
 plot!(p, z_Graham, 0, TRF, label="Graham")
@@ -64,7 +64,7 @@ prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
 z_gBloch = solve(prob)
 p = plot(z_gBloch, xlabel="t [s]", ylabel="zˢ(t)", idxs=1, label="g. Bloch")
 
-Rʳᶠ = graham_saturation_rate(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
+Rʳᶠ = graham_saturation_rate_spectral(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
 
 z_Graham(t) = (Rʳᶠ * exp(-t * (R1s + Rʳᶠ)) + R1s) / (R1s + Rʳᶠ)
 plot!(p, z_Graham, 0, TRF, label="Graham")
