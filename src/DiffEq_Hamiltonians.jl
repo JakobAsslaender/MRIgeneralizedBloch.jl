@@ -574,6 +574,10 @@ function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p
     return ∂m∂t
 end
 
+function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf = p
+    apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
+end
 
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf = p
@@ -610,13 +614,13 @@ end
 
 
 """
-    graham_saturation_rate(lineshape, f_ω1, TRF, Δω)
+    graham_saturation_rate_spectral(lineshape, ω1, TRF, Δω)
 
 Calculate saturation rate (in units of 1/s) according to Graham's spectral model.
 
 # Arguments
 - `lineshape::Function`: as a function of ω₀ (in rad/s). Supply, e.g., the anonymous function `ω₀ -> lineshape_superlorentzian(ω₀, T2s)`. Note that the integral over the lineshape has to be 1.
-- `f_ω1::Function`: ω1 in rad/s as a function of time (in units of s) where the puls shape is defined for t ∈ [0,TRF]
+- `ω1::Function`: ω1 in rad/s as a function of time (in units of s) where the puls shape is defined for t ∈ [0,TRF]
 - `TRF::Real`: duration of the RF pulse in s
 - `Δω::Real`: offset frequency in rad/s
 
@@ -632,19 +636,64 @@ julia> TRF = 100e-6;
 
 julia> NSideLobes = 1;
 
-julia> f_ω1(t) = sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1));
+julia> ω1(t) = sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1));
 
 julia> Δω = 200;
 
-julia> graham_saturation_rate(ω₀ -> lineshape_superlorentzian(ω₀, T2s), f_ω1, TRF, Δω)
+julia> graham_saturation_rate_spectral(ω₀ -> lineshape_superlorentzian(ω₀, T2s), ω1, TRF, Δω)
 56135.388046022905
 ```
 """
-function graham_saturation_rate(lineshape::Function, f_ω1::Function, TRF::Real, Δω::Real)
-    S(ω, Δω) = abs(quadgk(t -> f_ω1(t) * exp(1im * (ω - Δω) * t), 0, TRF)[1])^2 / (2π*TRF)
+function graham_saturation_rate_spectral(lineshape::Function, ω1::Function, TRF::Real, Δω::Real)
+    S(ω, Δω) = abs(quadgk(t -> ω1(t) * exp(1im * (ω - Δω) * t), 0, TRF)[1])^2 / (2π*TRF)
     Rrf = π * quadgk(ω -> S(ω, Δω) * lineshape(ω), -Inf, 0, Inf)[1]
     return Rrf
 end
+function graham_saturation_rate_spectral(lineshape::Function, ω1::Real, TRF::Real, Δω::Real)
+    return graham_saturation_rate_spectral(lineshape, (t) -> ω1, TRF, Δω)
+end
+
+
+"""
+    graham_saturation_rate_single_frequency(lineshape, ω1, TRF, Δω)
+
+Calculate saturation rate (in units of 1/s) according to Graham's single frequency approximation.
+
+# Arguments
+- `lineshape::Function`: as a function of ω₀ (in rad/s). Supply, e.g., the anonymous function `ω₀ -> lineshape_superlorentzian(ω₀, T2s)`. Note that the integral over the lineshape has to be 1.
+- `ω1::Function`: ω1 in rad/s as a function of time (in units of s) where the puls shape is defined for t ∈ [0,TRF]
+- `TRF::Real`: duration of the RF pulse in s
+- `Δω::Real`: offset frequency in rad/s
+
+# Examples
+```jldoctest
+julia> using SpecialFunctions
+
+julia> T2s = 10e-6;
+
+julia> α = π;
+
+julia> TRF = 100e-6;
+
+julia> NSideLobes = 1;
+
+julia> ω1(t) = sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1));
+
+julia> Δω = 200;
+
+julia> graham_saturation_rate_single_frequency(ω₀ -> lineshape_superlorentzian(ω₀, T2s), ω1, TRF, Δω)
+419969.3376658947
+```
+"""
+function graham_saturation_rate_single_frequency(lineshape::Function, ω1::Function, TRF::Real, Δω::Real)
+    p = quadgk(t -> ω1(t)^2, 0, TRF)[1] / TRF
+    Rrf = π * p * lineshape(Δω)
+    return Rrf
+end
+function graham_saturation_rate_single_frequency(lineshape::Function, ω1::Real, TRF::Real, Δω::Real)
+    return graham_saturation_rate_single_frequency(lineshape, (t) -> ω1, TRF, Δω)
+end
+
 
 ##################################################################
 # Sled's model

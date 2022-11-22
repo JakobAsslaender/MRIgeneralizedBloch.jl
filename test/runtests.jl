@@ -31,6 +31,10 @@ end
     end
 end
 
+@testset "Graham_saturation_rate" begin
+    include("Graham_saturation_rate.jl")
+end
+
 @testset "apply_hamiltonian_sled!" begin
     for i = 1:10 # test different random initializations
         include("Sled_Hamiltonian_superLorentzian.jl")

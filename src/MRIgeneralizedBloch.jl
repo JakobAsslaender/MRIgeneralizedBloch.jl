@@ -16,7 +16,8 @@ using LinearAlgebra
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_graham_superlorentzian!
-export graham_saturation_rate
+export graham_saturation_rate_spectral
+export graham_saturation_rate_single_frequency
 export apply_hamiltonian_sled!
 export hamiltonian_linear
 export d_hamiltonian_linear_dω1
