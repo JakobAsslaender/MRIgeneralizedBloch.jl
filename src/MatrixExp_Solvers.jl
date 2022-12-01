@@ -26,6 +26,7 @@ Optional:
 - `grad_list=[undef]`: Vector that specifies the gradients that are calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `rfphase_increment=[π]::Vector{Real}`: Increment of the RF phase between consecutive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array.
 - `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calculated assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initialization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
+- `preppulse=false`: if `true`, a `α/2 - TR/2` preparation is applied. In the case of `m0=:IR`, it is applied after the inversion pulse based on `α[2]`, otherwise it is based on `α[1]`
 - `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs, 1]`
 - `isInversionPulse::Vector{Bool}`: Indicates all inversion pulses; must have the same length as α; the `default = [true; falses(length(α)-1)]` indicates that the first pulse is an inversion pulse and all others are not
 
@@ -59,14 +60,14 @@ julia> calculatesignal_linearapprox(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 
     0.06223633770306246 + 0.0im
 ```
 """
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list=[undef], rfphase_increment=[π], m0=:periodic, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)])
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list=[undef], rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)])
 
     R2s_vec = evaluate_R2sl_vector(abs.(α), TRF, B1, T2s, R2slT, grad_list)
 
-    return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=grad_list, rfphase_increment=rfphase_increment, m0=m0, output=output, isInversionPulse = isInversionPulse)
+    return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=grad_list, rfphase_increment=rfphase_increment, m0=m0, preppulse=preppulse, output=output, isInversionPulse = isInversionPulse)
 end
 
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=[undef], rfphase_increment=[π], m0=:periodic, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)])
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=[undef], rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)])
 
     ω1 = α ./ TRF
 
@@ -104,16 +105,19 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R
         if m0 == :periodic
             m = antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, R2s_vec[1], R2s_vec[2], R2s_vec[3], grad_list[j], rfphase_increment[i], isInversionPulse)
         elseif m0 == :thermal || isa(m0, AbstractVector)
-            # this implements the α[1]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
-            u_pr = exp(hamiltonian_linear(ω1[1] / 2, B1, ω0, TRF[1], m0s, R1f, R2f, Rx, R1s, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad_list[j])) # R2sl is actually wrong for the prep pulse
-            m = u_pr * _m0
+            m = _m0
         elseif m0 == :IR
-            # this implements the π - spoiler - TR - α[2]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
+            # this implements the π - spoiler - TR preparation
             u_ip = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad_list[j])
             m = u_ip * _m0
             u_fp = xs_destructor(grad_list[j]) * exp(hamiltonian_linear(0, B1, ω0, TR, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad_list[j]))
             m = u_fp * m
-            u_pr = exp(hamiltonian_linear(ω1[2] / 2, B1, ω0, TRF[2], m0s, R1f, R2f, Rx, R1s, R2s_vec[1][2], R2s_vec[2][2], R2s_vec[3][2], grad_list[j])) # R2sl is actually wrong for the prep pulse
+        end
+
+        # this implements the α[1]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
+        if preppulse
+            i = (m0 == :IR) ? 2 : 1
+            u_pr = exp(hamiltonian_linear(ω1[i] / 2, B1, ω0, TRF[i], m0s, R1f, R2f, Rx, R1s, R2s_vec[1][i], R2s_vec[2][i], R2s_vec[3][i], grad_list[j])) # R2sl is actually wrong for the prep pulse
             m = u_pr * m
         end
 
