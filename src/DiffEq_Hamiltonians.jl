@@ -219,19 +219,17 @@ end
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{12,Any}, t; pulsetype=:normal)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s, grad_list = p
 
-    # Apply Hamiltonian to M
-    u_v1 = @view m[1:5]
-    du_v1 = @view ∂m∂t[1:5]
-    apply_hamiltonian_gbloch!(du_v1, u_v1, mfun, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, 4, g), t)
+    ∂m∂t_m = reshape(∂m∂t, 5, :)
+    m_m    = reshape(   m, 5, :)
+    mfun4(τ) = mfun(p, τ; idxs=4)
 
-    # Apply Hamiltonian to all derivatives and add partial derivatives
-    for i = 1:length(grad_list)
-        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
-        u_v  = @view m[5 * i + 1:5 * (i + 1)]
-        apply_hamiltonian_gbloch!(du_v, u_v, mfun, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, (5i + 4), g), t)
+    # Apply Hamiltonian to M, all derivatives and add partial derivatives
+    for i ∈ axes(m_m, 2)
+        @views apply_hamiltonian_gbloch!(∂m∂t_m[:,i], m_m[:,i], mfun, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, (5i - 1), g), t)
 
-        if pulsetype==:normal || isa(grad_list[i], grad_T2s) || isa(grad_list[i], grad_B1)
-            add_partial_derivative!(du_v, u_v1, τ -> mfun(p, τ; idxs=4), (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s), t, grad_list[i])
+        if i > 1 && (pulsetype==:normal || isa(grad_list[i-1], grad_T2s) || isa(grad_list[i-1], grad_B1))
+            # @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], τ -> mfun(p, τ; idxs=4), (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], mfun4, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s), t, grad_list[i-1])
         end
     end
     return ∂m∂t
@@ -257,18 +255,16 @@ end
 function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{7,Any}, t)
     ω0, m0s, R1f, R2f, Rx, R1s, grad_list = p
 
-    # Apply Hamiltonian to M
-    u_v1 = @view m[1:5]
-    du_v1 = @view ∂m∂t[1:5]
-    apply_hamiltonian_freeprecession!(du_v1, u_v1, (ω0, m0s, R1f, R2f, Rx, R1s), t)
+    ∂m∂t_m = reshape(∂m∂t, 5, :)
+    m_m    = reshape(   m, 5, :)
 
-    # Apply Hamiltonian to M and all its derivatives
-    for i = 1:length(grad_list)
-        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
-        u_v  = @view m[5 * i + 1:5 * (i + 1)]
-        apply_hamiltonian_freeprecession!(du_v, u_v, (ω0, m0s, R1f, R2f, Rx, R1s), t)
+    # Apply Hamiltonian to M, all derivatives and add partial derivatives
+    for i ∈ axes(m_m, 2)
+        @views apply_hamiltonian_freeprecession!(∂m∂t_m[:,i], m_m[:,i], (ω0, m0s, R1f, R2f, Rx, R1s), t)
 
-        add_partial_derivative!(du_v, u_v1, undef, (0, 1, ω0, m0s, R1f, R2f, Rx, R1s, undef, undef, undef), t, grad_list[i])
+        if i > 1
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (0, 1, ω0, m0s, R1f, R2f, Rx, R1s, undef, undef, undef), t, grad_list[i-1])
+        end
     end
     return ∂m∂t
 end
@@ -544,18 +540,16 @@ end
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{11,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s, grad_list = p
 
-    # Apply Hamiltonian to M
-    u_v1 = @view m[1:5]
-    du_v1 = @view ∂m∂t[1:5]
-    apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
+    ∂m∂t_m = reshape(∂m∂t, 5, :)
+    m_m    = reshape(   m, 5, :)
 
-    # Apply Hamiltonian to M and all its derivatives
-    for i = 1:length(grad_list)
-        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
-        u_v  = @view m[5 * i + 1:5 * (i + 1)]
-        apply_hamiltonian_graham_superlorentzian!(du_v, u_v, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
+    # Apply Hamiltonian to M, all derivatives and add partial derivatives
+    for i ∈ axes(m_m, 2)
+        @views apply_hamiltonian_graham_superlorentzian!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
 
-        add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, undef), t, grad_list[i])
+        if i > 1
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, undef), t, grad_list[i-1])
+        end
     end
     return ∂m∂t
 end
@@ -563,19 +557,15 @@ end
 function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p::NTuple{11,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s, grad_list = p
 
-    # Apply Hamiltonian to M
-    u_v1 = @view m[1:5]
-    du_v1 = @view ∂m∂t[1:5]
-    apply_hamiltonian_graham_superlorentzian!(du_v1, u_v1, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
+    ∂m∂t_m = reshape(∂m∂t, 5, :)
+    m_m    = reshape(   m, 5, :)
 
-    # Apply Hamiltonian to M and all its derivatives
-    for i = 1:length(grad_list)
-        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
-        u_v  = @view m[5 * i + 1:5 * (i + 1)]
-        apply_hamiltonian_graham_superlorentzian!(du_v, u_v, (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
+    # Apply Hamiltonian to M, all derivatives and add partial derivatives
+    for i ∈ axes(m_m, 2)
+        @views apply_hamiltonian_graham_superlorentzian!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
 
-        if isa(grad_list[i], grad_B1) || isa(grad_list[i], grad_T2s)
-            add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, undef), t, grad_list[i])
+        if i > 1 && (isa(grad_list[i], grad_B1) || isa(grad_list[i], grad_T2s))
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, undef), t, grad_list[i-1])
         end
     end
     return ∂m∂t
@@ -604,19 +594,16 @@ end
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{11,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf, dRrfdT2s, grad_list = p
 
+    ∂m∂t_m = reshape(∂m∂t, 5, :)
+    m_m    = reshape(   m, 5, :)
 
-     # Apply Hamiltonian to M
-     u_v1 = @view m[1:5]
-     du_v1 = @view ∂m∂t[1:5]
-     apply_hamiltonian_linear!(du_v1, u_v1, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
+    # Apply Hamiltonian to M, all derivatives and add partial derivatives
+    for i ∈ axes(m_m, 2)
+        @views apply_hamiltonian_linear!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
 
-      # Apply Hamiltonian to M and all its derivatives
-     for i = 1:length(grad_list)
-         du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
-         u_v  = @view m[5 * i + 1:5 * (i + 1)]
-         apply_hamiltonian_linear!(du_v, u_v, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
-
-         add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, 0, Rrf, dRrfdT2s), t, grad_list[i])
+        if i > 1
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, 0, Rrf, dRrfdT2s), t, grad_list[i-1])
+        end
     end
     return ∂m∂t
 end
