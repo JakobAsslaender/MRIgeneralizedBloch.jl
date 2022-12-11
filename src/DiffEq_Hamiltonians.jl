@@ -268,7 +268,7 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{7,Any}, t)
         u_v  = @view m[5 * i + 1:5 * (i + 1)]
         apply_hamiltonian_freeprecession!(du_v, u_v, (ω0, m0s, R1f, R2f, Rx, R1s), t)
 
-        add_partial_derivative!(du_v, u_v1, undef, (0.0, 1.0, ω0, m0s, R1f, R2f, Rx, R1s, undef, undef, undef), t, grad_list[i])
+        add_partial_derivative!(du_v, u_v1, undef, (0, 1, ω0, m0s, R1f, R2f, Rx, R1s, undef, undef, undef), t, grad_list[i])
     end
     return ∂m∂t
 end
@@ -279,8 +279,8 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_m0s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[3] -= Rx * m[3] + Rx * m[4] + R1f
-    ∂m∂t[4] += Rx * m[3] + Rx * m[4] + R1s
+    ∂m∂t[3] -= Rx * m[3] + Rx * m[4] + R1f * m[5]
+    ∂m∂t[4] += Rx * m[3] + Rx * m[4] + R1s * m[5]
     return ∂m∂t
 end
 
@@ -356,7 +356,14 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any
     return ∂m∂t
 end
 
-# version for Graham's model
+# versions for Graham's model
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Real,Real,Real,Real,Real,Real,Real,Real,Real}, t, grad_type::grad_T2s)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, Rrf, dRrfdT2s = p
+
+    ∂m∂t[4] -= dRrfdT2s * m[4]
+    return ∂m∂t
+end
+
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Any,Any,Any,Any,Any,Any,Any,Real,Real,Any}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
@@ -578,6 +585,10 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf = p
     apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
 end
+function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real,Real,Any}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf, dRrfdT2s, grad_list = p
+    return apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf, dRrfdT2s, grad_list), t)
+end
 
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf = p
@@ -590,22 +601,22 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     return ∂m∂t
 end
 
-function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{10,Any}, t)
-    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf_d, grad_list = p
-    Rrf = Rrf_d[1]
+function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{11,Any}, t)
+    ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf, dRrfdT2s, grad_list = p
+
 
      # Apply Hamiltonian to M
-    u_v1 = @view m[1:5]
-    du_v1 = @view ∂m∂t[1:5]
-    apply_hamiltonian_linear!(du_v1, u_v1, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
+     u_v1 = @view m[1:5]
+     du_v1 = @view ∂m∂t[1:5]
+     apply_hamiltonian_linear!(du_v1, u_v1, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
 
-     # Apply Hamiltonian to M and all its derivatives
-    for i = 1:length(grad_list)
-        du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
-        u_v  = @view m[5 * i + 1:5 * (i + 1)]
-        apply_hamiltonian_linear!(du_v, u_v, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
+      # Apply Hamiltonian to M and all its derivatives
+     for i = 1:length(grad_list)
+         du_v = @view ∂m∂t[5 * i + 1:5 * (i + 1)]
+         u_v  = @view m[5 * i + 1:5 * (i + 1)]
+         apply_hamiltonian_linear!(du_v, u_v, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf), t)
 
-        add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, 0, Rx, R1s, Rrf_d, undef), t, grad_list[i])
+         add_partial_derivative!(du_v, u_v1, undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, 0, Rrf, dRrfdT2s), t, grad_list[i])
     end
     return ∂m∂t
 end
