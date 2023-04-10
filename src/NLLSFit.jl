@@ -23,8 +23,8 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 
 # Arguments
 - `data::Vector{Number}`: Array of measured data points, either in the time or a compressed domain (cf. `u`)
-- `α::Vector{Real}`: Array of flip angles in radians
-- `TRF::Vector{Real}`: Array of the RF-pulse durations in seconds
+- `α::Vector{Real}`: Array of flip angles in radians; can also be a `Vector{Vector{Real}}` which simulates each RF pattern and concatenates the signals of each simulation
+- `TRF::Vector{Real}`: Array of the RF-pulse durations in seconds (or `Vector{Vector{Real}}` if `α::Vector{Vector{Real}}``)
 - `TR::Real`: Repetition time in seconds
 - `ω0::Real`: Off-resonance frequency in rad/s
 
