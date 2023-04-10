@@ -1,7 +1,7 @@
 name = "MRIgeneralizedBloch"
 uuid = "9689932d-8765-44d0-985b-2d9644d92569"
 authors = ["Jakob Asslaender <jakob.asslaender@nyumc.org> and contributors"]
-version = "0.8.2-DEV"
+version = "0.8.2"
 
 [deps]
 Cubature = "667455a9-e2ce-5579-9412-b964f529a492"
