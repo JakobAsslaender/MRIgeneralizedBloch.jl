@@ -49,7 +49,7 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 # Examples
 c.f. [Non-Linear Least Square Fitting](@ref)
 """
-function fit_gBloch(data, α, TRF, TR;
+function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR;
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
     m0s  = (   0, 0.2,    1),
@@ -66,7 +66,46 @@ function fit_gBloch(data, α, TRF, TR;
     show_trace=false,
     maxIter=100,
     R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
+    ) where T <: Real
+
+    fit_gBloch(data, [α], [TRF], TR;
+    reM0 = reM0,
+    imM0 = imM0,
+    m0s  = m0s ,
+    R1f  = R1f ,
+    R2f  = R2f ,
+    Rx   = Rx  ,
+    R1s  = R1s ,
+    T2s  = T2s ,
+    ω0   = ω0  ,
+    B1   = B1  ,
+    R1a  = R1a ,
+    u    = u,
+    fit_apparentR1 = fit_apparentR1,
+    show_trace = show_trace,
+    maxIter = maxIter,
+    R2slT = R2slT
     )
+end
+
+function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR;
+    reM0 = (-Inf,   1,  Inf),
+    imM0 = (-Inf,   0,  Inf),
+    m0s  = (   0, 0.2,    1),
+    R1f  = (   0, 0.3,  Inf),
+    R2f  = (   0,  15,  Inf),
+    Rx   = (   0,  20,  Inf),
+    R1s  = (   0,   3,  Inf),
+    T2s  = (8e-6,1e-5,12e-6),
+    ω0   = (-Inf,   0,  Inf),
+    B1   = (   0,   1,  1.5),
+    R1a  = (   0, 0.7,  Inf),
+    u=1,
+    fit_apparentR1=false,
+    show_trace=false,
+    maxIter=100,
+    R2slT = precompute_R2sl(TRF_min=minimum(minimum.(TRF)), TRF_max=maximum(maximum.(TRF)), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(maximum.(α ./ TRF)), B1_max=maximum(B1)),
+    ) where T <: Real
 
     grad_list = MRIgeneralizedBloch.grad_param[]
     pmin = Float64[reM0[1], imM0[1]]
@@ -99,7 +138,12 @@ function fit_gBloch(data, α, TRF, TR;
 
     function model!(F, _, p)
         M0, m0s, R1f, R2f, Rx, R1s, T2s, ω0, B1 = getparameters(p)
-        m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
+
+        m = zeros(ComplexF64,size(α[1],1),length(α))
+        Threads.@threads for i ∈ eachindex(α)
+            m[:,i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT))
+        end
+
         m = vec(m)
         m .*= M0
         m = u' * m
@@ -110,8 +154,13 @@ function fit_gBloch(data, α, TRF, TR;
 
     function jacobian!(J, _, p)
         M0, m0s, R1f, R2f, Rx, R1s, T2s, ω0, B1 = getparameters(p)
-        M = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=grad_list)
-        M = dropdims(M, dims=2)
+
+        M = zeros(ComplexF64,size(α[1],1),length(α),length(grad_list)+1)
+        Threads.@threads for i ∈ eachindex(α)
+            M[:,i,:] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=grad_list), dims=2)
+        end
+        M = reshape(M,:,length(grad_list)+1)
+
         M[:,2:end] .*= M0
         M = u' * M
 
