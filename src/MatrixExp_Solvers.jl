@@ -116,8 +116,8 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R
 
         # this implements the α[1]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
         if preppulse
-            i = (m0 == :IR) ? 2 : 1
-            u_pr = exp(hamiltonian_linear(ω1[i] / 2, B1, ω0, TRF[i], m0s, R1f, R2f, Rx, R1s, R2s_vec[1][i], R2s_vec[2][i], R2s_vec[3][i], grad_list[j])) # R2sl is actually wrong for the prep pulse
+            k = (m0 == :IR) ? 2 : 1
+            u_pr = exp(hamiltonian_linear(ω1[k] / 2, B1, ω0, TRF[k], m0s, R1f, R2f, Rx, R1s, R2s_vec[1][k], R2s_vec[2][k], R2s_vec[3][k], grad_list[j])) # R2sl is actually wrong for the prep pulse
             m = u_pr * m
         end
 
