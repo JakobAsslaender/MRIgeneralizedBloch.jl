@@ -510,7 +510,7 @@ function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p
     for i ∈ axes(m_m, 2)
         @views apply_hamiltonian_graham_superlorentzian!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s), t)
 
-        if i > 1 && (isa(grad_list[i], grad_B1) || isa(grad_list[i], grad_T2s))
+        if i > 1 && (isa(grad_list[i-1], grad_B1) || isa(grad_list[i-1], grad_T2s))
             @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, undef), t, grad_list[i-1])
         end
     end
