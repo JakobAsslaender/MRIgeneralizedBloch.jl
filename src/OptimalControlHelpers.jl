@@ -176,7 +176,7 @@ end
 
 
 """
-    F = second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1)
+    F = second_order_α!(grad_ω1, grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ = 1)
 
 Calculate second order penalty of variations of the flip angle α and over-write the gradients in place.
 
@@ -187,6 +187,7 @@ Calculate second order penalty of variations of the flip angle α and over-write
 - `TRF::Vector{Real}`: Control vector
 
 # Optional Keyword Arguments:
+- `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
 
 # Examples
@@ -203,9 +204,8 @@ julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ
 0.3272308747790844
 ```
 """
-function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1)
+function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ = 1)
     α = ω1 .* TRF
-    idx = α .≉ π
     T = sum(idx)
 
     αi   = @view   α[idx]
@@ -282,7 +282,7 @@ end
 ####################################################################
 
 """
-    F = TRF_TV!(grad_TRF, ω1, TRF; λ = 1)
+    F = TRF_TV!(grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ = 1)
 
 Calculate the total variation penalty of `TRF` and over-write `grad_TRF` in place.
 
@@ -292,6 +292,7 @@ Calculate the total variation penalty of `TRF` and over-write `grad_TRF` in plac
 - `TRF::Vector{Real}`: Control vector
 
 # Optional Keyword Arguments:
+- `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
 
 # Examples
@@ -306,19 +307,19 @@ julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
 1.5456176321183175e-5
 ```
 """
-function TRF_TV!(grad_TRF, ω1, TRF; λ = 1)
+function TRF_TV!(grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ = 1)
     T = length(TRF)
 
     F = 0
     for t = 1:(T - 1)
-        if ω1[t] * TRF[t] ≉ π && ω1[t + 1] * TRF[t + 1] ≉ π
+        if idx[t] && idx[t + 1]
             F += abs(TRF[t + 1] - TRF[t])
         end
     end
 
     if grad_TRF !== nothing
         for t = 1:(T - 1)
-            if ω1[t] * TRF[t] ≉ π && ω1[t + 1] * TRF[t + 1] ≉ π
+            if idx[t] && idx[t + 1]
                 grad_TRF[t]     -= λ * sign(TRF[t + 1] - TRF[t])
                 grad_TRF[t + 1] += λ * sign(TRF[t + 1] - TRF[t])
             end
@@ -331,7 +332,7 @@ end
 # SAR Penalty
 ####################################################################
 """
-    F = RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
+    F = RF_power!(grad_ω1, grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ=1, Pmax=3e6, TR=3.5e-3)
 
 Calculate RF power penalty and over-write the gradients in place.
 
@@ -342,6 +343,7 @@ Calculate RF power penalty and over-write the gradients in place.
 - `TRF::Vector{Real}`: Control vector
 
 # Optional Keyword Arguments:
+- `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
 - `Pmax::Real`: Maximum average power deposition in (rad/s)²; everything above this value will be penalized and with an appropriate λ, the resulting power will be equal to or less than this value.
 - `TR::Real`: Repetition time of the pulse sequence
@@ -360,18 +362,18 @@ julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, P
 1.2099652735600044e16
 ```
 """
-function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=2.85e5, TR=3.5e-3)
+function RF_power!(grad_ω1, grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ=1, Pmax=2.85e5, TR=3.5e-3)
     N = length(ω1)
-    ΔSAR = sum(ω1.^2 .* TRF) / (N * TR) - Pmax
+    @views ΔSAR = sum(ω1[idx].^2 .* TRF[idx]) / (N * TR) - Pmax
 
     P(x)    = x < 0 ? 0 : λ * x^2
     dPdx(x) = x < 0 ? 0 : 2λ * x
 
     if grad_ω1 !== nothing
-        grad_ω1  .+= dPdx(ΔSAR) .* 2ω1 .* TRF ./ (N * TR)
+        @views grad_ω1[idx]  .+= dPdx(ΔSAR) .* 2ω1[idx] .* TRF[idx] ./ (N * TR)
     end
     if grad_TRF !== nothing
-        grad_TRF .+= dPdx(ΔSAR) .* ω1.^2 ./ (N * TR)
+        @views grad_TRF[idx] .+= dPdx(ΔSAR) .* ω1[idx].^2 ./ (N * TR)
     end
     return P(ΔSAR)
 end
