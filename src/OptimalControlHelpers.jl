@@ -356,11 +356,11 @@ julia> grad_ω1 = similar(ω1);
 
 julia> grad_TRF = similar(ω1);
 
-julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, Pmax=3e5)
+julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, Pmax=2.85e5)
 1.2099652735600044e16
 ```
 """
-function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
+function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=2.85e5, TR=3.5e-3)
     N = length(ω1)
     ΔSAR = sum(ω1.^2 .* TRF) / (N * TR) - Pmax
 
