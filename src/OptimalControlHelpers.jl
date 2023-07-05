@@ -311,14 +311,14 @@ function TRF_TV!(grad_TRF, ω1, TRF; λ = 1)
 
     F = 0
     for t = 1:(T - 1)
-        if ω1[t] * TRF[t] ≉ π || ω1[t + 1] * TRF[t + 1] ≉ π
+        if ω1[t] * TRF[t] ≉ π && ω1[t + 1] * TRF[t + 1] ≉ π
             F += abs(TRF[t + 1] - TRF[t])
         end
     end
 
     if grad_TRF !== nothing
         for t = 1:(T - 1)
-            if ω1[t] * TRF[t] ≉ π || ω1[t + 1] * TRF[t + 1] ≉ π
+            if ω1[t] * TRF[t] ≉ π && ω1[t + 1] * TRF[t + 1] ≉ π
                 grad_TRF[t]     -= λ * sign(TRF[t + 1] - TRF[t])
                 grad_TRF[t + 1] += λ * sign(TRF[t + 1] - TRF[t])
             end
