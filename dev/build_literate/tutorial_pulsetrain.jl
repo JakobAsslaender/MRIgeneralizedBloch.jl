@@ -72,4 +72,3 @@ plot!(p, t, real.(s_linapp[:,1,1]       ), label="Re(∂s/∂M₀)/M₀")
 plot!(p, t, real.(s_linapp[:,1,2] .* R1a), label="Re(∂s/∂R₁ᵃ)*R₁ᵃ")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

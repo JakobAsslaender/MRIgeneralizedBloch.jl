@@ -108,4 +108,3 @@ plot!(p, TR*(1:Npulses), zs ./   m0s , label="zˢ")
 p = plot(xf, zf, xlabel="xf", ylabel="zf", framestyle = :zerolines, legend=:none)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

@@ -134,4 +134,3 @@ z_gBloch_superLorentzian_i = solve(prob)[end][1]
 z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

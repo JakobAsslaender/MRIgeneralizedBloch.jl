@@ -90,4 +90,3 @@ plot!(p, 1e3t, (hcat(z_Sled_superLorentzian(t).u...)'), label="Sled's model")
 plot!(p, 1e3t, (hcat(z_gBloch_superLorentzian(t).u...)'), label="generalized Bloch model")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

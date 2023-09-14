@@ -119,4 +119,3 @@ plot!(p, ys_gBloch, 0, TRF, label="yˢ")
 plot!(p, zs_gBloch, 0, TRF, label="zˢ")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

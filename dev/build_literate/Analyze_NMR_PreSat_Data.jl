@@ -106,4 +106,3 @@ p = plot(xlabel="Δ [rad/s]", ylabel="M / max(M)", xaxis=:log, legend=:none)
 display(p)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

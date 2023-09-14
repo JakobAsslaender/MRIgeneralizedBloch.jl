@@ -78,4 +78,3 @@ s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T
 qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

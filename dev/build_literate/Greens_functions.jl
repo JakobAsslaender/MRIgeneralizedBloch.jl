@@ -10,4 +10,3 @@ plot!(p, 1e3t, greens_gaussian.(t ./ T₂ˢ), label="Gaussian lineshape")
 plot!(p, 1e3t, greens_superlorentzian.(t ./ T₂ˢ), label="super-Lorentzian l.")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

@@ -371,4 +371,3 @@ scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
 scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-

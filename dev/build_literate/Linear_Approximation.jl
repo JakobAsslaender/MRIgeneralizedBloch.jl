@@ -89,4 +89,3 @@ prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 @benchmark exp(hamiltonian_linear($(α[end]/Tʳᶠ), 1, 0, $Tʳᶠ, $m₀ˢ, $R₁, $R₂ᶠ, $Rₓ, $R₁, R₂ˢˡ($Tʳᶠ, $α[end], 1, $T₂ˢ))) * $m0_6D
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
-
