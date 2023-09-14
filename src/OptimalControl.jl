@@ -174,8 +174,6 @@ function propagate_magnetization(Q, E)
         end
     end
     return Y
-
-    return S
 end
 
 # the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them.
