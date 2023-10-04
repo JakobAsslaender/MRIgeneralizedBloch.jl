@@ -62,9 +62,9 @@ function fg!(F, G, x)
     (F, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
     F = abs(F)
 
-    F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; idx=isInversionPulse, λ=1e4)
-    F += MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; idx=isInversionPulse, λ=1e-3, Pmax=3e6, TR=TR)
-    F += MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; idx=isInversionPulse, λ=1e3)
+    F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; idx = .!isInversionPulse, λ=1e4)
+    F += MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; idx = .!isInversionPulse, λ=1e-3, Pmax=3e6, TR=TR)
+    F += MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; idx = .!isInversionPulse, λ=1e3)
 
     MRIgeneralizedBloch.apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min = ω1_min, ω1_max = ω1_max, TRF_min = TRF_min, TRF_max = TRF_max)
     return F
