@@ -131,7 +131,6 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
 
     xys = real(exp(-1im * ω0 * t) * quadgk(τ -> exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1^2 * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
-
     return ∂m∂t
 end
 
@@ -144,6 +143,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Rea
 
     xys = real(exp(-1im * ω0 * t) * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1(t) * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    return ∂m∂t
 end
 
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real,Integer,Function}, t)
@@ -155,6 +155,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Fun
 
     xys = real(exp(-1im * φ(t)) * quadgk(τ -> ω1(τ) * exp(1im * φ(τ)) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1(t) * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    return ∂m∂t
 end
 
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{10,Any}, t)
@@ -168,6 +169,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{6,Any}, t)
 
     xys = real(exp(-1im * ω0 * t) * quadgk(τ -> exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
     ∂m∂t[1] = -B1^2 * ω1^2 * xys + R1s * (1 - m[1])
+    return ∂m∂t
 end
 
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Real,Real,Function}, t)
@@ -175,6 +177,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Rea
 
     xys = real(exp(-1im * ω0 * t) * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
     ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (1 - m[1])
+    return ∂m∂t
 end
 
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Real,Real,Function}, t)
@@ -182,6 +185,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Fun
 
     xys = real(exp(-1im * φ(t)) * quadgk(τ -> ω1(τ) * exp(1im * φ(τ)) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
     ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (1 - m[1])
+    return ∂m∂t
 end
 
 
@@ -711,6 +715,7 @@ function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real
 
     xy = quadgk(τ -> g((t - τ) / T2s), 0, t, order=7)[1]
     d∂m∂t[1] = -B1^2 * ω1^2 * xy * m[1] + R1s * (1 - m[1])
+    return ∂m∂t
 end
 
 function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Function,Real,Any,Real,Real,Function}, t)
@@ -718,6 +723,7 @@ function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Function,Real,Any,Real,R
 
     xy = quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
     d∂m∂t[1] = -B1^2 * xy * m[1] + R1s * (1 - m[1])
+    return ∂m∂t
 end
 
 function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,Real,Real,Real,Real,Function}, t)
