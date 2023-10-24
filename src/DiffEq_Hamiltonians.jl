@@ -710,19 +710,19 @@ julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
 
 ```
 """
-function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,Function}, t)
+function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,Function}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
     xy = quadgk(τ -> g((t - τ) / T2s), 0, t, order=7)[1]
-    d∂m∂t[1] = -B1^2 * ω1^2 * xy * m[1] + R1s * (1 - m[1])
+    ∂m∂t[1] = -B1^2 * ω1^2 * xy * m[1] + R1s * (1 - m[1])
     return ∂m∂t
 end
 
-function apply_hamiltonian_sled!(d∂m∂t, m, p::Tuple{Function,Real,Any,Real,Real,Function}, t)
+function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Function,Real,Any,Real,Real,Function}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
     xy = quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
-    d∂m∂t[1] = -B1^2 * xy * m[1] + R1s * (1 - m[1])
+    ∂m∂t[1] = -B1^2 * xy * m[1] + R1s * (1 - m[1])
     return ∂m∂t
 end
 
