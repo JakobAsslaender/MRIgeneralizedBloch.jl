@@ -733,19 +733,19 @@ function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
-    xy = quadgk(τ -> g((t - τ) / T2s), 0, t, order=7)[1]
-    ∂m∂t[4] = -B1^2 * ω1^2 * xy * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    ∂zs∂t = - B1^2 * ω1^2 * quadgk(τ -> g((t - τ) / T2s), 0, t, order=7)[1]
+    ∂m∂t[4] = ∂zs∂t * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
 
 function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real,Function}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g = p
 
-    ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
+    ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1(t) * m[3]
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
-    ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
+    ∂m∂t[3] = - B1 * ω1(t)  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
-    xy = quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
-    ∂m∂t[4] = -B1^2 * xy * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    ∂zs∂t = -B1^2 * quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
+    ∂m∂t[4] = ∂zs∂t * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
