@@ -15,6 +15,7 @@ using LsqFit
 using LinearAlgebra
 
 export apply_hamiltonian_gbloch!
+export apply_hamiltonian_linear!
 export apply_hamiltonian_graham_superlorentzian!
 export graham_saturation_rate_spectral
 export graham_saturation_rate_single_frequency
