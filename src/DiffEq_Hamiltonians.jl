@@ -530,6 +530,19 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real
     return apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf, dRrfdT2s, grad_list), t)
 end
 
+function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real}, t)
+    ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, Rrf = p
+
+    apply_hamiltonian_freeprecession!(∂m∂t, m, (0, m0s, R1f, R2f, Rx, R1s), t)
+
+    ∂m∂t[1] += B1 * ω1(t) * cos(φ(t)) * m[3]
+    ∂m∂t[2] -= B1 * ω1(t) * sin(φ(t)) * m[3]
+    ∂m∂t[3] -= B1 * ω1(t) * cos(φ(t)) * m[1]
+    ∂m∂t[3] += B1 * ω1(t) * sin(φ(t)) * m[2]
+    ∂m∂t[4] -= Rrf * m[4]
+    return ∂m∂t
+end
+
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, Rrf = p
 
@@ -592,13 +605,20 @@ julia> graham_saturation_rate_spectral(ω₀ -> lineshape_superlorentzian(ω₀,
 56135.388046022905
 ```
 """
+function graham_saturation_rate_spectral(lineshape::Function, ω1::Real, TRF::Real, Δω::Real)
+    S(ω, Δω) = abs((exp(1im * TRF * (-Δω + ω)) - 1) * ω1 / (Δω - ω))^2 / (2π*TRF)
+    Rrf = π * quadgk(ω -> S(ω, Δω) * lineshape(ω), -Inf, 0, Inf)[1]
+    return Rrf
+end
 function graham_saturation_rate_spectral(lineshape::Function, ω1::Function, TRF::Real, Δω::Real)
     S(ω, Δω) = abs(quadgk(t -> ω1(t) * exp(1im * (ω - Δω) * t), 0, TRF)[1])^2 / (2π*TRF)
     Rrf = π * quadgk(ω -> S(ω, Δω) * lineshape(ω), -Inf, 0, Inf)[1]
     return Rrf
 end
-function graham_saturation_rate_spectral(lineshape::Function, ω1::Real, TRF::Real, Δω::Real)
-    return graham_saturation_rate_spectral(lineshape, (t) -> ω1, TRF, Δω)
+function graham_saturation_rate_spectral(lineshape::Function, ω1::Function, TRF::Real, φ::Function)
+    S(ω, φ) = abs(quadgk(t -> ω1(t) * exp(1im * (ω * t + φ(t))), 0, TRF)[1])^2 / (2π*TRF)
+    Rrf = π * quadgk(ω -> S(ω, φ) * lineshape(ω), -Inf, 0, Inf)[1]
+    return Rrf
 end
 
 
@@ -744,6 +764,18 @@ function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,R
     ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1(t) * m[3]
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1(t)  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
+
+    ∂zs∂t = -B1^2 * quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
+    ∂m∂t[4] = ∂zs∂t * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    return ∂m∂t
+end
+
+function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real,Function}, t)
+    ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g = p
+
+    ∂m∂t[1] = - R2f * m[1] + B1 * ω1(t) * cos(φ(t)) * m[3]
+    ∂m∂t[2] = - R2f * m[2] - B1 * ω1(t) * sin(φ(t)) * m[3]
+    ∂m∂t[3] = - B1 * ω1(t) * cos(φ(t)) * m[1] + B1 * ω1(t) * sin(φ(t)) * m[2] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
     ∂zs∂t = -B1^2 * quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
     ∂m∂t[4] = ∂zs∂t * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]

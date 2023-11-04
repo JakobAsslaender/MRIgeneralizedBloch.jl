@@ -102,7 +102,7 @@ julia> greens_superlorentzian((t-τ)/T2s)
 """
 greens_superlorentzian(κ) = quadgk(ζ -> exp(- κ^2 * (3ζ^2 - 1)^2 / 8), 0, sqrt(1/3), 1, order = 100)[1]
 
-lineshape_superlorentzian(ω₀, T₂ˢ) = sqrt(2 / π) * T₂ˢ * quadgk(ct -> exp(-2 * (T₂ˢ * ω₀ / abs(3 * ct^2 - 1))^2) / abs(3 * ct^2 - 1), 0.0, sqrt(1 / 3), 1)[1]
+lineshape_superlorentzian(ω₀, T₂ˢ) = sqrt(2/π) * T₂ˢ * quadgk(ct -> exp(-2 * (T₂ˢ * ω₀ / abs(3 * ct^2 - 1))^2) / abs(3 * ct^2 - 1), 0, sqrt(1/3), 1)[1]
 
 """
     dG_o_dT2s_x_T2s_superlorentzian(κ)
