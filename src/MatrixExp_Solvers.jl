@@ -83,7 +83,7 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, 
     else
         if output == :complexsignal
             S = Array{ComplexF64}(undef, length(ω1), length(rfphase_increment), 1 + length(grad_list))
-            jj = [[1,j + 1] for j = 1:length(grad_list)]
+            jj = [[1, j + 1] for j = 1:length(grad_list)]
         elseif output == :realmagnetization
             S = Array{SVector{11,Float64}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
             jj = 1:length(grad_list)
@@ -138,10 +138,10 @@ end
 # helper functions
 ############################################################################
 function evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
-    u_rot = z_rotation_propagator(rfphase_increment, grad)
-
     # put prep pulse at the end (this defines m as the magnetization at the first TE after the inversion pulse)
     u_fp, u_pl = pulse_propagators(ω1[1], B1, ω0, TRF[1], TR, m0s, R1f, R2f, Rex, R1s, R2s[1], dR2sdT2s[1], dR2sdB1[1], grad, grad_moment[1])
+
+    u_rot = z_rotation_propagator(rfphase_increment, u_fp)
     A = u_fp * u_pl * u_rot * u_fp
 
     for i = length(ω1):-1:2
@@ -161,10 +161,24 @@ function antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1f
 end
 
 function propagate_magnetization_linear!(S, m, ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
-    u_rot = z_rotation_propagator(rfphase_increment, grad)
+    function ms_setindex!(S::AbstractArray{<:AbstractVector}, y, i, grad)
+        S[i] = y
+        return S
+    end
+    function ms_setindex!(S::AbstractArray{<:Complex}, y, i, grad)
+        S[i] = y[1] + 1im * y[2]
+        return S
+    end
+    function ms_setindex!(S::AbstractArray{<:Complex}, y, i, grad::grad_param)
+        S[i, 1] = y[1] + 1im * y[2]
+        S[i, 2] = y[6] + 1im * y[7]
+        return S
+    end
+
     ms_setindex!(S, m, 1, grad)
     for i = 2:length(ω1)
         u_fp, u_pl = pulse_propagators(ω1[i], B1, ω0, TRF[i], TR, m0s, R1f, R2f, Rex, R1s, R2s[i], dR2sdT2s[i], dR2sdB1[i], grad, grad_moment[i])
+        u_rot = z_rotation_propagator(rfphase_increment, u_fp)
 
         m = u_fp * (u_pl * (u_rot * (u_fp * m)))
         ms_setindex!(S, m, i, grad)
@@ -195,18 +209,4 @@ function pulse_propagators(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, 
         error("Unknown gradient moment type.")
     end
     return u_fp, u_pl
-end
-
-function ms_setindex!(S::AbstractArray{<:AbstractVector}, y, i, grad)
-    S[i] = y
-    return S
-end
-function ms_setindex!(S::AbstractArray{<:Complex}, y, i, grad)
-    S[i] = y[1] + 1im * y[2]
-    return S
-end
-function ms_setindex!(S::AbstractArray{<:Complex}, y, i, grad::grad_param)
-    S[i,1] = y[1] + 1im * y[2]
-    S[i,2] = y[6] + 1im * y[7]
-    return S
 end

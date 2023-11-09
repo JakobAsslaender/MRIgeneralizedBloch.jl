@@ -67,10 +67,9 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
     cache = ExponentialUtilities.alloc_mem(zeros(22, 22), ExpMethodHigham2005Base())
     dH = zeros(Float64, 22, 22)
 
-    u_rot = z_rotation_propagator(π, grad_m0s())
+    u_rot = z_rotation_propagator(π, zeros(SMatrix{11, 11}))
     for g ∈ eachindex(grad_list)
         grad = grad_list[g]
-
         for t ∈ 1:length(ω1)
             if grad_moment[t] == :crusher
                 calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache)

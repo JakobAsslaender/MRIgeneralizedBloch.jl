@@ -76,4 +76,7 @@ include("NLLSFit.jl")
 include("OptimalControl.jl")
 include("OptimalControlHelpers.jl")
 
+include("4Comp_MatrixExp_Hamiltonians.jl")
+include("4Comp_MatrixExp_Solvers.jl")
+
 end

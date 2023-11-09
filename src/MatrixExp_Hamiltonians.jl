@@ -165,7 +165,7 @@ function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_type:
     return U
 end
 
-function z_rotation_propagator(rfphase_increment, _)
+function z_rotation_propagator(rfphase_increment, _::SMatrix{6, 6})
     sϕ, cϕ = sincos(rfphase_increment)
     u_rot = @SMatrix [cϕ -sϕ 0 0 0 0;
                       sϕ  cϕ 0 0 0 0;
@@ -176,7 +176,7 @@ function z_rotation_propagator(rfphase_increment, _)
     return u_rot
 end
 
-function z_rotation_propagator(rfphase_increment, ::grad_param)
+function z_rotation_propagator(rfphase_increment, _::SMatrix{11, 11})
     sϕ, cϕ = sincos(rfphase_increment)
     u_rot = @SMatrix [cϕ -sϕ 0 0 0  0   0 0 0 0 0;
                       sϕ  cϕ 0 0 0  0   0 0 0 0 0;
