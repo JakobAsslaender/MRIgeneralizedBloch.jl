@@ -30,15 +30,49 @@ julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) 
 ```
 c.f. [Optimal Control](@ref)
 """
-function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = [true; falses(length(ω1)-1)])
-    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, isInversionPulse=isInversionPulse)
-    Q = calcualte_cycle_propgator(E)
-    Y = propagate_magnetization(Q, E)
-    (CRB, d) = dCRBdm(Y, weights)
-    P = calculate_adjoint_state(d, Q, E)
-    (grad_ω1, grad_TRF) = calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = [true; falses(length(ω1)-1)], nSeq = 1)
+    
+    E_cat      = Vector{Array{SMatrix{11,11,Float64,121},3}}(undef, nSeq)
+    dEdω1_cat  = similar(E_cat)
+    dEdTRF_cat = similar(E_cat)
+
+    Q_cat = Vector{Array{SMatrix{11,11,Float64}}}(undef, nSeq)
+    Y_cat = Vector{Array{SVector{11,Float64}}}(undef, nSeq)
+
+    ω1 = reshape(ω1,:,nSeq)
+    TRF = reshape(TRF,:,nSeq)
+    isInversionPulse = reshape(isInversionPulse,:,nSeq)
+    
+    grad_ω1 = similar(ω1)
+    grad_TRF = similar(ω1)
+
+    Threads.@threads for iSeq = 1:nSeq
+        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:,iSeq], TRF[:,iSeq], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, isInversionPulse=isInversionPulse[:,iSeq])
+        E_cat[iSeq] = E
+        dEdω1_cat[iSeq] = dEdω1
+        dEdTRF_cat[iSeq] = dEdTRF
+
+        Q_cat[iSeq] = calcualte_cycle_propgator(E_cat[iSeq])
+        Y_cat[iSeq] = propagate_magnetization(Q_cat[iSeq], E_cat[iSeq])
+    end
+
+    (CRB, d) = dCRBdm(cat(Y_cat...,dims=1), weights)
+
+    for iSeq = 1:nSeq
+
+        P = calculate_adjoint_state(d, Q_cat[iSeq], E_cat[iSeq], iSeq)
+
+        (grad_ω1[:,iSeq], grad_TRF[:,iSeq]) = calculate_gradient_inner_product(P, Y_cat[iSeq], E_cat[iSeq], dEdω1_cat[iSeq], dEdTRF_cat[iSeq])
+
+    end
+    
+    grad_ω1 = vec(grad_ω1)
+    grad_TRF = vec(grad_TRF)
+
     return (CRB, grad_ω1, grad_TRF)
 end
+
+
 
 function OCT_TV_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, λ_TV)
     (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
@@ -178,23 +212,24 @@ function propagate_magnetization(Q, E)
 end
 
 # the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them.
-function calculate_adjoint_state(d, Q, E)
+function calculate_adjoint_state(d, Q, E, iSeq)
     P = similar(E, Array{Float64})
     λ = @view P[end,:,:]
 
     for g in 1:size(E, 3), r in 1:size(E, 2)
-        λ[r,g] = d(size(E, 1), r, g)
+    λ[r,g] = d(size(E, 1) + (iSeq-1)*size(E, 1), r, g)
+
     end
 
     for r ∈ axes(E, 2)
         for t = size(E, 1) - 1:-1:1
             λ[r,1] = transpose(E[t + 1,r,1]) * λ[r,1]
-            λ[r,1] += d(t, r, 1)
+            λ[r,1] += d(t + (iSeq-1)*size(E, 1) , r, 1)
             for g = 2:size(E, 3)
                 λ[r,g] = transpose(E[t + 1,r,g][6:10,:]) * λ[r,g][6:10]
                 λ[r,1][1:5] .+= λ[r,g][1:5]
                 # λ[r,1][end]  += λ[r,g][end]
-                λ[r,g] .+= d(t, r, g)
+                λ[r,g] .+= d(t + (iSeq-1)*size(E, 1), r, g)
             end
         end
 
@@ -221,7 +256,7 @@ function calculate_adjoint_state(d, Q, E)
                     P[t - 1,r,1][1:5] .+= P[t - 1,r,g][1:5]
                     P[t - 1,r,1][end]  += P[t - 1,r,g][end]
                 end
-                P[t - 1,r,g] .+= d(t, r, g)
+                P[t - 1,r,g] .+= d(t + (iSeq-1)*size(E, 1), r, g)
             end
 
         # for g = 2:length(grad_list)
@@ -253,6 +288,7 @@ function dCRBdm(Y, w)
         end
         F[g1 + 1,g2 + 1] += s1 * s2
     end
+
     Fi = inv(F)
     CRB = w * real.(diag(Fi))
 
@@ -333,6 +369,21 @@ end
 function calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
     grad_ω1 = zeros(size(E, 1))
     grad_TRF = zeros(size(E, 1))
+
+    for g in 1:size(E, 3), r in 1:size(E, 2)
+        if g == 1
+            grad_ω1[1]  -= transpose(P[end,r,g]) * (dEdω1[1,r,g] * Y[end,r,g])
+            grad_TRF[1] -= transpose(P[end,r,g]) * (dEdTRF[1,r,g] * Y[end,r,g])
+        else
+            a = dEdω1[1,r,g] * Y[end,r,g]
+            b = dEdTRF[1,r,g] * Y[end,r,g]
+            @inbounds for i = 6:10
+                grad_ω1[1]   -= P[end,r,g][i] * a[i]
+                grad_TRF[1]  -= P[end,r,g][i] * b[i]
+            end
+        end
+    end
+
 
     for g in 1:size(E, 3), r in 1:size(E, 2), t in 2:size(E, 1)
         if g == 1
