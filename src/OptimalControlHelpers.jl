@@ -29,6 +29,38 @@ function get_bounded_ω1_TRF(x; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, 
     return (ω1, TRF)
 end
 
+function get_bounded_ω1_TRF_inv(x; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6,isInversionPulse = [true; falses(length(x)÷ 2 -1)],TRF_inv_min = 100e-6, TRF_inv_max = 500e-6, nSeq=1, ismutable = trues(length(x)))
+
+    xpad = zeros(length(ismutable))
+    xpad[ismutable] .= x
+
+    # change implementation to use a isFAzero variable instead of ismutable
+
+    x1 = xpad[1:end ÷ 2]
+    x2 = xpad[end ÷ 2 + 1:end]
+
+    ω1 = similar(x1)
+    TRF = similar(x2)
+    ω1  =  ω1_min .+ ( ω1_max -  ω1_min) .* (1 .+ tanh.(x1     )) / 2
+    TRF[.~isInversionPulse] = TRF_min .+ (TRF_max - TRF_min) .* (1 .+ tanh.(x2[.~isInversionPulse])) / 2
+    
+    TRF[isInversionPulse] = TRF_inv_min .+ (TRF_inv_max - TRF_inv_min) .* (1 .+ tanh.(x2[isInversionPulse])) / 2
+
+    ω1[isInversionPulse] = π./TRF[isInversionPulse]
+
+    # secret sauce setting values of non mutables
+    ω1 = reshape(ω1,:,nSeq)
+    TRF = reshape(TRF,:,nSeq)
+    ω1[1,1:nSeq] .= π./TRF[1,1:nSeq]
+    ω1[[2,end],1:nSeq] .= 0
+    TRF[[2,end],1:nSeq] .= TRF_max
+    ω1 = vec(ω1)
+    TRF = vec(TRF)
+
+    return (ω1, TRF)
+end
+
+
 """
     x = bound_ω1_TRF!(ω1, TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
 
@@ -87,6 +119,30 @@ function bound_ω1_TRF!(ω1, TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6
     return x
 end
 
+function bound_ω1_TRF_inv!(ω1, TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6, isInversionPulse = [true; falses(length(ω1) -1)],TRF_inv_min = 100e-6, TRF_inv_max = 500e-6, ismutable = trues(length(ω1)*2))
+    ω1 .= min.(ω1, ω1_max)
+    ω1 .= max.(ω1, ω1_min)
+
+    TRF[.~isInversionPulse] .= min.(TRF[.~isInversionPulse], TRF_max)
+    TRF[.~isInversionPulse] .= max.(TRF[.~isInversionPulse], TRF_min)
+
+    TRF[isInversionPulse] .= min.(TRF[isInversionPulse], TRF_inv_max)
+    TRF[isInversionPulse] .= max.(TRF[isInversionPulse], TRF_inv_min)
+
+    x = similar(ω1, 2length(ω1))
+    x2 = similar(TRF)
+
+    x[1:end÷2]     .= atanh.(( ω1 .-  ω1_min) .* 2 ./ ( ω1_max -  ω1_min) .- 1)
+    x2[.~isInversionPulse] .= atanh.((TRF[.~isInversionPulse] .- TRF_min) .* 2 ./ (TRF_max - TRF_min) .- 1)
+    x2[isInversionPulse]   .= atanh.((TRF[isInversionPulse] .- TRF_inv_min) .* 2 ./ (TRF_inv_max - TRF_inv_min) .- 1)
+
+    x[end÷2+1:end] .= x2
+
+    x = x[ismutable]
+
+    return x
+end
+
 function apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6)
     G[1:end ÷ 2]       .= grad_ω1  .* ( ω1_max -  ω1_min) / 2
     G[end ÷ 2 + 1:end] .= grad_TRF .* (TRF_max - TRF_min) / 2
@@ -94,6 +150,29 @@ function apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min = 0, ω1_max = 
     return G
 end
 
+function apply_bounds_inv_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min = 0, ω1_max = 2e3π, TRF_min = 100e-6, TRF_max = 500e-6,isInversionPulse = [true; falses(length(x)÷ 2 -1)],TRF_inv_min = 100e-6, TRF_inv_max = 500e-6, nSeq = 1, ismutable = trues(length(grad_ω1)*2))
+
+    _, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF_inv(x; ω1_min, ω1_max, TRF_min, TRF_max, isInversionPulse, TRF_inv_min , TRF_inv_max,nSeq ,ismutable)
+   
+    G_temp = zeros(length(grad_ω1)*2)
+    G2 = similar(grad_TRF)
+    G1 = similar(grad_ω1)
+
+    G2[.~isInversionPulse] .= grad_TRF[.~isInversionPulse] .* (TRF_max - TRF_min) / 2
+    G2[isInversionPulse]   .= grad_TRF[isInversionPulse] .- π ./ TRF[isInversionPulse].^2 .* grad_ω1[isInversionPulse]
+    G2[isInversionPulse]   .= G2[isInversionPulse] .* (TRF_inv_max - TRF_inv_min) / 2
+    G_temp[end ÷ 2 + 1:end] .= G2
+
+    G1[.~isInversionPulse] .= grad_ω1[.~isInversionPulse]  .* ( ω1_max -  ω1_min) / 2
+    G1[isInversionPulse] .= 0
+    G_temp[1:end ÷ 2]       .= G1
+
+    G .= G_temp[ismutable]
+    G .*= sech.(x).^2
+
+
+    return G
+end
 
 
 ####################################################################
@@ -204,53 +283,71 @@ julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ
 0.3272308747790844
 ```
 """
-function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ = 1)
-    α = ω1 .* TRF
+function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1,nSeq = 1, isInversionPulse = nothing)
+
+    ω1_reshape = reshape(ω1,:,nSeq)
+    TRF_reshape = reshape(TRF, :, nSeq)
+    grad_ω1_reshape = reshape(grad_ω1, :, nSeq)
+    grad_TRF_reshape = reshape(grad_TRF, :, nSeq)
+    F = 0
+
+
+    for iSeq = 1:nSeq
+        α = ω1_reshape[:, iSeq] .* TRF_reshape[:, iSeq]
+        if isInversionPulse == nothing
+            idx = α .≉ π
+        else
+            isInversionPulse_reshape = reshape(isInversionPulse,:,nSeq)
+            idx = .~isInversionPulse_reshape[:,iSeq]
+        end
     T = sum(idx)
 
     αi   = @view   α[idx]
-    ω1i  = @view  ω1[idx]
-    TRFi = @view TRF[idx]
+    ω1i  = @view  ω1_reshape[idx,iSeq]
+    TRFi = @view  TRF_reshape[idx,iSeq]
 
-    F  = (αi[end - 1] / 2 - αi[end] + αi[1] / 2)^2
+    F += (αi[end - 1] / 2 - αi[end] + αi[1] / 2)^2
     F += (αi[end    ] / 2 - αi[1  ] + αi[2] / 2)^2
     for t = 2:T - 1
-        F += (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2)^2
+            F += (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2)^2
     end
 
     if grad_ω1 !== nothing
-        grad_ω1i = @view grad_ω1[idx]
-        grad_ω1i[end - 1] +=  λ * (αi[end - 1] / 2 - αi[end] + αi[1  ] / 2) * TRFi[end - 1]
-        grad_ω1i[end    ] -= 2λ * (αi[end - 1] / 2 - αi[end] + αi[1  ] / 2) * TRFi[end    ]
-        grad_ω1i[1      ] +=  λ * (αi[end - 1] / 2 - αi[end] + αi[1  ] / 2) * TRFi[1      ]
+        grad_ω1i = @view grad_ω1_reshape[idx,:]
+        grad_ω1i[end-1, iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[end-1]
+        grad_ω1i[end  , iSeq] -= 2λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[end]
+            grad_ω1i[1    , iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[1]
 
-        grad_ω1i[end] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[end]
-        grad_ω1i[1  ] -= 2λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[1  ]
-        grad_ω1i[2  ] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[2  ]
+        grad_ω1i[end, iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[end]
+        grad_ω1i[1  , iSeq] -= 2λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[1]
+        grad_ω1i[2  , iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[2]
 
-        for t = 2:T - 1
-            grad_ω1i[t - 1] +=  λ * (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2) * TRFi[t - 1]
-            grad_ω1i[t    ] -= 2λ * (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2) * TRFi[t    ]
-            grad_ω1i[t + 1] +=  λ * (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2) * TRFi[t + 1]
+            for t = 2:T-1
+            grad_ω1i[t-1, iSeq] +=  λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * TRFi[t-1]
+            grad_ω1i[t  , iSeq] -= 2λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * TRFi[t]
+            grad_ω1i[t+1, iSeq] +=  λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * TRFi[t+1]
         end
     end
 
     if grad_TRF !== nothing
-        grad_TRFi = @view grad_TRF[idx]
-        grad_TRFi[end - 1] +=  λ * (αi[end - 1] / 2 - αi[end] + αi[1] / 2) * ω1i[end - 1]
-        grad_TRFi[end    ] -= 2λ * (αi[end - 1] / 2 - αi[end] + αi[1] / 2) * ω1i[end    ]
-        grad_TRFi[1      ] +=  λ * (αi[end - 1] / 2 - αi[end] + αi[1] / 2) * ω1i[1      ]
+        grad_TRFi = @view grad_TRF_reshape[idx,:]
+        grad_TRFi[end-1, iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * ω1i[end-1]
+        grad_TRFi[end  , iSeq] -= 2λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * ω1i[end]
+        grad_TRFi[1    , iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * ω1i[1]
 
-        grad_TRFi[end] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * ω1i[end]
-        grad_TRFi[1  ] -= 2λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * ω1i[1  ]
-        grad_TRFi[2  ] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * ω1i[2  ]
+        grad_TRFi[end, iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * ω1i[end]
+        grad_TRFi[1  , iSeq] -= 2λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * ω1i[1]
+        grad_TRFi[2  , iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * ω1i[2]
 
         for t = 2:T - 1
-            grad_TRFi[t - 1] +=  λ * (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2) * ω1i[t - 1]
-            grad_TRFi[t    ] -= 2λ * (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2) * ω1i[t    ]
-            grad_TRFi[t + 1] +=  λ * (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2) * ω1i[t + 1]
+            grad_TRFi[t-1, iSeq] +=  λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * ω1i[t-1]
+            grad_TRFi[t  , iSeq] -= 2λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * ω1i[t]
+            grad_TRFi[t+1, iSeq] +=  λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * ω1i[t+1]
         end
     end
+
+    end
+
     return λ * F
 end
 
@@ -307,19 +404,30 @@ julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
 1.5456176321183175e-5
 ```
 """
-function TRF_TV!(grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ = 1)
+function TRF_TV!(grad_TRF, ω1, TRF; λ = 1,isInversionPulse = nothing)
+    idx = trues(size(TRF))
     T = length(TRF)
+
+    if isInversionPulse == nothing
+        for t = 1:(T - 1)
+            idx[t] = ω1[t] * TRF[t] ≉ π || ω1[t + 1] * TRF[t + 1] ≉ π
+        end
+    else
+        for t = 1:(T - 1)
+            idx[t] = !(isInversionPulse[t] || isInversionPulse[t+1])
+        end
+    end
 
     F = 0
     for t = 1:(T - 1)
-        if idx[t] && idx[t + 1]
+        if idx[t]
             F += abs(TRF[t + 1] - TRF[t])
         end
     end
 
     if grad_TRF !== nothing
         for t = 1:(T - 1)
-            if idx[t] && idx[t + 1]
+            if idx[t]
                 grad_TRF[t]     -= λ * sign(TRF[t + 1] - TRF[t])
                 grad_TRF[t + 1] += λ * sign(TRF[t + 1] - TRF[t])
             end
@@ -362,18 +470,43 @@ julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, P
 1.2099652735600044e16
 ```
 """
-function RF_power!(grad_ω1, grad_TRF, ω1, TRF; idx=(ω1 .* TRF) .≉ π, λ=1, Pmax=2.85e5, TR=3.5e-3)
+function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
     N = length(ω1)
-    @views ΔSAR = sum(ω1[idx].^2 .* TRF[idx]) / (N * TR) - Pmax
+    ΔSAR = sum(ω1.^2 .* TRF) / (N * TR) - Pmax
 
     P(x)    = x < 0 ? 0 : λ * x^2
     dPdx(x) = x < 0 ? 0 : 2λ * x
 
     if grad_ω1 !== nothing
-        @views grad_ω1[idx]  .+= dPdx(ΔSAR) .* 2ω1[idx] .* TRF[idx] ./ (N * TR)
+        grad_ω1  .+= dPdx(ΔSAR) .* 2ω1 .* TRF ./ (N * TR)
     end
     if grad_TRF !== nothing
-        @views grad_TRF[idx] .+= dPdx(ΔSAR) .* ω1[idx].^2 ./ (N * TR)
+        grad_TRF .+= dPdx(ΔSAR) .* ω1.^2 ./ (N * TR)
     end
     return P(ΔSAR)
+end
+
+function RF_power_multi!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3, nSeq = 1)
+    ω1 = reshape(ω1,:,nSeq)
+    TRF = reshape(TRF,:,nSeq)
+    grad_ω1 = reshape(grad_ω1,:,nSeq)
+    grad_TRF = reshape(grad_TRF,:,nSeq)
+
+    N = size(ω1,1)
+    ΔSAR = Vector{typeof(ω1[1])}(undef,nSeq)
+
+    P(x)    = x < 0 ? 0 : λ * x^2
+    dPdx(x) = x < 0 ? 0 : 2λ * x
+
+    for i in eachindex(ΔSAR)
+        ΔSAR[i] = (sum(ω1[:,i].^2 .* TRF[:,i]) / (N * TR) - Pmax)
+
+        if grad_ω1 !== nothing
+            grad_ω1[:,i]  .+= dPdx(ΔSAR[i]) .* 2ω1[:,i] .* TRF[:,i] ./ (N * TR)
+        end
+        if grad_TRF !== nothing
+            grad_TRF[:,i] .+= dPdx(ΔSAR[i]) .* ω1[:,i].^2 ./ (N * TR)
+        end
+    end
+    return sum(P.(ΔSAR))
 end
