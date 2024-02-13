@@ -298,7 +298,8 @@ function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1,nSeq = 1, isInver
             idx = α .≉ π
         else
             isInversionPulse_reshape = reshape(isInversionPulse,:,nSeq)
-            idx = .~isInversionPulse_reshape[:,iSeq]
+            #ToDo fix with iszeros
+            idx = .~isInversionPulse_reshape[:,iSeq] .& circshift(.~isInversionPulse_reshape[:,iSeq],1) .& circshift(.~isInversionPulse_reshape[:,iSeq],-1)
         end
     T = sum(idx)
 
@@ -306,29 +307,23 @@ function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1,nSeq = 1, isInver
     ω1i  = @view  ω1_reshape[idx,iSeq]
     TRFi = @view  TRF_reshape[idx,iSeq]
 
-    # F += (αi[end - 1] / 2 - αi[end] + αi[1] / 2)^2
-    # F += (αi[end    ] / 2 - αi[1  ] + αi[2] / 2)^2
-    # for t = 2:T - 1
-        #     F += (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2)^2
-    # end
-
-        # ToDo fix with iszero...
-        for t = 3:T-1
-            F += (αi[t-1] / 2 - αi[t] + αi[t+1] / 2)^2
+    F += (αi[end - 1] / 2 - αi[end] + αi[1] / 2)^2
+    F += (αi[end    ] / 2 - αi[1  ] + αi[2] / 2)^2
+    for t = 2:T - 1
+            F += (αi[t - 1] / 2 - αi[t] + αi[t + 1] / 2)^2
     end
 
     if grad_ω1 !== nothing
         grad_ω1i = @view grad_ω1_reshape[idx,:]
-            # grad_ω1i[end-1, iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[end-1]
-        # grad_ω1i[end  , iSeq] -= 2λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[end]
-            # grad_ω1i[1    , iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[1]
+        grad_ω1i[end-1, iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[end-1]
+        grad_ω1i[end  , iSeq] -= 2λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[end]
+            grad_ω1i[1    , iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * TRFi[1]
 
-        # grad_ω1i[end, iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[end]
-        # grad_ω1i[1  , iSeq] -= 2λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[1]
-            # grad_ω1i[2  , iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[2]
+        grad_ω1i[end, iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[end]
+        grad_ω1i[1  , iSeq] -= 2λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[1]
+        grad_ω1i[2  , iSeq] +=  λ * (αi[end] / 2 - αi[1] + αi[2] / 2) * TRFi[2]
 
-        # ToDo
-            for t = 3:T - 1
+            for t = 2:T-1
             grad_ω1i[t-1, iSeq] +=  λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * TRFi[t-1]
             grad_ω1i[t  , iSeq] -= 2λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * TRFi[t]
             grad_ω1i[t+1, iSeq] +=  λ * (αi[t-1] / 2 - αi[t] + αi[t+1] / 2) * TRFi[t+1]
