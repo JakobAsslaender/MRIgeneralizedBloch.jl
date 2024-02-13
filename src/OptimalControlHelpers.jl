@@ -298,8 +298,7 @@ function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1,nSeq = 1, isInver
             idx = α .≉ π
         else
             isInversionPulse_reshape = reshape(isInversionPulse,:,nSeq)
-            #ToDo fix with iszeros
-            idx = .~isInversionPulse_reshape[:,iSeq] .& circshift(.~isInversionPulse_reshape[:,iSeq],1) .& circshift(.~isInversionPulse_reshape[:,iSeq],-1)
+            idx = .~isInversionPulse_reshape[:,iSeq]
         end
     T = sum(idx)
 
