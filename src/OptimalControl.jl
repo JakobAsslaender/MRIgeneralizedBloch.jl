@@ -74,6 +74,48 @@ end
 
 
 
+function CRB_gradient_OCT_ortho_multi(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, _dUidVk; isInversionPulse = [true; falses(length(ω1)-1)], nSeq = 1)
+
+
+    E_cat      = Vector{Array{SMatrix{11,11,Float64,121},3}}(undef, nSeq)
+    dEdω1_cat  = similar(E_cat)
+    dEdTRF_cat = similar(E_cat)
+
+    Q_cat = Vector{Array{SMatrix{11,11,Float64}}}(undef, nSeq)
+    Y_cat = Vector{Array{SVector{11,Float64}}}(undef, nSeq)
+
+    ω1 = reshape(ω1,:,nSeq)
+    TRF = reshape(TRF,:,nSeq)
+    isInversionPulse = reshape(isInversionPulse,:,nSeq)
+    
+    grad_ω1 = similar(ω1)
+    grad_TRF = similar(ω1)
+
+    Threads.@threads for iSeq = 1:nSeq
+        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:,iSeq], TRF[:,iSeq], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, isInversionPulse=isInversionPulse[:,iSeq])
+        E_cat[iSeq] = E
+        dEdω1_cat[iSeq] = dEdω1
+        dEdTRF_cat[iSeq] = dEdTRF
+
+        Q_cat[iSeq] = calcualte_cycle_propgator(E_cat[iSeq])
+        Y_cat[iSeq] = propagate_magnetization(Q_cat[iSeq], E_cat[iSeq])
+    end
+
+
+
+    # (CRB, d) = dCRBdm(Y, weights)
+    (C, d) = dCostdm(cat(Y_cat...,dims=1), weights,_dUidVk)
+    for iSeq = 1:nSeq
+        P = calculate_adjoint_state(d, Q_cat[iSeq], E_cat[iSeq], iSeq)
+        (grad_ω1[:,iSeq], grad_TRF[:,iSeq]) = calculate_gradient_inner_product(P, Y_cat[iSeq], E_cat[iSeq], dEdω1_cat[iSeq], dEdTRF_cat[iSeq])
+    end
+
+    grad_ω1 = vec(grad_ω1)
+    grad_TRF = vec(grad_TRF)
+    return (C, grad_ω1, grad_TRF)
+end
+
+
 function OCT_TV_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, λ_TV)
     (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
     Q = calcualte_cycle_propgator(E)
@@ -321,6 +363,119 @@ function dCRBdm(Y, w)
 
     return (CRB, d)
 end
+
+
+function dCostdm(Y, w,_dUidVk)
+    _dCdx = Array{Float64}(undef, size(Y, 1), size(Y, 3) + 1)
+    _dCdy = similar(_dCdx)
+    
+    V = Array{ComplexF64}(undef, size(Y,1),size(Y, 3) + 1) # not implemented for phase-cycling
+    
+    for g in 0:size(Y, 3), t in 1:size(Y, 1)
+        if g == 0
+            V[t,1]     =  Y[t,1,1][1]  + 1im * Y[t,1,1][2]
+        else
+            V[t,g+1] =  Y[t,1,g][6] + 1im * Y[t,1,g][7]
+        end
+    end
+    
+    
+    Vshift = [circshift(V,(0,i)) for i = size(V,2)-1: -1 : 0] # shift corresponding derivative to the end
+    U      = [CalcU(Vshift[i])   for i = 1:size(V,2)]
+    
+    Gperp = cat(dims =3, U...)[:,end,:]
+
+    C = 0
+    for i in 1:size(Gperp,2)
+        C += w[i]/norm(Gperp[:,i],1)
+    end
+
+    y = [zeros(ComplexF64,size(Y, 1),) for i = 1:size(Y,3)+1]
+
+    _dCdx .= 0
+    _dCdy .= 0
+    for j in eachindex(w)
+        if (w[j] != 0)
+
+
+            dUidVk_mat_real!(U[j],Vshift[j],_dUidVk,y)
+
+            for i in 1:size(Y,3)+1
+                
+                shiftIdx = sortperm(circshift(1:length(U), length(U)-j))                
+
+                _dCdx[:,i]    .+= w[j] / (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(real.(Gperp[:,j])).* real.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+                _dCdy[:,i]    .+= w[j] / (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(imag.(Gperp[:,j])).* imag.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+                # the orth. grad of each paramter is always in the last row of the respective U matrix (also Vshift).
+                # Thus the derivative of (ds/dR1f)perp wrt. to (ds/dM0) for example is d U[3][:,end]/ d Vshift[3][:,X]. X has to be the index of ds/dM0
+                # in the Vshift[j] matrix, shiftIdx helps to undo these circshifts.
+            end 
+        end
+    end
+
+    d(t, r, g) = @SVector [_dCdx[t,1], _dCdy[t,1],0,0,0,_dCdx[t,g + 1], _dCdy[t,g + 1],0,0,0,0]
+    return (C, d)
+end
+
+function CalcU(V)
+    U = similar(V)
+    for i = 1:size(U,2)
+        U[:,i] = V[:,i]
+        for j = i-1:-1:1
+            U[:,i] .-= Proj(U[:,j],V[:,i])
+        end
+    end
+    return U
+end
+
+
+function Proj(U,V)
+    return (U'*V)/real(U'*U) * U
+end
+
+
+function dVidVk!(U,i,k,_dUidVk_el)
+    if i == k
+        _dUidVk_el  .= 0
+        for iloop in range(1,size(U,1))
+            _dUidVk_el[iloop,iloop]  = 1 # unit matrix
+        end
+    else
+        _dUidVk_el .= 0
+    end
+end
+
+
+function dUidVk_mat_real!(U,V,_dUidVk,y)
+
+    Threads.@threads for idxV = 1:size(U,2)
+        for idxU = 1:size(U,2)
+            if (idxV <= idxU)
+            
+                @views dVidVk!(U,idxU,idxV,_dUidVk[idxU,idxV])
+
+                for l = 1:idxU-1
+                    
+                    mul!(_dUidVk[idxU,idxV], _dUidVk[l,idxV], I , -(V[:,idxU]'*U[:,l])./(U[:,l]'*U[:,l]), 1)
+                    
+                    if idxU == idxV
+                        @views y[idxV]  .= conj(U[:,l])
+                    else
+                        @views y[idxV]  .= 0
+                    end
+                    @views y[idxV] .+= _dUidVk[l,idxV]*V[:,idxU]
+                    @views y[idxV] ./= (U[:,l]'*U[:,l])
+
+                    mul!(y[idxV], _dUidVk[l,idxV] , U[:,l], -2*(V[:,idxU]'*U[:,l])/((U[:,l]'*U[:,l])^2) , 1)
+
+                    mul!(_dUidVk[idxU,idxV], y[idxV], transpose(U[:,l]), -1, 1)
+                end
+            end
+        end
+    end
+end
+
+
 
 function dthetaTVdm(Y, λ)
     # ϑ = vec([atan(Y[t,r,1][1] / Y[t,r,1][3]) for t=1:size(Y,1), r=1:size(Y,2)])
