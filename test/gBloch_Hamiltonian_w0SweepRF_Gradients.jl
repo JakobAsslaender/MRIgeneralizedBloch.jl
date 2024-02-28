@@ -13,9 +13,9 @@ TRF = 10.24e-3
 μ = 5 # rad
 β = 674.1 # 1/s
 
-f_ω1(t) = ω₁ᵐᵃˣ .* sech.(β * (t - TRF/2)) # rad/s
-f_ω0(t) = -μ * β * tanh.(β * (t - TRF/2)) # rad/s
-f_φ(t)  = -μ * log(cosh(β * t) - sinh(β*t) * tanh(β*TRF/2))
+f_ω1 = (t) -> ω₁ᵐᵃˣ .* sech.(β * (t - TRF/2)) # rad/s
+f_ω0 = (t) -> -μ * β * tanh.(β * (t - TRF/2)) # rad/s
+f_φ  = (t) -> -μ * log(cosh(β * t) - sinh(β*t) * tanh(β*TRF/2))
 
 @test ω₁ᵐᵃˣ /(√μ * β) > 1 # adiabatic condition
 
@@ -26,7 +26,7 @@ R1s = 2.0
 R2f = 1 / 65e-3
 T2s = 10e-6
 Rx = 30.0
-mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(30)
+mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(30)
 
 # ApproxFun
 G = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
@@ -59,7 +59,7 @@ dyf_fd = similar(t)
 dzf_fd = similar(t)
 dzs_fd = similar(t)
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dm0s(t[i])[1] - gBloch_sol(t[i])[1]) / dm0s
     dyf_fd[i] = (gBloch_sol_dm0s(t[i])[2] - gBloch_sol(t[i])[2]) / dm0s
     dzf_fd[i] = (gBloch_sol_dm0s(t[i])[3] - gBloch_sol(t[i])[3]) / dm0s
@@ -81,7 +81,7 @@ dR1f = 1e-9
 
 gBloch_sol_dR1f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_φ, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1f(t[i])[1] - gBloch_sol(t[i])[1]) / dR1f
     dyf_fd[i] = (gBloch_sol_dR1f(t[i])[2] - gBloch_sol(t[i])[2]) / dR1f
     dzf_fd[i] = (gBloch_sol_dR1f(t[i])[3] - gBloch_sol(t[i])[3]) / dR1f
@@ -103,7 +103,7 @@ dR2f = 1e-4
 
 gBloch_sol_dR2f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_φ, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR2f(t[i])[1] - gBloch_sol(t[i])[1]) / dR2f
     dyf_fd[i] = (gBloch_sol_dR2f(t[i])[2] - gBloch_sol(t[i])[2]) / dR2f
     dzf_fd[i] = (gBloch_sol_dR2f(t[i])[3] - gBloch_sol(t[i])[3]) / dR2f
@@ -124,7 +124,7 @@ dRx = 1e-6
 
 gBloch_sol_dRx = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_φ, m0s, R1f, R2f, (Rx + dRx), R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dRx(t[i])[1] - gBloch_sol(t[i])[1]) / dRx
     dyf_fd[i] = (gBloch_sol_dRx(t[i])[2] - gBloch_sol(t[i])[2]) / dRx
     dzf_fd[i] = (gBloch_sol_dRx(t[i])[3] - gBloch_sol(t[i])[3]) / dRx
@@ -146,7 +146,7 @@ dR1s = 1e-5
 
 gBloch_sol_dR1s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1s(t[i])[1] - gBloch_sol(t[i])[1]) / dR1s
     dyf_fd[i] = (gBloch_sol_dR1s(t[i])[2] - gBloch_sol(t[i])[2]) / dR1s
     dzf_fd[i] = (gBloch_sol_dR1s(t[i])[3] - gBloch_sol(t[i])[3]) / dR1s
@@ -168,7 +168,7 @@ dT2s = 1e-12
 
 gBloch_sol_dT2s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s), G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dT2s(t[i])[1] - gBloch_sol(t[i])[1]) / dT2s
     dyf_fd[i] = (gBloch_sol_dT2s(t[i])[2] - gBloch_sol(t[i])[2]) / dT2s
     dzf_fd[i] = (gBloch_sol_dT2s(t[i])[3] - gBloch_sol(t[i])[3]) / dT2s
@@ -191,7 +191,7 @@ dω0 = 1e-2
 f_dφ(t) = f_φ(t) + dω0 * t
 gBloch_sol_dω0 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_dφ, m0s, R1f, R2f, Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dω0(t[i])[1] - gBloch_sol(t[i])[1]) / dω0
     dyf_fd[i] = (gBloch_sol_dω0(t[i])[2] - gBloch_sol(t[i])[2]) / dω0
     dzf_fd[i] = (gBloch_sol_dω0(t[i])[3] - gBloch_sol(t[i])[3]) / dω0
@@ -213,7 +213,7 @@ dB1 = 1e-6
 
 gBloch_sol_dB1 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, (B1 + dB1), f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dB1(t[i])[1] - gBloch_sol(t[i])[1]) / dB1
     dyf_fd[i] = (gBloch_sol_dB1(t[i])[2] - gBloch_sol(t[i])[2]) / dB1
     dzf_fd[i] = (gBloch_sol_dB1(t[i])[3] - gBloch_sol(t[i])[3]) / dB1
@@ -250,7 +250,7 @@ dR1a = 1e-9
 
 gBloch_sol_dR1a = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_φ, m0s, (R1a + dR1a), R2f, Rx, (R1a + dR1a), T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1a(t[i])[1] - gBloch_sol(t[i])[1]) / dR1a
     dyf_fd[i] = (gBloch_sol_dR1a(t[i])[2] - gBloch_sol(t[i])[2]) / dR1a
     dzf_fd[i] = (gBloch_sol_dR1a(t[i])[3] - gBloch_sol(t[i])[3]) / dR1a

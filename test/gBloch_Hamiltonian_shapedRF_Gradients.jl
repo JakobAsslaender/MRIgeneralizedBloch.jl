@@ -10,9 +10,8 @@ max_error = 5e-2
 TRF = 500e-6
 α = π
 
-# f_ω1(t) = α / 500e-6
 NSideLobes = 1
-f_ω1(t) = sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1))
+f_ω1 = (t) -> sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1))
 @test quadgk(f_ω1, 0, TRF)[1] ≈ α
 
 ω0 = 200.0
@@ -23,7 +22,7 @@ R1s = 2.0
 R2f = 1 / 65e-3
 T2s = 10e-6
 Rx = 30.0
-mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(30)
+mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(30)
 
 # ApproxFun
 G = interpolate_greens_function(greens_superlorentzian, 0, 100)

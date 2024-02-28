@@ -18,7 +18,7 @@ Rx = 70 # 1/s
 
 ## pre-calcualtions
 G = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF) / T2s)
-mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
+mfun = (p, t; idxs=nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 print("Time to pre-compute saturation: ")
 R2slT = @time precompute_R2sl()

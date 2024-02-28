@@ -17,7 +17,7 @@ Rrf_sp = graham_saturation_rate_spectral(ω0 -> lineshape_superlorentzian(ω0, T
 
 ## shaped pulse
 shape_param = 16 # what is the right choice?
-f_ω1(t) = exp(- (t-TRF/2)^2 / TRF^2 * shape_param) / (sqrt(π/shape_param) * TRF * erf(sqrt(shape_param)/2)) * α
+f_ω1 = (t) -> exp(- (t-TRF/2)^2 / TRF^2 * shape_param) / (sqrt(π/shape_param) * TRF * erf(sqrt(shape_param)/2)) * α
 
 Rrf_sf = graham_saturation_rate_single_frequency(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)
 Rrf_sp = graham_saturation_rate_spectral(ω0 -> lineshape_superlorentzian(ω0, T2s), f_ω1, TRF, ω0)

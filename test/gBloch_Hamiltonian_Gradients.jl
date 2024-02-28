@@ -18,7 +18,7 @@ R2f = 1 / 65e-3
 T2s = 10e-6
 Rx = 30.0
 TRF = 500e-6
-mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(30)
+mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(30)
 alg = MethodOfSteps(DP8())
 N = Inf
 

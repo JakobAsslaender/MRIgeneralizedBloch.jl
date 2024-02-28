@@ -29,13 +29,13 @@ mf = (1 - m0s) * rand()
 ## ######################################################################################
 # Compare function implementation (using a constant amplitude) to ω1::Real implementation
 #########################################################################################
-f_ω1(t) = α/TRF
+f_ω1 = (_) -> α/TRF
 G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
+mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 ## isolated semi-solid spin pool
 for ω0 ∈ [0, 100randn()]
     local m0 = [rand(), 1]
-    mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (α/TRF, B1, ω0, R1s, T2s, G)
     u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
@@ -50,7 +50,6 @@ end
 ## Bloch-McConnell for exchanging pools
 for ω0 ∈ [0, 100randn()]
     local m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
-    mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (α/TRF, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
     u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
@@ -69,7 +68,7 @@ end
 G = greens_lorentzian
 
 NSideLobes = 1
-f_ω1(t) = sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1))
+f_ω1 = (t) -> sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NSideLobes+1)π) * TRF/π / (NSideLobes+1))
 @test quadgk(f_ω1, 0, TRF)[1] ≈ α
 
 ## Solve org. Bloch for isolated semi-solid spin pool
@@ -94,7 +93,6 @@ for ω0 ∈ [0, 100randn()]
 
     # Solve gen. Bloch for isolated semi-solid spin pool
     local m0 = [m0s, 1]
-    mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (f_ω1, B1, ω0, R1s, T2s, G)
     z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end][1]
@@ -130,7 +128,6 @@ for ω0 ∈ [0, 100randn()]
 
     # Solve gen. Bloch for isolated semi-solid spin pool
     local m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
-    mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
     local u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end][1:4]

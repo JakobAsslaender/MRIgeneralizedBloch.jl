@@ -25,7 +25,7 @@ mf = (1 - m0s) * rand()
 φ = rand() * 2π
 
 ## Solve generalized Bloch-McConnell with Lorentzian lineshape
-mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
+mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, greens_lorentzian)
 alg = MethodOfSteps(DP8())
