@@ -62,7 +62,7 @@ M_appx = similar(M_full)
 for i in eachindex(α)
     param = (α[i]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
     prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
-    M_full[i,:] = solve(prob)[end][1:4]
+    M_full[i,:] = solve(prob).u[end][1:4]
 
     u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
     M_appx[i,:] = u[[1:3;5]]

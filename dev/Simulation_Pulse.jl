@@ -73,7 +73,7 @@ z_Sled_Lorentzian = similar(Tʳᶠ)
 for i = 1:length(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠ[i]), param)
-    z_Sled_Lorentzian[i] = solve(prob)[end][1]
+    z_Sled_Lorentzian[i] = solve(prob).u[end][1]
 end
 
 # ### Generalized Bloch Model
@@ -93,7 +93,7 @@ z_gBloch_Lorentzian = similar(Tʳᶠ)
 for i = 1:length(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Lorentzian[i] = solve(prob)[end][1]
+    z_gBloch_Lorentzian[i] = solve(prob).u[end][1]
 end
 
 # Now we have solved all five models and can plot the solutions for comparison:
@@ -121,14 +121,14 @@ z_Sled_Gaussian = similar(Tʳᶠ)
 for i = 1:length(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_gaussian)
     prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠ[i]), param)
-    z_Sled_Gaussian[i] = solve(prob)[end][1]
+    z_Sled_Gaussian[i] = solve(prob).u[end][1]
 end
 
 z_gBloch_Gaussian = similar(Tʳᶠ)
 for i = 1:length(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_gaussian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Gaussian[i] = solve(prob)[end][1]
+    z_gBloch_Gaussian[i] = solve(prob).u[end][1]
 end
 
 p = plot(xaxis=:log, legend=:bottomright, xlabel="Tʳᶠ [s]", ylabel="zˢ(Tʳᶠ)")
@@ -152,14 +152,14 @@ z_Sled_superLorentzian = similar(Tʳᶠ)
 for i = 1:length(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
     prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠ[i]), param)
-    z_Sled_superLorentzian[i] = solve(prob)[end][1]
+    z_Sled_superLorentzian[i] = solve(prob).u[end][1]
 end
 
 z_gBloch_superLorentzian = similar(Tʳᶠ)
 for i = 1:length(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_superLorentzian[i] = solve(prob)[end][1]
+    z_gBloch_superLorentzian[i] = solve(prob).u[end][1]
 end
 
 p = plot(xaxis=:log, legend=:bottomright, xlabel="Tʳᶠ [s]", ylabel="zˢ(Tʳᶠ)")
@@ -179,10 +179,10 @@ Tʳᶠᵢ = 1e-3 # s
 param = (ω₁ᵢ, 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
 
 prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠᵢ), param)
-z_Sled_superLorentzian_i = solve(prob)[end][1]
+z_Sled_superLorentzian_i = solve(prob).u[end][1]
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠᵢ), param)
-z_gBloch_superLorentzian_i = solve(prob)[end][1]
+z_gBloch_superLorentzian_i = solve(prob).u[end][1]
 
 z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 
@@ -193,10 +193,10 @@ Tʳᶠᵢ = 1e-4 # s
 param = (ω₁ᵢ, 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
 
 prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠᵢ), param)
-z_Sled_superLorentzian_i = solve(prob)[end][1]
+z_Sled_superLorentzian_i = solve(prob).u[end][1]
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠᵢ), param)
-z_gBloch_superLorentzian_i = solve(prob)[end][1]
+z_gBloch_superLorentzian_i = solve(prob).u[end][1]
 
 z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 

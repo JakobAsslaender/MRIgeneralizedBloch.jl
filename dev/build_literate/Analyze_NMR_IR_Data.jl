@@ -206,7 +206,7 @@ function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
     for i = 1:length(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
         prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob)[end]
+        m = solve(prob).u[end]
 
         for j = 1:length(TI)
             M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
@@ -262,7 +262,7 @@ function Graham_IR_model(p, Tʳᶠ, TI, R2f)
     for i = 1:length(Tʳᶠ)
         param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rx, R₁, T₂ˢ)
         prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob)[end]
+        m = solve(prob).u[end]
 
         for j = 1:length(TI)
             M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
@@ -311,7 +311,7 @@ function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
     for i = 1:length(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
         prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob)[end]
+        m = solve(prob).u[end]
 
         for j = 1:length(TI)
             M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
