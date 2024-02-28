@@ -104,7 +104,7 @@ julia> plot(sol, labels=["xf" "yf" "zf" "zs" "1"], xlabel="t (s)", ylabel="m(t)"
 julia> dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, TRF / T2s);
 
 
-julia> grad_list = [grad_R2f(), grad_m0s()];
+julia> grad_list = (grad_R2f(), grad_m0s());
 
 
 julia> m0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];

@@ -25,16 +25,16 @@ R2f = 1 / 65e-3
 T2s = 10e-6
 Rx = 20
 
-grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 
 ## ########################################################################
 # Test dCRBdm
 ###########################################################################
-# m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list=grad_list)
+# m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list)
 # CRB_fd, d_fd = dCRBdm_fd(m,w)
 
-# m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list=grad_list, output=:realmagnetization)
+# m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list, output=:realmagnetization)
 # CRB, d = MRIgeneralizedBloch.dCRBdm(m, w)
 
 # _dCRBdm    = [d(t,r,g)[i]    for t=1:size(m,1), r=1:size(m,2), g=1:size(m,3), i ∈ 1:11]

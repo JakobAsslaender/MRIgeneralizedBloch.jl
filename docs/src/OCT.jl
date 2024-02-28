@@ -33,7 +33,7 @@ Npulses * TR
 R2slT = precompute_R2sl();
 
 # In the calculation of the CRB, we account for following gradients:
-grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()];
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
 
 # and we sum up the CRB of all parameters, weighted by the following vector:
 weights = transpose([0, 1, 0, 0, 0, 0, 0, 0, 0]);

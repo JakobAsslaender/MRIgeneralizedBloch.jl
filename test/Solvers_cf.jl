@@ -27,8 +27,8 @@ Rx = 20
 
 
 ## gBloch model with IDE vs Graham vs linear approximation: complex signal
-s_gBloch_IDE    = calculatesignal_gbloch_ide(  α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, Ncyc=4)
-s_Graham        = calculatesignal_graham_ode(  α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, Ncyc=4)
+s_gBloch_IDE    = calculatesignal_gbloch_ide(  α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s; Ncyc=4)
+s_Graham        = calculatesignal_graham_ode(  α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s; Ncyc=4)
 s_gBloch_linear = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
 @test s_gBloch_IDE ≈ s_Graham        rtol = 5e-2
 @test s_gBloch_IDE ≈ s_gBloch_linear rtol = 5e-2

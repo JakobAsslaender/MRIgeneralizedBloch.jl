@@ -29,7 +29,7 @@ m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 FP_sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, R1f, R2f, Rx, R1s)), alg)
 
 ## Analytical gradients (using ApproxFun)
-grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 
 FP_sol_grad = solve(ODEProblem(apply_hamiltonian_freeprecession!, [m0; zeros(5 * (length(grad_list)),1)], (0, TE), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), alg)
 
@@ -216,7 +216,7 @@ end
 ## R1a
 #############################################################
 R1a = 1
-grad_list = [grad_R1a()]
+grad_list = (grad_R1a(),)
 
 ## baseline ODE solution
 FP_sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TE), (ω0, m0s, R1a, R2f, Rx, R1a)), alg)

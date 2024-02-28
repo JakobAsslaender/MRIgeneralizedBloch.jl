@@ -39,7 +39,7 @@ gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (f_
 
 
 ## Analytical gradients (using ApproxFun)
-grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 m0_grad = zeros(5 * (length(grad_list) + 1), 1)
 m0_grad[1:length(m0)] .= m0
 
@@ -239,7 +239,7 @@ R1a = 1
 gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, f_φ, m0s, R1a, R2f, Rx, R1a, T2s, G)))
 
 # Analytical gradients (using ApproxFun)
-grad_list = [grad_R1a()]
+grad_list = (grad_R1a(),)
 m0_grad = zeros(5 * (length(grad_list) + 1), 1)
 m0_grad[1:length(m0)] .= m0
 

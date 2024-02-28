@@ -41,7 +41,7 @@ gBloch_sol = solve(
 )
 
 ## Analytical gradients (using ApproxFun)
-grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 m0 = zeros(5 * (length(grad_list) + 1), 1)
 m0[1] = 0.5 * (1 - m0s)
 m0[3] = 0.5 * (1 - m0s)
@@ -336,7 +336,7 @@ gBloch_sol = solve(
 )
 
 ## Analytical gradients (using ApproxFun)
-grad_list = [grad_R1a()]
+grad_list = (grad_R1a(),)
 m0 = zeros(5 * (length(grad_list) + 1), 1)
 m0[1] = 0.5 * (1 - m0s)
 m0[3] = 0.5 * (1 - m0s)

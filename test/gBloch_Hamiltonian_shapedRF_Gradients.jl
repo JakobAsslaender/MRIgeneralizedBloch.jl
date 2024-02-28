@@ -36,7 +36,7 @@ gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (
 
 
 ## Analytical gradients (using ApproxFun)
-grad_list = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 m0 = zeros(5 * (length(grad_list) + 1), 1)
 m0[1] = 0.5 * (1 - m0s)
 m0[3] = 0.5 * (1 - m0s)
@@ -61,7 +61,7 @@ dyf_fd = similar(t)
 dzf_fd = similar(t)
 dzs_fd = similar(t)
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dm0s(t[i])[1] - gBloch_sol(t[i])[1]) / dm0s
     dyf_fd[i] = (gBloch_sol_dm0s(t[i])[2] - gBloch_sol(t[i])[2]) / dm0s
     dzf_fd[i] = (gBloch_sol_dm0s(t[i])[3] - gBloch_sol(t[i])[3]) / dm0s
@@ -83,7 +83,7 @@ dR1f = 1e-9
 
 gBloch_sol_dR1f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1f(t[i])[1] - gBloch_sol(t[i])[1]) / dR1f
     dyf_fd[i] = (gBloch_sol_dR1f(t[i])[2] - gBloch_sol(t[i])[2]) / dR1f
     dzf_fd[i] = (gBloch_sol_dR1f(t[i])[3] - gBloch_sol(t[i])[3]) / dR1f
@@ -105,7 +105,7 @@ dR2f = 1e-8
 
 gBloch_sol_dR2f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR2f(t[i])[1] - gBloch_sol(t[i])[1]) / dR2f
     dyf_fd[i] = (gBloch_sol_dR2f(t[i])[2] - gBloch_sol(t[i])[2]) / dR2f
     dzf_fd[i] = (gBloch_sol_dR2f(t[i])[3] - gBloch_sol(t[i])[3]) / dR2f
@@ -126,7 +126,7 @@ dRx = 1e-6
 
 gBloch_sol_dRx = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, (Rx + dRx), R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dRx(t[i])[1] - gBloch_sol(t[i])[1]) / dRx
     dyf_fd[i] = (gBloch_sol_dRx(t[i])[2] - gBloch_sol(t[i])[2]) / dRx
     dzf_fd[i] = (gBloch_sol_dRx(t[i])[3] - gBloch_sol(t[i])[3]) / dRx
@@ -148,7 +148,7 @@ dR1s = 1e-5
 
 gBloch_sol_dR1s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1s(t[i])[1] - gBloch_sol(t[i])[1]) / dR1s
     dyf_fd[i] = (gBloch_sol_dR1s(t[i])[2] - gBloch_sol(t[i])[2]) / dR1s
     dzf_fd[i] = (gBloch_sol_dR1s(t[i])[3] - gBloch_sol(t[i])[3]) / dR1s
@@ -170,7 +170,7 @@ dT2s = 1e-13
 
 gBloch_sol_dT2s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s), G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dT2s(t[i])[1] - gBloch_sol(t[i])[1]) / dT2s
     dyf_fd[i] = (gBloch_sol_dT2s(t[i])[2] - gBloch_sol(t[i])[2]) / dT2s
     dzf_fd[i] = (gBloch_sol_dT2s(t[i])[3] - gBloch_sol(t[i])[3]) / dT2s
@@ -192,7 +192,7 @@ dω0 = 1e2
 
 gBloch_sol_dω0 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dω0(t[i])[1] - gBloch_sol(t[i])[1]) / dω0
     dyf_fd[i] = (gBloch_sol_dω0(t[i])[2] - gBloch_sol(t[i])[2]) / dω0
     dzf_fd[i] = (gBloch_sol_dω0(t[i])[3] - gBloch_sol(t[i])[3]) / dω0
@@ -212,7 +212,7 @@ dB1 = 1e-9
 
 gBloch_sol_dB1 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, (B1 + dB1), ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dB1(t[i])[1] - gBloch_sol(t[i])[1]) / dB1
     dyf_fd[i] = (gBloch_sol_dB1(t[i])[2] - gBloch_sol(t[i])[2]) / dB1
     dzf_fd[i] = (gBloch_sol_dB1(t[i])[3] - gBloch_sol(t[i])[3]) / dB1
@@ -239,7 +239,7 @@ m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
 gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, G)))
 
 # Analytical gradients (using ApproxFun)
-grad_list = [grad_R1a()]
+grad_list = (grad_R1a(),)
 m0 = zeros(5 * (length(grad_list) + 1), 1)
 m0[1] = 0.5 * (1 - m0s)
 m0[3] = 0.5 * (1 - m0s)
@@ -254,7 +254,7 @@ m0 = m0[1:5]
 
 gBloch_sol_dR1a = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, (R1a + dR1a), R2f, Rx, (R1a + dR1a), T2s, G)))
 
-for i = 1:length(t)
+for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1a(t[i])[1] - gBloch_sol(t[i])[1]) / dR1a
     dyf_fd[i] = (gBloch_sol_dR1a(t[i])[2] - gBloch_sol(t[i])[2]) / dR1a
     dzf_fd[i] = (gBloch_sol_dR1a(t[i])[3] - gBloch_sol(t[i])[3]) / dR1a
