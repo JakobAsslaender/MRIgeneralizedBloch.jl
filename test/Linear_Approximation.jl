@@ -33,7 +33,7 @@ M_full = zeros(length(ω1), 4)
 M_appx = similar(M_full)
 
 for i in eachindex(ω1)
-    M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))[end][1:4]
+    M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8())).u[end][1:4]
     u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2sl(TRF, α[i], 1, T2s))) * u0_6D
     M_appx[i,:] = u[[1:3;5]]
 end

@@ -34,7 +34,7 @@ sol = solve(
     alg,
 )
 
-u_gBloch = sol[end]
+u_gBloch = sol.u[end]
 
 ## Solve original Bloch-McConnell with Lorentzian lineshape
 H = @SMatrix [

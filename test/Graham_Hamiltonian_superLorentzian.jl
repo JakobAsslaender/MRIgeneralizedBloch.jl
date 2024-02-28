@@ -35,7 +35,7 @@ sol = solve(
     alg,
 )
 
-u_Graham = sol[end]
+u_Graham = sol.u[end]
 
 ## Solve generalized Bloch-McConnell with super-Lorentzian lineshape
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
@@ -48,7 +48,7 @@ sol = solve(
     alg,
 )
 
-u_gBloch = sol[end]
+u_gBloch = sol.u[end]
 
 ## Test!
 @test u_gBloch ≈ u_Graham atol = 1e-2

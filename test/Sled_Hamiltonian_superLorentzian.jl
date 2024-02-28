@@ -31,13 +31,13 @@ p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
 sol = solve(ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_sled!, m0, (0, TRF), p))
-u_Sled = sol[end]
+u_Sled = sol.u[end]
 
 ## Solve generalized Bloch-McConnell with super-Lorentzian lineshape
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g)
 sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))
-u_gBloch = sol[end]
+u_gBloch = sol.u[end]
 
 ## Test!
 @test u_gBloch ≈ u_Sled atol = 1e-2

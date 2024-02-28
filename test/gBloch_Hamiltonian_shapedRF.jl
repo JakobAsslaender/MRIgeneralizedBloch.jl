@@ -38,10 +38,10 @@ for ω0 ∈ [0, 100randn()]
     mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (α/TRF, B1, ω0, R1s, T2s, G)
-    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end]
+    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
 
     local p = (f_ω1, B1, ω0, R1s, T2s, G)
-    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end]
+    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
 
     @test u_ω1Number ≈ u_ω1Function
 end
@@ -53,10 +53,10 @@ for ω0 ∈ [0, 100randn()]
     mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (α/TRF, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
-    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end]
+    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
 
     local p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
-    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end]
+    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
 
     @test u_ω1Number ≈ u_ω1Function
 end
@@ -90,14 +90,14 @@ end
 for ω0 ∈ [0, 100randn()]
     local m0 = [0, 0, m0s, 1]
     local p = (f_ω1, B1, ω0, R1s, T2s)
-    z_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p))[end][3]
+    z_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p)).u[end][3]
 
     # Solve gen. Bloch for isolated semi-solid spin pool
     local m0 = [m0s, 1]
     mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (f_ω1, B1, ω0, R1s, T2s, G)
-    z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end][1]
+    z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end][1]
 
     @test z_gBloch ≈ z_Bloch atol = 1e-4
 end
@@ -126,14 +126,14 @@ for ω0 ∈ [0, 100randn()]
     local m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, 0, ms, 1]
 
     local p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s)
-    local u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p))[end][[1:3...,6]]
+    local u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p)).u[end][[1:3...,6]]
 
     # Solve gen. Bloch for isolated semi-solid spin pool
     local m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
     mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     local p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
-    local u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))[end][1:4]
+    local u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end][1:4]
 
     @test u_gBloch ≈ u_Bloch rtol = 1e-2
 end

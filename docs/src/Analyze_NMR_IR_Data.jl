@@ -14,7 +14,7 @@ using Printf
 using Formatting
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
- 
+
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
 MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
 BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
@@ -32,7 +32,7 @@ M = M[:,1]; # select Tᵢ = 5s
 T_dwell = 100e-6 # s
 TE = T_dwell * ((1:length(M)) .+ 7) # s
 
-# Note that the signal is an FID, so the phrase *echo* time is a bit misleading. 
+# Note that the signal is an FID, so the phrase *echo* time is a bit misleading.
 
 # The function [curve_fit](https://julianlsolvers.github.io/LsqFit.jl/latest/api/#LsqFit.curve_fit) from the [LsqFit.jl](https://julianlsolvers.github.io/LsqFit.jl/latest/) package is only implemented for real-valued models. To accommodate this, we need to split the data into its real and imaginary part:
 TEreal = [TE;TE]
@@ -60,12 +60,12 @@ norm(fit.resid) / norm(M)
 
 # Despite its small ``\ell_2``-norm, the Shapiro-Wilk test indicates that the residual is not Gaussian or normal distributed at a significance level of `α=0.05`
 Pingouin.normality(fit.resid, α=0.05)
-# We note that mono-exponential ``T_2^*`` decays assume a Lorentzian distributed magnetic field, which is in general an assumption rather than a well-founded theory. 
+# We note that mono-exponential ``T_2^*`` decays assume a Lorentzian distributed magnetic field, which is in general an assumption rather than a well-founded theory.
 
 # ### Mono-Exponential IR Model
 # We performed several experiments in which we inverted the thermal equilibrium magnetization with rectangular π-pulses with the following pulse durations (in seconds):
 Tʳᶠmin = 22.8e-6 # s - shortest Tʳᶠ possible on the NMR
-TRF_scale = [1;2;5:5:40] # scaling factor 
+TRF_scale = [1;2;5:5:40] # scaling factor
 Tʳᶠ = TRF_scale * Tʳᶠmin # s
 
 # and acquired inversion recovery data at exponentially spaced inversion times (in seconds):
@@ -161,21 +161,21 @@ R₁[1] # 1/s
 Minv[end]
 #-
 R₁[end] # 1/s
-# The mean value of all R₁ estimates is 
+# The mean value of all R₁ estimates is
 mean(R₁) # 1/s
 
-# 1/s and its standard deviation in units of 1/s is 
+# 1/s and its standard deviation in units of 1/s is
 std(R₁) # 1/s
 
-# The relative residual norm of the fits is on average 
+# The relative residual norm of the fits is on average
 mean(residual)
 
-# ### Global IR Fit 
+# ### Global IR Fit
 # As an alternative to individual fits to the inversion recovery curves with different ``T_\text{RF}``, we can also perform a global fit that accounts for the ``T_2^{*,f}`` decay during the inversion pulse. The model first simulates the ``T_2^{*,f}`` decay during the inversion pulse, followed by ``T_1`` recovery:
 function Bloch_IR_model(p, Tʳᶠ, Tᵢ, T2)
     (m0, m0_inv, R₁) = p
     R2 = 1 / T2
-    
+
     M = zeros(Float64, length(Tᵢ), length(Tʳᶠ))
     for i = 1:length(Tʳᶠ)
         ## simulate inversion pulse
@@ -183,7 +183,7 @@ function Bloch_IR_model(p, Tʳᶠ, Tᵢ, T2)
         H = [-R2 -ω₁ 0 ;
               ω₁ -R₁ R₁;
                0   0 0 ]
-        
+
         m_inv = m0_inv * (exp(H * Tʳᶠ[i]) * [0,1,1])[2]
 
         ## simulate T1 recovery
@@ -211,7 +211,7 @@ display(p) #!md
 # With this global fit, we get a very similar relaxation rate in units of 1/s
 R₁_MnCl2 = fit.param[3] # 1/s
 
-# with an uncertainty (also in units of 1/s) of 
+# with an uncertainty (also in units of 1/s) of
 stderror(fit)[3] # 1/s
 
 # Note that the relative residual norm is somewhat increased compared to individual fits to each inversion recovery curve:
@@ -229,11 +229,11 @@ Mreal = [real(M);imag(M)]
 
 fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0]);
 
-# The estimated ``T_2^{*,f}`` of the BSA sample is 
+# The estimated ``T_2^{*,f}`` of the BSA sample is
 T₂star_BSA = fit.param[3] # s
-# seconds with an uncertainty of 
+# seconds with an uncertainty of
 stderror(fit)[3] # s
-# seconds. 
+# seconds.
 
 # Visually, the plot and the data align well for the BSA sample, too:
 Mfitted = FID_model(TEreal, fit.param)
@@ -251,7 +251,7 @@ Pingouin.normality(fit.resid, α=0.05)
 
 
 # ### Mono-Exponential IR Model
-# We also fit a mono-exponential model to each inversion recovery curve of the BSA data: 
+# We also fit a mono-exponential model to each inversion recovery curve of the BSA data:
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
 for i = 1:length(TRF_scale)
     M[:,i] = load_first_datapoint(BSA_data(TRF_scale[i]))
@@ -280,7 +280,7 @@ close(io) #src
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
 for i = 1:length(TRF_scale)
     Mi = @view M[:,i]
-    
+
     fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
     param[i] = fit.param #src
 
@@ -319,15 +319,15 @@ close(io) #src
 # Zooming into the early phase of the recovery curve reveals the poor fit quality, in particular for long ``T_\text{RF}``. This is also reflected by a substantially larger relative residual norm compared to the MnCl``_2`` sample:
 mean(residual)
 
-# In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with ``T_\text{RF}=22.8``μs 
+# In the paper, we highlight the estimated inversion efficiency and the relaxation rate of the dataset acquired with ``T_\text{RF}=22.8``μs
 Minv[1]
 #-
 R₁[1] # 1/s
-# and of the dataset acquired with ``T_\text{RF}=912``μs 
+# and of the dataset acquired with ``T_\text{RF}=912``μs
 Minv[end]
 #-
 R₁[end] # 1/s
-# The mean value of all R₁ estimates is 
+# The mean value of all R₁ estimates is
 mean(R₁) # 1/s
 
 # and its standard deviation is substantially larger compared to the same fit of the MnCl``_2`` sample:
@@ -355,7 +355,7 @@ function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
     for i = 1:length(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
         prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob)[end]
+        m = solve(prob).u[end]
 
         for j = 1:length(TI)
             M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
@@ -436,7 +436,7 @@ function Graham_IR_model(p, Tʳᶠ, TI, R2f)
     ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
-    
+
     H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
              m0s*Rx -R₁-m0f*Rx R₁*m0s;
               0          0         0 ]
@@ -445,7 +445,7 @@ function Graham_IR_model(p, Tʳᶠ, TI, R2f)
     for i = 1:length(Tʳᶠ)
         param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rx, R₁, T₂ˢ)
         prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob)[end]
+        m = solve(prob).u[end]
 
         for j = 1:length(TI)
             M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
@@ -516,7 +516,7 @@ function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
     ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
-    
+
     H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
              m0s*Rx -R₁-m0f*Rx R₁*m0s;
               0          0         0 ]
@@ -525,7 +525,7 @@ function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
     for i = 1:length(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
         prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob)[end]
+        m = solve(prob).u[end]
 
         for j = 1:length(TI)
             M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
@@ -575,7 +575,7 @@ for i = 1:length(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
-    
+
 for j = 1:length(Tᵢplot) #src
     write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
     for i = 1:length(Tʳᶠ) #src
@@ -586,7 +586,7 @@ end #src
 close(io) #src
 
 # ### Analysis of the Residuals
-# In order to visualize how well the three models align with the data at different ``T_\text{RF}``, we calculate the ``\ell_2``-norm of the residuals after subtracting the modeled from the measured signal and normalize it by the ``\ell_2``-norm of the signal: 
+# In order to visualize how well the three models align with the data at different ``T_\text{RF}``, we calculate the ``\ell_2``-norm of the residuals after subtracting the modeled from the measured signal and normalize it by the ``\ell_2``-norm of the signal:
 
 resid_gBlo = similar(Tʳᶠ)
 resid_Sled = similar(Tʳᶠ)
@@ -633,7 +633,7 @@ scatter!(p, Tʳᶠ, resid_Grah, label="Graham's spectral model")
 scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
 #md Main.HTMLPlot(p) #hide
 
-# One can observe reduced residuals for Graham's and Sled's models for long ``T_\text{RF}`` as a trade off for larger residuals at short ``T_\text{RF}``. Yet, the residuals at long ``T_\text{RF}`` are still substantially larger compared to ones of the generalized Bloch model. 
+# One can observe reduced residuals for Graham's and Sled's models for long ``T_\text{RF}`` as a trade off for larger residuals at short ``T_\text{RF}``. Yet, the residuals at long ``T_\text{RF}`` are still substantially larger compared to ones of the generalized Bloch model.
 
 #src #############################################################################
 #src # export data

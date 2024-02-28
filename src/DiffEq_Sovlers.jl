@@ -96,16 +96,16 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
 
     # prep pulse
     sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF[2]), (-ω1[2] / 2, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)), alg)
-    m0 = sol[end]
+    m0 = sol.u[end]
 
     T_FP = (TR - TRF[2]) / 2 - TRF[1] / 2
     sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5())
-    m0 = sol[end]
+    m0 = sol.u[end]
 
     for ic = 0:(Ncyc - 1)
         # free precession for TRF/2
         sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0, TRF[1] / 2), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5())
-        m0 = sol[end]
+        m0 = sol.u[end]
 
         # inversion pulse with crusher gradients (assumed to be instantanious)
         u00 = m0[1:3]
@@ -115,7 +115,7 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
 
         # calculate saturation of RF pulse
         sol = solve(DDEProblem(apply_hamiltonian_gbloch_inversion!, m0, mfun, (0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, m0s, 0, 0, 0, 0, T2s, G, dG_o_dT2s_x_T2s, grad_list)), alg)
-        m0[4:5:end] = sol[end][4:5:end]
+        m0[4:5:end] = sol.u[end][4:5:end]
 
         for i in eachindex(grad_list)
             if isa(grad_list[i], grad_B1)
@@ -129,14 +129,14 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
         T_FP = TR - TRF[2] / 2
         TE = TR / 2
         sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
-        s[:,1] = sol[2]
+        s[:,1] = sol.u[2]
         s[1:5:end,1] .*= (-1)^(1 + ic)
         s[2:5:end,1] .*= (-1)^(1 + ic)
-        m0 = sol[end]
+        m0 = sol.u[end]
 
         for ip = 2:length(TRF)
             sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)), alg)
-            m0 = sol[end]
+            m0 = sol.u[end]
 
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2
             TE = TR / 2 - TRF[ip] / 2
@@ -144,10 +144,10 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
             if sol.t[2] / TE - 1 > 1e-10
                 throw(DimensionMismatch("sol.t[2] is not equal to TE"))
             end
-            s[:,ip] = sol[2]
+            s[:,ip] = sol.u[2]
             s[1:5:end,ip] .*= (-1)^(ip + ic)
             s[2:5:end,ip] .*= (-1)^(ip + ic)
-            m0 = sol[end]
+            m0 = sol.u[end]
         end
     end
     s = transpose(s)
@@ -244,16 +244,16 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
 
     # prep pulse
     sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, TRF[2], m0s, R1f, R2f, Rx, R1s, T2s, grad_list)), Tsit5(), save_everystep=false)
-    m0 = sol[end]
+    m0 = sol.u[end]
 
     T_FP = TR / 2 - TRF[2] / 2 - TRF[1] / 2
     sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false)
-    m0 = sol[end]
+    m0 = sol.u[end]
 
     for ic = 0:(Ncyc - 1)
         # free precession for TRF/2
         sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, TRF[1] / 2), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false)
-        m0 = sol[end]
+        m0 = sol.u[end]
 
         # inversion pulse with crusher gradients (assumed to be instantaneous)
         u00 = m0[1:3]
@@ -263,7 +263,7 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
 
         # calculate saturation of RF pulse
         sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian_inversionpulse!, m0, (0, TRF[1]), ((-1)^(1 + ic) * ω1[1], B1, ω0, TRF[1], m0s, 0, 0, 0, 0, T2s, grad_list)), Tsit5(), save_everystep=false)
-        m0[4:5:end] = sol[end][4:5:end]
+        m0[4:5:end] = sol.u[end][4:5:end]
 
         for i in eachindex(grad_list)
             if isa(grad_list[i], grad_B1)
@@ -277,14 +277,14 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
         T_FP = TR - TRF[2] / 2
         TE = TR / 2
         sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rx, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
-        s[:,1] = sol[2]
+        s[:,1] = sol.u[2]
         s[1:5:end,1] .*= (-1)^(1 + ic)
         s[2:5:end,1] .*= (-1)^(1 + ic)
-        m0 = sol[end]
+        m0 = sol.u[end]
 
         for ip = 2:length(TRF)
             sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF[ip]), ((-1)^(ip + ic) * ω1[ip], B1, ω0, TRF[ip], m0s, R1f, R2f, Rx, R1s, T2s, grad_list)), Tsit5(), save_everystep=false)
-            m0 = sol[end]
+            m0 = sol.u[end]
 
             T_FP = TR - TRF[ip] / 2 - TRF[mod(ip, length(TRF)) + 1] / 2
             TE = TR / 2 - TRF[ip] / 2
@@ -292,10 +292,10 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
             if sol.t[2] / TE - 1 > 1e-10
                 throw(DimensionMismatch("sol.t[2] is not equal to TE"))
             end
-            s[:,ip] = sol[2]
+            s[:,ip] = sol.u[2]
             s[1:5:end,ip] .*= (-1)^(ip + ic)
             s[2:5:end,ip] .*= (-1)^(ip + ic)
-            m0 = sol[end]
+            m0 = sol.u[end]
         end
     end
     s = transpose(s)

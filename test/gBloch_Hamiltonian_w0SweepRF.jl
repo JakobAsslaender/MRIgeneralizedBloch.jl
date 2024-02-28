@@ -40,10 +40,10 @@ m0 = [rand(), 1]
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
 p = (α/TRF, B1, ω0, R1s, T2s, G)
-u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))[end]
+u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
 
 p = (f_ω1, B1, f_φ, R1s, T2s, G)
-u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))[end]
+u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
 
 @test u_ω1Number ≈ u_ω1Function
 
@@ -53,10 +53,10 @@ m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 mfun(p, t; idxs = nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
 p = (α/TRF, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
-u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))[end]
+u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
 
 p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
-u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))[end]
+u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
 
 @test u_ω1Number ≈ u_ω1Function
 

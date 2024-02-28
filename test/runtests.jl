@@ -6,7 +6,7 @@ using Test
 end
 
 @testset "apply_hamiltonian_gbloch!" begin
-    for i = 1:10 # test different random initializations
+    for _ = 1:10 # test different random initializations
         include("gBloch_Hamiltonian.jl")
     end
 end
