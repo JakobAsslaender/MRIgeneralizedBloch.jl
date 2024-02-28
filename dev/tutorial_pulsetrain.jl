@@ -72,11 +72,10 @@ plot!(p, t, [m_linapp[i][5] for i=1:size(m_linapp,1)] ./      m0s , label="zˢ /
 
 # ## Gradients
 # The same interface can also be used to calculate the derivatives of the signal wrt. the biophysical parameters. One can specify any subset of derivatives in any order with a vector of identifier objects:
-grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()];
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
 
 # Calling the function `calculatesignal_linearapprox` with the keyword argument `grad_list` and this vector
-s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT;
-    grad_list=grad_list);
+s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list);
 
 # returns the derivatives in the specified order:
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
@@ -97,9 +96,8 @@ plot!(p, t, real.(s_linapp[:,1,9] .* B1 ), label="Re(∂s/∂B₁ )*B₁ ")
 # Above code calculates separate derivatives for ``R_1^f`` and ``R_1^s``. Yet, many publications, including our own paper ["Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model"](https://arxiv.org/pdf/2207.08259.pdf) assumes an apparent longitudinal relaxation rate ``R_1^a = R_1^f = R_1^f``. The derivatives wrt. this apparent relaxation rate can be calculated with
 
 R1a = 1 # 1/s
-grad_list=[grad_R1a()]
-s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT;
-    grad_list=grad_list)
+grad_list = (grad_R1a(),)
+s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT; grad_list)
 
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
 plot!(p, t, real.(s_linapp[:,1,1]       ), label="Re(∂s/∂M₀)/M₀")

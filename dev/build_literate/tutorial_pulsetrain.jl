@@ -46,10 +46,9 @@ plot!(p, t, [m_linapp[i][3] for i=1:size(m_linapp,1)] ./ (1 - m0s), label="zᶠ 
 plot!(p, t, [m_linapp[i][4] for i=1:size(m_linapp,1)] ./      m0s , label="xˢ / m₀ˢ")
 plot!(p, t, [m_linapp[i][5] for i=1:size(m_linapp,1)] ./      m0s , label="zˢ / m₀ˢ")
 
-grad_list=[grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()];
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
 
-s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT;
-    grad_list=grad_list);
+s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; grad_list);
 
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
 plot!(p, t, real.(s_linapp[:,1,1]       ), label="Re(∂s/∂M₀ )*M₀")
@@ -63,9 +62,8 @@ plot!(p, t, real.(s_linapp[:,1,8] .* ω0 ), label="Re(∂s/∂ω₀ )*ω₀ ")
 plot!(p, t, real.(s_linapp[:,1,9] .* B1 ), label="Re(∂s/∂B₁ )*B₁ ")
 
 R1a = 1 # 1/s
-grad_list=[grad_R1a()]
-s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT;
-    grad_list=grad_list)
+grad_list = (grad_R1a(),)
+s_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT; grad_list)
 
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
 plot!(p, t, real.(s_linapp[:,1,1]       ), label="Re(∂s/∂M₀)/M₀")
