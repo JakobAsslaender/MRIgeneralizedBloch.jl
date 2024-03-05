@@ -167,13 +167,18 @@ function propagate_magnetization_linear!(S, m, ω1, B1, ω0, TRF, TR, m0s, R1f, 
 end
 
 function pulse_propagators(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad, isInversionPulse)
-    if isInversionPulse # assume transversal magnitization to be zero before inversion or spoiled away
-        u_fp = xyfxs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
-    else
-        u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
-    end
+    
     u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad))
+    u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
 
+    if isInversionPulse # assume transverse magnetization to be zero before inversion or spoiled away
+        u_ds = xyfxs_destructor(grad)
+    else
+        u_ds = xs_destructor(grad)
+    end
+
+    u_pl = u_ds * u_pl * u_ds
+    
     return u_fp, u_pl
 end
 
