@@ -367,6 +367,31 @@ function xs_destructor(grad::grad_param)
         0 0 0 0 0 0 0 0 0 0 1]
 end
 
+function xyfxs_destructor(_)
+    @SMatrix [
+        0 0 0 0 0 0;
+        0 0 0 0 0 0;
+        0 0 1 0 0 0;
+        0 0 0 0 0 0;
+        0 0 0 0 1 0;
+        0 0 0 0 0 1]
+end
+
+function xyfxs_destructor(grad::grad_param)
+    @SMatrix [
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 1 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 1 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 1 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 1 0;
+        0 0 0 0 0 0 0 0 0 0 1]
+end
+
     function A0(_)
     @SMatrix [
         1 0 0 0 0 0;
