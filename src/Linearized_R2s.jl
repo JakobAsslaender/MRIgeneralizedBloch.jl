@@ -23,7 +23,7 @@ julia> R2sl, dR2sldB1, R2sldT2s, _ = precompute_R2sl(TRF_min=100e-6, TRF_max=500
 
 ```
 """
-function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.5, greens=greens_superlorentzian)
+function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.5, greens=greens_superlorentzian, NumOfΩvGridPoints = 2^7, NumOfτvGridPoints = 2^10)
 
     # interpolate super-Lorentzian Green's function for speed purposes
     if greens == greens_superlorentzian
@@ -63,8 +63,8 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
         return sol.zero[1]
     end
 
-    τv = range(TRF_min / T2s_max, TRF_max / T2s_min; length=2^10)
-    Ωv = range(0, B1_max * ω1_max * T2s_max; length=2^6)
+    τv = range(TRF_min / T2s_max, TRF_max / T2s_min; length=NumOfτvGridPoints)
+    Ωv = range(0, B1_max * ω1_max * T2s_max; length=NumOfΩvGridPoints)
 
     A = Matrix{Float64}(undef, length(τv), length(Ωv))
     @batch minbatch=8 for iΩ ∈ 2:length(Ωv)
