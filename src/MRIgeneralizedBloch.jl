@@ -10,7 +10,6 @@ using StaticArrays
 using LinearAlgebra
 using NLsolve
 using ExponentialUtilities
-using Polyester
 using LsqFit
 using LinearAlgebra
 

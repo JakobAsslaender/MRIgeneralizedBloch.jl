@@ -2,6 +2,7 @@ using MRIgeneralizedBloch
 using Test
 using LinearAlgebra
 using StaticArrays
+R2slT = precompute_R2sl()
 
 ##
 Npulse = 100
@@ -11,8 +12,6 @@ TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 TRF[1] = 500e-6
 isInversionPulse = [true; falses(length(α)-1)]
 ω1 = α ./ TRF
-
-R2slT = precompute_R2sl(ω1_max = 1.1 * maximum(ω1))
 TR = 3.5e-3
 
 B1 = 1
