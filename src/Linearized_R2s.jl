@@ -23,7 +23,7 @@ julia> R2sl, dR2sldB1, R2sldT2s, _ = precompute_R2sl(TRF_min=100e-6, TRF_max=500
 
 ```
 """
-function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.5, greens=greens_superlorentzian, NumOfΩvGridPoints = 2^7, NumOfτvGridPoints = 2^10)
+function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.5, greens=greens_superlorentzian)
 
     # interpolate super-Lorentzian Green's function for speed purposes
     if greens == greens_superlorentzian
@@ -59,20 +59,23 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
             J[1] = real(x)
         end
 
-        sol = nlsolve(f!, j!, [0.1])
-        return sol.zero[1]
+        sol = nlsolve(f!, j!, [0.15])
+        return sol.f_converged ? sol.zero[1] : NaN
     end
 
-    τv = range(TRF_min / T2s_max, TRF_max / T2s_min; length=NumOfτvGridPoints)
-    Ωv = range(0, B1_max * ω1_max * T2s_max; length=NumOfΩvGridPoints)
+    τv = range(TRF_min / T2s_max, TRF_max / T2s_min; length=2^10)
+    Ωv = range(0, B1_max * ω1_max * T2s_max; length=2^6)
 
     A = Matrix{Float64}(undef, length(τv), length(Ωv))
     @batch minbatch=8 for iΩ ∈ 2:length(Ωv)
-        τmax = min(τv[end], TRF_max * ω1_max / Ωv[iΩ])
+        τmax = min(τv[end], TRF_max * B1_max * ω1_max / Ωv[iΩ])
         z_fun = calculate_z(τmax, Ωv[iΩ], G)
         for iτ in eachindex(τv)
-            τ = min(τv[iτ], TRF_max * ω1_max / Ωv[iΩ])
+            τ = min(τv[iτ], TRF_max * B1_max * ω1_max / Ωv[iΩ])
             A[iτ,iΩ] = calculate_R2sl(z_fun, τ, Ωv[iΩ])
+            if isnan(A[iτ,iΩ]) || A[iτ,iΩ] < 0 # hack if nsolve did not converge to a meaningful value
+                A[iτ,iΩ] = (iτ > 1) ? A[iτ-1,iΩ] : 0
+            end
         end
     end
     A[:,1] .= A[:,2] # extrapolation hack as the fit does not work with Ω = 0

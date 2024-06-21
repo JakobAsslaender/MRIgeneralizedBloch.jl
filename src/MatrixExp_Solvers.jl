@@ -68,11 +68,6 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R
 end
 
 function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)])
-
-    if ~(all(>=(0),R2s_vec[1]))
-        error("Some R2s values are negative. Try increasing the number of grid points of R2slT")
-    end
-    
     if isempty(grad_list)
         grad_list = (undef,)
     end
