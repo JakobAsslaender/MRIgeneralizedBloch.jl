@@ -60,27 +60,22 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
         end
 
         sol = nlsolve(f!, j!, [0.15])
-        return sol.f_converged ? sol.zero[1] : NaN
+        return (sol.f_converged && sol.zero[1] > 0) ? sol.zero[1] : NaN
     end
 
     τv = range(TRF_min / T2s_max, TRF_max / T2s_min; length=2^10)
-    Ωv = range(0, B1_max * ω1_max * T2s_max; length=2^6)
+    Ωv = range(0, B1_max * ω1_max * T2s_max; length=2^8)
 
     A = Matrix{Float64}(undef, length(τv), length(Ωv))
     Threads.@threads for iΩ ∈ 2:length(Ωv)
-        τmax = min(τv[end], TRF_max * B1_max * ω1_max / Ωv[iΩ])
-        z_fun = calculate_z(τmax, Ωv[iΩ], G)
+        z_fun = calculate_z(τv[end], Ωv[iΩ], G)
         for iτ in eachindex(τv)
-            τ = min(τv[iτ], TRF_max * B1_max * ω1_max / Ωv[iΩ])
-            A[iτ,iΩ] = calculate_R2sl(z_fun, τ, Ωv[iΩ])
-            if isnan(A[iτ,iΩ]) || A[iτ,iΩ] < 0
-                error("No linear approximation found at τ = $(τv[iτ]), Ω = $(Ωv[iΩ]).")
-            end
+            A[iτ,iΩ] = calculate_R2sl(z_fun, τv[iτ], Ωv[iΩ])
         end
     end
     A[:,1] .= A[:,2] # extrapolation hack as the fit does not work with Ω = 0
 
-    f = cubic_spline_interpolation((τv, Ωv), A)
+    f = linear_interpolation((τv, Ωv), A)
     dfdτ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[1]
     dfdΩ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[2]
     d2fdτ2( τ, Ω) = Interpolations.hessian( f, τ, Ω)[1,1]
