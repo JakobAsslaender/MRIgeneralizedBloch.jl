@@ -22,10 +22,10 @@ R2s = 1 / T2s
 Rx = 17
 
 # random initial m0
-ms = m0s * rand()
-mf = (1 - m0s) * rand()
-ϑ = rand() * π / 2
-φ = rand() * 2π
+ms = 0.3543 * m0s
+mf = 0.6344 * (1 - m0s)
+ϑ =  0.6345 * π / 2
+φ =  0.3943 * 2π
 
 ## ######################################################################################
 # Compare function implementation (using a constant amplitude) to ω1::Real implementation
@@ -36,14 +36,14 @@ f_φ = (t) -> ω0 * t
 G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s)
 
 ## isolated semi-solid spin pool
-m0 = [rand(), 1]
+m0 = [0.654, 1]
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 p = (α/TRF, B1, ω0, R1s, T2s, G)
-u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
+u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(RK4())).u[end]
 
 p = (f_ω1, B1, f_φ, R1s, T2s, G)
-u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
+u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(RK4())).u[end]
 
 @test u_ω1Number ≈ u_ω1Function
 
@@ -53,10 +53,10 @@ m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 p = (α/TRF, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
-u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
+u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(RK4())).u[end]
 
 p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
-u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p)).u[end]
+u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(RK4())).u[end]
 
 @test u_ω1Number ≈ u_ω1Function
 
@@ -102,7 +102,7 @@ u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0, TRF), p))
 m0 = [1, 1]
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (f_ω1, B1, f_φ, R1s, 1/R2f, G)
-z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
+z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(RK4()))
 x_gBloch  = (t) ->  B1 * quadgk(x -> f_ω1(x) * cos(f_φ(x)) * G((t - x) * R2f) * z_gBloch(x)[1], 0, t, order=100)[1]
 y_gBloch  = (t) -> -B1 * quadgk(x -> f_ω1(x) * sin(f_φ(x)) * G((t - x) * R2f) * z_gBloch(x)[1], 0, t, order=100)[1]
 mt_gBloch = (t) -> (x_gBloch(t) + 1im * y_gBloch(t)) * exp(1im * (f_φ(t)))
@@ -119,7 +119,7 @@ u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0, TRF), p))
 m0 = [1, 1]
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (f_ω1, B1, f_φ, R1s, T2s, G)
-z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))
+z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(RK4()))
 x_gBloch  = (t) ->  B1 * quadgk(x -> f_ω1(x) * cos(f_φ(x)) * G((t - x) / T2s) * z_gBloch(x)[1], 0, t, order=100)[1]
 y_gBloch  = (t) -> -B1 * quadgk(x -> f_ω1(x) * sin(f_φ(x)) * G((t - x) / T2s) * z_gBloch(x)[1], 0, t, order=100)[1]
 mt_gBloch = (t) -> (x_gBloch(t) + 1im * y_gBloch(t)) * exp(1im * (f_φ(t)))
@@ -156,7 +156,7 @@ u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p))
 m0 = [0, 0, 1-m0s, m0s, 1]
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
-u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p))
+u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(RK4()))
 
 xs_gBloch(t) =  B1 * quadgk(x -> f_ω1(x) * cos(f_φ(x)) * G((t - x) / T2s) * u_gBloch(x)[4], 0, t, order=100)[1]
 ys_gBloch(t) = -B1 * quadgk(x -> f_ω1(x) * sin(f_φ(x)) * G((t - x) / T2s) * u_gBloch(x)[4], 0, t, order=100)[1]
