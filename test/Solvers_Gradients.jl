@@ -13,8 +13,6 @@ TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 TRF[1] = 500e-6
 ω1 = α ./ TRF
 isInversionPulse = α .≈ π
-
-R2slT = precompute_R2sl(ω1_max = 1.1 * maximum(ω1))
 TR = 3.5e-3
 
 B1 = 1
@@ -25,7 +23,6 @@ R1s = 2
 R2f = 1 / 65e-3
 T2s = 10e-6
 Rx = 20
-
 R1a = 0.7
 
 rtol = 1e-5

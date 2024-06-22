@@ -1,5 +1,5 @@
 """
-    precompute_R2sl([;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.5, greens=greens_superlorentzian])
+    precompute_R2sl([;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.4, greens=greens_superlorentzian])
 
 Pre-compute and interpolate the linearized `R2sl(TRF, α, B1, T2s)` and its derivatives `dR2sldB1(TRF, α, B1, T2s)`, `R2sldT2s(TRF, α, B1, T2s)` etc. in the range specified by the arguments.
 
@@ -19,11 +19,11 @@ The function solves the generalized Bloch equations of an isolated semi-solid po
 julia> R2slT = precompute_R2sl();
 
 
-julia> R2sl, dR2sldB1, R2sldT2s, _ = precompute_R2sl(TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=15e-6, ω1_max=π/500e-6, B1_max=1.3, greens=greens_gaussian);
+julia> R2sl, dR2sldB1, R2sldT2s, _ = precompute_R2sl(TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=15e-6, ω1_max=π/500e-6, B1_max=1.4, greens=greens_gaussian);
 
 ```
 """
-function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.5, greens=greens_superlorentzian)
+function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.4, greens=greens_superlorentzian)
 
     # interpolate super-Lorentzian Green's function for speed purposes
     if greens == greens_superlorentzian
@@ -59,25 +59,23 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
             J[1] = real(x)
         end
 
-        sol = nlsolve(f!, j!, [0.1])
-        return sol.zero[1]
+        sol = nlsolve(f!, j!, [0.15])
+        return (sol.f_converged && sol.zero[1] > 0) ? sol.zero[1] : NaN
     end
 
     τv = range(TRF_min / T2s_max, TRF_max / T2s_min; length=2^10)
-    Ωv = range(0, B1_max * ω1_max * T2s_max; length=2^6)
+    Ωv = range(0, B1_max * ω1_max * T2s_max; length=2^8)
 
     A = Matrix{Float64}(undef, length(τv), length(Ωv))
-    @batch minbatch=8 for iΩ ∈ 2:length(Ωv)
-        τmax = min(τv[end], TRF_max * ω1_max / Ωv[iΩ])
-        z_fun = calculate_z(τmax, Ωv[iΩ], G)
+    Threads.@threads for iΩ ∈ 2:length(Ωv)
+        z_fun = calculate_z(τv[end], Ωv[iΩ], G)
         for iτ in eachindex(τv)
-            τ = min(τv[iτ], TRF_max * ω1_max / Ωv[iΩ])
-            A[iτ,iΩ] = calculate_R2sl(z_fun, τ, Ωv[iΩ])
+            A[iτ,iΩ] = calculate_R2sl(z_fun, τv[iτ], Ωv[iΩ])
         end
     end
     A[:,1] .= A[:,2] # extrapolation hack as the fit does not work with Ω = 0
 
-    f = cubic_spline_interpolation((τv, Ωv), A)
+    f = linear_interpolation((τv, Ωv), A)
     dfdτ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[1]
     dfdΩ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[2]
     d2fdτ2( τ, Ω) = Interpolations.hessian( f, τ, Ω)[1,1]

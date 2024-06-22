@@ -67,7 +67,10 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R
     return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list, rfphase_increment, m0, preppulse, output, isInversionPulse)
 end
 
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=(), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)])
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, R2s_vec; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)])
+    if isempty(grad_list)
+        grad_list = (undef,)
+    end
 
     ω1 = α ./ TRF
 
