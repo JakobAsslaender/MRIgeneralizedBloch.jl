@@ -772,7 +772,7 @@ end
 
 function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real,Function}, t)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g = p
-	(sφ,cφ) = sincos(φ(t))
+    sφ, cφ = sincos(φ(t))
 
     ∂m∂t[1] = - R2f * m[1] + B1 * ω1(t) * cφ * m[3]
     ∂m∂t[2] = - R2f * m[2] - B1 * ω1(t) * sφ * m[3]
