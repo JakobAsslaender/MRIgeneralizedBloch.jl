@@ -129,7 +129,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1^2 * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
@@ -141,7 +141,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Rea
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1(t)  * m[1] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> ω1(τ) * cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1(t) * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
@@ -153,7 +153,7 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Fun
     ∂m∂t[2] = - R2f * m[2] - B1 * ω1(t) * sin(φ(t)) * m[3]
     ∂m∂t[3] = - B1 * ω1(t) * cos(φ(t)) * m[1] + B1 * ω1(t) * sin(φ(t)) * m[2] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
-    xys = real(exp(-1im * φ(t)) * quadgk(τ -> ω1(τ) * exp(1im * φ(τ)) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
+    xys = real(cis(-φ(t)) * quadgk(τ -> ω1(τ) * cis(φ(τ)) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1(t) * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
     return ∂m∂t
 end
@@ -167,7 +167,7 @@ end
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{6,Any}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
     ∂m∂t[1] = -B1^2 * ω1^2 * xys + R1s * (1 - m[1])
     return ∂m∂t
 end
@@ -175,7 +175,7 @@ end
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Real,Real,Function}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> ω1(τ) * cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
     ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (1 - m[1])
     return ∂m∂t
 end
@@ -183,7 +183,7 @@ end
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Real,Real,Function}, t)
     ω1, B1, φ, R1s, T2s, g = p
 
-    xys = real(exp(-1im * φ(t)) * quadgk(τ -> ω1(τ) * exp(1im * φ(τ)) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
+    xys = real(cis(-φ(t)) * quadgk(τ -> ω1(τ) * cis(φ(τ)) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
     ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (1 - m[1])
     return ∂m∂t
 end
@@ -293,7 +293,7 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Real,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> exp(1im * ω0 * τ) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> cis(ω0 * τ) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= B1^2 * ω1^2 * xys/T2s
     return ∂m∂t
 end
@@ -301,7 +301,7 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> ω1(τ) * cis(ω0 * τ) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= B1^2 * ω1(t) * xys/T2s
     return ∂m∂t
 end
@@ -309,7 +309,7 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Function,Any,Any,Any,Any,Any,Real,Function,Function}, t, grad_type::grad_T2s)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g, dG_o_dT2s_x_T2s = p
 
-    xys = real(exp(-1im * φ(t)) * quadgk(τ -> ω1(τ) * exp(1im * φ(τ)) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys = real(cis(-φ(t)) * quadgk(τ -> ω1(τ) * cis(φ(τ)) * dG_o_dT2s_x_T2s((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= B1^2 * ω1(t) * xys/T2s
     return ∂m∂t
 end
@@ -343,8 +343,8 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Real,Any,
     ∂m∂t[1] -= m[2]
     ∂m∂t[2] += m[1]
 
-    xys  = imag(exp(-1im * ω0 * t) * t * quadgk(τ -> exp(1im * ω0 * τ)     * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
-    xys -= imag(exp(-1im * ω0 * t)     * quadgk(τ -> exp(1im * ω0 * τ) * τ * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys  = imag(cis(-ω0 * t) * t * quadgk(τ -> cis(ω0 * τ)     * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys -= imag(cis(-ω0 * t)     * quadgk(τ -> cis(ω0 * τ) * τ * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= B1^2 * ω1^2 * xys
     return ∂m∂t
 end
@@ -355,8 +355,8 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,
     ∂m∂t[1] -= m[2]
     ∂m∂t[2] += m[1]
 
-    xys  = imag(exp(-1im * ω0 * t) * t * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ)     * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
-    xys -= imag(exp(-1im * ω0 * t)     * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ) * τ * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys  = imag(cis(-ω0 * t) * t * quadgk(τ -> ω1(τ) * cis(ω0 * τ)     * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys -= imag(cis(-ω0 * t)     * quadgk(τ -> ω1(τ) * cis(ω0 * τ) * τ * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= B1^2 * ω1(t) * xys
     return ∂m∂t
 end
@@ -368,8 +368,8 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Funct
     ∂m∂t[2] -= B1 * ω1(t) * cos(φ(t)) * t * m[3]
     ∂m∂t[3] += B1 * ω1(t) * sin(φ(t)) * t * m[1] + B1 * ω1(t) * cos(φ(t)) * t * m[2]
 
-    xys  = imag(exp(-1im * φ(t)) * t * quadgk(τ -> ω1(τ) * exp(1im * φ(τ))     * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
-    xys -= imag(exp(-1im * φ(t))     * quadgk(τ -> ω1(τ) * exp(1im * φ(τ)) * τ * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys  = imag(cis(-φ(t)) * t * quadgk(τ -> ω1(τ) * cis(φ(τ))     * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys -= imag(cis(-φ(t))     * quadgk(τ -> ω1(τ) * cis(φ(τ)) * τ * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= B1^2 * ω1(t) * xys
     return ∂m∂t
 end
@@ -388,7 +388,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Real,Any,
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> cis(ω0 * τ) * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= 2 * B1 * ω1^2 * xys
     return ∂m∂t
 end
@@ -399,7 +399,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Real,
     ∂m∂t[1] += ω1(t) * m[3]
     ∂m∂t[3] -= ω1(t) * m[1]
 
-    xys = real(exp(-1im * ω0 * t) * quadgk(τ -> ω1(τ) * exp(1im * ω0 * τ) * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys = real(cis(-ω0 * t) * quadgk(τ -> ω1(τ) * cis(ω0 * τ) * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
     ∂m∂t[4] -= 2 * B1 * ω1(t) * xys
     return ∂m∂t
 end
@@ -412,7 +412,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Funct
     ∂m∂t[2] -= ω1(t) * sin(φ(t)) * m[3]
     ∂m∂t[3] += - ω1(t) * cos(φ(t)) * m[1] + ω1(t) * sin(φ(t)) * m[2]
 
-    xys = real(exp(-1im * φ(t)) * quadgk(τ -> ω1(τ) * exp(1im * φ(τ)) * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
+    xys = real(cis(-φ(t)) * quadgk(τ -> ω1(τ) * cis(φ(τ)) * g((t - τ) / T2s) * mfun(τ), 0, t, order=7)[1])
 
     ∂m∂t[4] -= 2 * B1 * ω1(t) * xys
     return ∂m∂t
@@ -427,7 +427,7 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Real,Real,Any,Any,Any,Any,Any,Any,Real,Real,Any}, t, grad_type::grad_B1)
     ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, TRF, dG_o_dT2s_x_T2s = p
 
-    f_PSD(τ) = quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))), 0, 1, order=7)[1]
+    f_PSD(τ) = quadgk(ct -> 1 / abs(1 - 3 * ct^2) * (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + √(2π) * erf(τ / 2√2 * abs(1 - 3 * ct^2))), 0, 1, order=7)[1]
 
     ∂m∂t[1] += ω1 * m[3]
     ∂m∂t[3] -= ω1 * m[1]
@@ -445,7 +445,7 @@ function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{
     gt = (t, T2s, ct) -> exp(- (t / T2s)^2 * (3 * ct^2 - 1)^2 / 8)
 
     function fy!(x, y, gt, mfun, p, T2s, zs_idx, t)
-        for i = 1:size(x, 2)
+        for i ∈ axes(x, 2)
             y[i] = gt(t - x[2,i], T2s, x[1,i]) * mfun(p, x[2,i]; idxs=zs_idx)
         end
     end
@@ -606,17 +606,17 @@ julia> graham_saturation_rate_spectral(ω₀ -> lineshape_superlorentzian(ω₀,
 ```
 """
 function graham_saturation_rate_spectral(lineshape::Function, ω1::Real, TRF::Real, Δω::Real)
-    S(ω, Δω) = abs((exp(1im * TRF * (-Δω + ω)) - 1) * ω1 / (Δω - ω))^2 / (2π*TRF)
+    S(ω, Δω) = abs((cis(TRF * (-Δω + ω)) - 1) * ω1 / (Δω - ω))^2 / (2π*TRF)
     Rrf = π * quadgk(ω -> S(ω, Δω) * lineshape(ω), -Inf, 0, Inf)[1]
     return Rrf
 end
 function graham_saturation_rate_spectral(lineshape::Function, ω1::Function, TRF::Real, Δω::Real)
-    S(ω, Δω) = abs(quadgk(t -> ω1(t) * exp(1im * (ω - Δω) * t), 0, TRF)[1])^2 / (2π*TRF)
+    S(ω, Δω) = abs(quadgk(t -> ω1(t) * cis((ω - Δω) * t), 0, TRF)[1])^2 / (2π*TRF)
     Rrf = π * quadgk(ω -> S(ω, Δω) * lineshape(ω), -Inf, 0, Inf)[1]
     return Rrf
 end
 function graham_saturation_rate_spectral(lineshape::Function, ω1::Function, TRF::Real, φ::Function)
-    S(ω, φ) = abs(quadgk(t -> ω1(t) * exp(1im * (ω * t + φ(t))), 0, TRF)[1])^2 / (2π*TRF)
+    S(ω, φ) = abs(quadgk(t -> ω1(t) * cis((ω * t + φ(t))), 0, TRF)[1])^2 / (2π*TRF)
     Rrf = π * quadgk(ω -> S(ω, φ) * lineshape(ω), -Inf, 0, Inf)[1]
     return Rrf
 end
@@ -772,10 +772,11 @@ end
 
 function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real,Function}, t)
     ω1, B1, φ, m0s, R1f, R2f, Rx, R1s, T2s, g = p
+	(sφ,cφ) = sincos(φ(t))
 
-    ∂m∂t[1] = - R2f * m[1] + B1 * ω1(t) * cos(φ(t)) * m[3]
-    ∂m∂t[2] = - R2f * m[2] - B1 * ω1(t) * sin(φ(t)) * m[3]
-    ∂m∂t[3] = - B1 * ω1(t) * cos(φ(t)) * m[1] + B1 * ω1(t) * sin(φ(t)) * m[2] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
+    ∂m∂t[1] = - R2f * m[1] + B1 * ω1(t) * cφ * m[3]
+    ∂m∂t[2] = - R2f * m[2] - B1 * ω1(t) * sφ * m[3]
+    ∂m∂t[3] = - B1 * ω1(t) * cφ * m[1] + B1 * ω1(t) * sφ * m[2] - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s) * m[4] + (1 - m0s) * R1f * m[5]
 
     ∂zs∂t = -B1^2 * quadgk(τ -> ω1(τ)^2 * g((t - τ) / T2s), 0, t, order=7)[1]
     ∂m∂t[4] = ∂zs∂t * m[4] + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
