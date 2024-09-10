@@ -318,84 +318,52 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_typ
 end
 
 function z_rotation_propagator(rfphase_increment, _)
-    u_rot = @SMatrix [cos(rfphase_increment) -sin(rfphase_increment) 0 0 0 0;
-                      sin(rfphase_increment)  cos(rfphase_increment) 0 0 0 0;
-                                     0                0  1 0 0 0;
-                                     0                0  0 1 0 0;
-                                     0                0  0 0 1 0;
-                                     0                0  0 0 0 1]
+    sϕ, cϕ = sincos(rfphase_increment)
+    u_rot = @SMatrix [cϕ -sϕ 0 0 0 0;
+                      sϕ  cϕ 0 0 0 0;
+                       0   0 1 0 0 0;
+                       0   0 0 1 0 0;
+                       0   0 0 0 1 0;
+                       0   0 0 0 0 1]
     return u_rot
 end
 
-function z_rotation_propagator(rfphase_increment, grad::grad_param)
-    u_rot = @SMatrix [cos(rfphase_increment) -sin(rfphase_increment) 0 0 0 0                 0                0 0 0 0;
-                      sin(rfphase_increment)  cos(rfphase_increment) 0 0 0 0                 0                0 0 0 0;
-                      0                 0                1 0 0 0                 0                0 0 0 0;
-                      0                 0                0 1 0 0                 0                0 0 0 0;
-                      0                 0                0 0 1 0                 0                0 0 0 0;
-                      0                 0                0 0 0 cos(rfphase_increment) -sin(rfphase_increment) 0 0 0 0;
-                      0                 0                0 0 0 sin(rfphase_increment)  cos(rfphase_increment) 0 0 0 0;
-                      0                 0                0 0 0 0                 0                1 0 0 0;
-                      0                 0                0 0 0 0                 0                0 1 0 0;
-                      0                 0                0 0 0 0                 0                0 0 1 0;
-                      0                 0                0 0 0 0                 0                0 0 0 1]
+function z_rotation_propagator(rfphase_increment, ::grad_param)
+    sϕ, cϕ = sincos(rfphase_increment)
+    u_rot = @SMatrix [cϕ -sϕ 0 0 0  0   0 0 0 0 0;
+                      sϕ  cϕ 0 0 0  0   0 0 0 0 0;
+                      0    0 1 0 0  0   0 0 0 0 0;
+                      0    0 0 1 0  0   0 0 0 0 0;
+                      0    0 0 0 1  0   0 0 0 0 0;
+                      0    0 0 0 0 cϕ -sϕ 0 0 0 0;
+                      0    0 0 0 0 sϕ  cϕ 0 0 0 0;
+                      0    0 0 0 0  0   0 1 0 0 0;
+                      0    0 0 0 0  0   0 0 1 0 0;
+                      0    0 0 0 0  0   0 0 0 1 0;
+                      0    0 0 0 0  0   0 0 0 0 1]
     return u_rot
 end
 
 function xs_destructor(_)
-    @SMatrix [
-        1 0 0 0 0 0;
-        0 1 0 0 0 0;
-        0 0 1 0 0 0;
-        0 0 0 0 0 0;
-        0 0 0 0 1 0;
-        0 0 0 0 0 1]
+    Diagonal(SVector{6}(1,1,1,0,1,1))
 end
 
-function xs_destructor(grad::grad_param)
-    @SMatrix [
-        1 0 0 0 0 0 0 0 0 0 0;
-        0 1 0 0 0 0 0 0 0 0 0;
-        0 0 1 0 0 0 0 0 0 0 0;
-        0 0 0 0 0 0 0 0 0 0 0;
-        0 0 0 0 1 0 0 0 0 0 0;
-        0 0 0 0 0 1 0 0 0 0 0;
-        0 0 0 0 0 0 1 0 0 0 0;
-        0 0 0 0 0 0 0 1 0 0 0;
-        0 0 0 0 0 0 0 0 0 0 0;
-        0 0 0 0 0 0 0 0 0 1 0;
-        0 0 0 0 0 0 0 0 0 0 1]
+function xs_destructor(::grad_param)
+    Diagonal(SVector{11}(1,1,1,0,1,1,1,1,0,1,1))
 end
 
-    function A0(_)
-    @SMatrix [
-        1 0 0 0 0 0;
-        0 1 0 0 0 0;
-        0 0 1 0 0 0;
-        0 0 0 1 0 0;
-        0 0 0 0 1 0;
-        0 0 0 0 0 0]
+function A0(_)
+    Diagonal(SVector{6}(1,1,1,1,1,0))
 end
 
-function A0(grad::grad_param)
-    @SMatrix [
-        1 0 0 0 0 0 0 0 0 0 0;
-        0 1 0 0 0 0 0 0 0 0 0;
-        0 0 1 0 0 0 0 0 0 0 0;
-        0 0 0 1 0 0 0 0 0 0 0;
-        0 0 0 0 1 0 0 0 0 0 0;
-        0 0 0 0 0 1 0 0 0 0 0;
-        0 0 0 0 0 0 1 0 0 0 0;
-        0 0 0 0 0 0 0 1 0 0 0;
-        0 0 0 0 0 0 0 0 1 0 0;
-        0 0 0 0 0 0 0 0 0 1 0;
-        0 0 0 0 0 0 0 0 0 0 0]
+function A0(::grad_param)
+    Diagonal(SVector{11}(1,1,1,1,1,1,1,1,1,1,0))
 end
 
 function C(_)
     @SVector [0,0,0,0,0,1]
 end
 
-function C(grad::grad_param)
+function C(::grad_param)
     @SVector [0,0,0,0,0,0,0,0,0,0,1]
 end
