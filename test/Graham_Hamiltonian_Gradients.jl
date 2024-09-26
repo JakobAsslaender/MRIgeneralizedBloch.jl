@@ -5,6 +5,7 @@ using MRIgeneralizedBloch: apply_hamiltonian_graham_superlorentzian!, apply_hami
 
 ##
 max_error = 5e-2
+ode_solver = Tsit5()
 
 ## set parameters
 ω1 = π / 500e-6
@@ -20,12 +21,12 @@ TRF = 500e-6
 
 ## baseline IDE solution
 m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)))
+Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)), ode_solver)
 
 ## Analytical gradients (using ApproxFun)
 grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 
-Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s, grad_list)))
+Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s, grad_list)), ode_solver)
 
 ## FD derivative wrt. m0s
 dm0s = 1e-9
@@ -35,7 +36,7 @@ Graham_sol_dm0s = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, (m0s + dm0s), R1f, R2f, Rx, R1s, T2s),
-    ),
+    ), ode_solver
 )
 
 t = 0:1e-5:TRF
@@ -73,7 +74,7 @@ Graham_sol_dR1f = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s),
-    ),
+    ), ode_solver
 )
 
 for i = 1:length(t)
@@ -101,7 +102,7 @@ Graham_sol_dR2f = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s),
-    ),
+    ), ode_solver
 )
 
 for i = 1:length(t)
@@ -128,7 +129,7 @@ Graham_sol_dRx = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1f, R2f, (Rx + dRx), R1s, T2s),
-    ),
+    ), ode_solver
 )
 
 for i = 1:length(t)
@@ -157,7 +158,7 @@ Graham_sol_dR1s = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s),
-    ),
+    ), ode_solver
 )
 
 for i = 1:length(t)
@@ -186,7 +187,7 @@ Graham_sol_dT2s = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s)),
-    ),
+    ), ode_solver
 )
 
 for i = 1:length(t)
@@ -214,7 +215,7 @@ Graham_sol_dω0 = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, (ω0 + dω0), TRF, m0s, R1f, R2f, Rx, R1s, T2s),
-    ),
+    ), ode_solver
 )
 
 for i = 1:length(t)
@@ -241,7 +242,7 @@ Graham_sol_dB1 = solve(
         m0,
         (0.0, TRF),
         (ω1, (B1 + dB1), ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s),
-    ),
+    ), ode_solver
 )
 
 for i = 1:length(t)
@@ -268,12 +269,12 @@ end
 R1a = 0.8
 # baseline IDE solution
 m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s)), alg)
+Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s)), ode_solver)
 
 ## Analytical gradients (using ApproxFun)
 grad_list = (grad_R1a(),)
 
-Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s, grad_list)), Tsit5())
+Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s, grad_list)), ode_solver)
 
 ## FD derivative wrt. R1a
 dR1a = 1e-6
@@ -283,7 +284,7 @@ Graham_sol_dm0s = solve(
         m0,
         (0.0, TRF),
         (ω1, B1, ω0, TRF, m0s, R1a + dR1a, R2f, Rx, R1a + dR1a, T2s),
-    ),
+    ), ode_solver
 )
 
 t = 0:1e-5:TRF
