@@ -1,15 +1,42 @@
 name: CI
 on:
-  pull_request:
-    branches:
-      - master
   push:
-    branches:
-      - master
+    branches: '*'
     tags: '*'
+permissions:
+  contents: write
 jobs:
+  SymbolicDerivatives:
+    runs-on: ubuntu-latest
+    outputs:
+      commit_hash: ${{ steps.get_commit_hash.outputs.commit }}  # Define job output for commit hash
+    steps:
+      - uses: actions/checkout@v4
+      - run: touch src/MatrixExp_Hamiltonian_Gradients.jl
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+          arch: x64
+      - run: |
+          julia --project=symbolic_derivatives -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()'
+      - run: julia --project=symbolic_derivatives symbolic_derivatives/MatrixExp_Hamiltonian_Derivatives.jl
+      - run: cat src/MatrixExp_Hamiltonian_Gradients.jl
+      - name: Commit derivatives
+        run: |
+          git config --global user.name 'GitHubAction'
+          git config --global user.email 'GitHubAction@users.noreply.github.com'
+          git add src/MatrixExp_Hamiltonian_Gradients.jl
+          git diff --cached --quiet || git commit -m "Update derivatives"
+          git push
+      - name: Get the commit hash
+        id: get_commit_hash
+        run: echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT  # Capture the commit hash as an environment variable
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    needs: SymbolicDerivatives
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -17,19 +44,22 @@ jobs:
         version:
           - '1.6'
           - '1'
-          - 'nightly'
         os:
           - ubuntu-latest
           - macOS-latest
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history so we can checkout specific commits
+      - run: echo ${{ needs.SymbolicDerivatives.outputs.commit_hash }}
+      - run: git checkout ${{ needs.SymbolicDerivatives.outputs.commit_hash }}  # Checkout the commit hash passed from the 'commit' job
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         env:
           cache-name: cache-artifacts
         with:
@@ -41,17 +71,21 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
-        continue-on-error: ${{ matrix.version == 'nightly' }}
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v3
         with:
           file: lcov.info
   docs:
     name: Documentation
+    needs: SymbolicDerivatives
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history so we can checkout specific commits
+      - run: echo ${{ needs.SymbolicDerivatives.outputs.commit_hash }}
+      - run: git checkout ${{ needs.SymbolicDerivatives.outputs.commit_hash }}  # Checkout the commit hash passed from the 'commit' job
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
           arch: x64
