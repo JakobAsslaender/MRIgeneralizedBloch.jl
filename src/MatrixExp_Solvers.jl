@@ -113,7 +113,9 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R
             # this implements the π - spoiler - TR preparation
             u_ip = propagator_linear_inversion_pulse(ω1[1], TRF[1], B1, R2s_vec[1][1], R2s_vec[2][1], R2s_vec[3][1], grad_list[j])
             m = u_ip * _m0
-            u_fp = xs_destructor(grad_list[j]) * exp(hamiltonian_linear(0, B1, ω0, TR, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad_list[j]))
+            u_fp = exp(hamiltonian_linear(0, B1, ω0, TR, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad_list[j]))
+            u_fp = xs_destructor(u_fp) * u_fp
+
             m = u_fp * m
         end
 
@@ -151,8 +153,8 @@ end
 function antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad, rfphase_increment, isInversionPulse)
     A = evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad, rfphase_increment, isInversionPulse)
 
-    Q = A - A0(grad)
-    m = Q \ C(grad)
+    Q = A - A0(A)
+    m = Q \ C(A)
     return m
 end
 
@@ -171,10 +173,13 @@ end
 
 function pulse_propagators(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad, isInversionPulse)
     if isInversionPulse # inversion pulses are accompanied by crusher gradients
-        u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+        u_fp = xs_destructor(u_fp) * u_fp
+
         u_pl = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2s, _dR2sdT2s, _dR2sdB1, grad)
     else
-        u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+        u_fp = xs_destructor(u_fp) * u_fp
         u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, _R2s, _dR2sdT2s, _dR2sdB1, grad))
     end
     return u_fp, u_pl

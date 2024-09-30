@@ -89,7 +89,7 @@ end
 function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
 
     H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, Rx, R1s, 0.0, 0.0, 0.0, grad)
-    ux = xs_destructor(grad)
+    ux = xs_destructor(H_fp)
     u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
 
     H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rx, R1s,
@@ -136,7 +136,8 @@ function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1,
 end
 
 function calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, _, _)
-    u_fp = xs_destructor(grad) * exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+    u_fp = xs_destructor(u_fp) * u_fp
     u_pl = propagator_linear_inversion_pulse(ω1, TRF, B1,
         R2slT[1](TRF, ω1 * TRF, B1, T2s),
         R2slT[2](TRF, ω1 * TRF, B1, T2s),
@@ -151,12 +152,12 @@ end
 function calcualte_cycle_propgator(E)
     Q = Array{SMatrix{11,11,Float64}}(undef, size(E, 2), size(E, 3))
 
-    for g in 1:size(E, 3), r in 1:size(E, 2)
+    for g ∈ axes(E, 3), r ∈ axes(E, 2)
         A = E[1,r,g]
         for t = size(E, 1):-1:2
             A = A * E[t,r,g]
         end
-        Q[r,g] = A0(grad_m0s()) - A
+        Q[r,g] = A0(A) - A
     end
     return Q
 end
@@ -164,8 +165,8 @@ end
 function propagate_magnetization(Q, E)
     Y = similar(E, SVector{11,Float64})
 
-    for r in 1:size(E, 2), g in 1:size(E, 3)
-        m = Q[r,g] \ C(grad_m0s())
+    for r ∈ axes(E, 2), g ∈ axes(E, 3)
+        m = Q[r,g] \ C(Q[r,g])
 
         Y[1,r,g] = m
         for t = 2:size(E, 1)
@@ -185,7 +186,7 @@ function calculate_adjoint_state(d, Q, E)
         λ[r,g] = d(size(E, 1), r, g)
     end
 
-    for r = 1:size(E, 2)
+    for r ∈ axes(E, 2)
         for t = size(E, 1) - 1:-1:1
             λ[r,1] = transpose(E[t + 1,r,1]) * λ[r,1]
             λ[r,1] += d(t, r, 1)
@@ -211,7 +212,7 @@ function calculate_adjoint_state(d, Q, E)
 
         # step 5: propagate adjoint state
         for t in size(E, 1):-1:2
-            for g = 1:size(E, 3)
+            for g ∈ axes(E, 3)
                 _E = E[mod(t, size(E, 1)) + 1,r,g]
                 if g == 1
                     P[t - 1,r,g] = transpose(_E) * P[t,r,g]
@@ -239,7 +240,7 @@ function dCRBdm(Y, w)
     dFdy = similar(F)
     tmp  = similar(F)
 
-    for g2 in 0:size(Y, 3), g1 in 0:size(Y, 3), r in 1:size(Y, 2), t in 1:size(Y, 1)
+    for g2 in 0:size(Y, 3), g1 in 0:size(Y, 3), r ∈ axes(Y, 2), t ∈ axes(Y, 1)
         if g1 == 0
             s1 = Y[t,r,1][1] - 1im * Y[t,r,1][2]
         else
@@ -255,12 +256,12 @@ function dCRBdm(Y, w)
     Fi = inv(F)
     CRB = w * real.(diag(Fi))
 
-    for g1 in 0:size(Y, 3), r in 1:size(Y, 2), t in 1:size(Y, 1)
+    for g1 in 0:size(Y, 3), r ∈ axes(Y, 2), t ∈ axes(Y, 1)
         # derivative wrt. x
         dFdy .= 0
         dFdy[g1 + 1,1] = Y[t,r,1][1] + 1im * Y[t,r,1][2]
         dFdy[1,g1 + 1] = Y[t,r,1][1] - 1im * Y[t,r,1][2]
-        for g2 in 1:size(Y, 3)
+        for g2 ∈ axes(Y, 3)
             dFdy[g1 + 1,g2 + 1] = Y[t,r,g2][6] + 1im * Y[t,r,g2][7]
             dFdy[g2 + 1,g1 + 1] = Y[t,r,g2][6] - 1im * Y[t,r,g2][7]
         end
@@ -272,7 +273,7 @@ function dCRBdm(Y, w)
         dFdy .= 0
         dFdy[g1 + 1,1] = Y[t,r,1][2] - 1im * Y[t,r,1][1]
         dFdy[1,g1 + 1] = Y[t,r,1][2] + 1im * Y[t,r,1][1]
-        for g2 in 1:size(Y, 3)
+        for g2 ∈ axes(Y, 3)
             dFdy[g1 + 1,g2 + 1] = Y[t,r,g2][7] - 1im * Y[t,r,g2][6]
             dFdy[g2 + 1,g1 + 1] = Y[t,r,g2][7] + 1im * Y[t,r,g2][6]
         end

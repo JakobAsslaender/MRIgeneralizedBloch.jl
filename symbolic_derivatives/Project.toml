@@ -1,0 +1,3 @@
+[deps]
+MRIgeneralizedBloch = "9689932d-8765-44d0-985b-2d9644d92569"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
