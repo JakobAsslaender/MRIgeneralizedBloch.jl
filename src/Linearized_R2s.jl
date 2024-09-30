@@ -122,24 +122,3 @@ function evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
     end
     return (_R2s, _dR2sdT2s, _dR2sdB1)
 end
-
-function evaluate_R2sl_vector_OCT(α, TRF, B1, T2s, R2slT, grad_list)
-    (_R2s, _dR2sdT2s, _dR2sdB1) = evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
-
-    _dR2sldω1      = similar(α)
-    _dR2sldTRF     = similar(α)
-    _dR2sldT2sdω1  = similar(α)
-    _dR2sldB1dω1   = similar(α)
-    _dR2sldT2sdTRF = similar(α)
-    _dR2sldB1dTRF  = similar(α)
-
-    for i = 1:length(α)
-        _dR2sldω1[i]      = R2slT[4](TRF[i], α[i], B1, T2s)
-        _dR2sldTRF[i]     = R2slT[5](TRF[i], α[i], B1, T2s)
-        _dR2sldT2sdω1[i]  = R2slT[6](TRF[i], α[i], B1, T2s)
-        _dR2sldB1dω1[i]   = R2slT[7](TRF[i], α[i], B1, T2s)
-        _dR2sldT2sdTRF[i] = R2slT[8](TRF[i], α[i], B1, T2s)
-        _dR2sldB1dTRF[i]  = R2slT[9](TRF[i], α[i], B1, T2s)
-    end
-    return (_R2s, _dR2sdT2s, _dR2sdB1, _dR2sldω1, _dR2sldTRF, _dR2sldT2sdω1, _dR2sldB1dω1, _dR2sldT2sdTRF, _dR2sldB1dTRF)
-end
