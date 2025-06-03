@@ -42,7 +42,7 @@ H(ω₁, ω₀, R₂, R₁) = [-R₂ -ω₀  ω₁  0;
                        0   0   0  0]
 
 z_Bloch = similar(Tʳᶠ)
-for i = 1:length(Tʳᶠ)
+for i ∈ eachindex(Tʳᶠ)
     (_, _, z_Bloch[i], _)  = exp(H(ω₁[i], ω₀, 1 / T₂ˢ, R₁) * Tʳᶠ[i]) * [0; 0; 1; 1]
 end
 
@@ -68,9 +68,9 @@ z_Graham_SF_approx_Lorentzian = @. (Rʳᶠ * exp(-Tʳᶠ * (R₁ + Rʳᶠ)) + R�
 # ```
 # where ``G(t-τ)`` is the Green's function. The Hamiltonian of this ODE is implemented in [`apply_hamiltonian_sled!`](@ref) and the ODE can be solved with the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-z₀ = [1] # initial z-magnetization
+z₀ = [1.0, 1.0] # initial z-magnetization
 z_Sled_Lorentzian = similar(Tʳᶠ)
-for i = 1:length(Tʳᶠ)
+for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠ[i]), param)
     z_Sled_Lorentzian[i] = solve(prob).u[end][1]
@@ -87,10 +87,10 @@ end
 # ```
 # for off-resonant RF-pulses with ``ω_1 = ω_x + i ω_y``. The Hamiltonian of the IDE is implemented in [`apply_hamiltonian_gbloch!`](@ref) and we can solve this IDE with the [delay-differential equation (DDE)](https://diffeq.sciml.ai/stable/tutorials/dde_example/) solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-z_fun(p, t) = [1.0]; # initialize history function (will be populated with an interpolation by the DDE solver)
+z_fun(p, t) = [1.0, 1.0]; # initialize history function (will be populated with an interpolation by the DDE solver)
 
 z_gBloch_Lorentzian = similar(Tʳᶠ)
-for i = 1:length(Tʳᶠ)
+for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
     z_gBloch_Lorentzian[i] = solve(prob).u[end][1]
@@ -118,14 +118,14 @@ Rʳᶠ = @. π * ω₁^2 * g_Gaussian(ω₀)
 z_Graham_SF_approx_Gaussian = @. (Rʳᶠ * exp(-Tʳᶠ * (R₁ + Rʳᶠ)) + R₁) / (R₁ + Rʳᶠ)
 
 z_Sled_Gaussian = similar(Tʳᶠ)
-for i = 1:length(Tʳᶠ)
+for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_gaussian)
     prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠ[i]), param)
     z_Sled_Gaussian[i] = solve(prob).u[end][1]
 end
 
 z_gBloch_Gaussian = similar(Tʳᶠ)
-for i = 1:length(Tʳᶠ)
+for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_gaussian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
     z_gBloch_Gaussian[i] = solve(prob).u[end][1]
@@ -149,14 +149,14 @@ Rʳᶠ = @. f_PSD(Tʳᶠ / T₂ˢ) * ω₁^2 * T₂ˢ
 z_Graham_spec_superLorentzian = @. (Rʳᶠ * exp(-Tʳᶠ * (R₁ + Rʳᶠ)) + R₁) / (R₁ + Rʳᶠ)
 
 z_Sled_superLorentzian = similar(Tʳᶠ)
-for i = 1:length(Tʳᶠ)
+for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
     prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠ[i]), param)
     z_Sled_superLorentzian[i] = solve(prob).u[end][1]
 end
 
 z_gBloch_superLorentzian = similar(Tʳᶠ)
-for i = 1:length(Tʳᶠ)
+for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
     z_gBloch_superLorentzian[i] = solve(prob).u[end][1]
@@ -208,7 +208,7 @@ z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 using Printf #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/Pulse_Response_FA", round(Int, α / pi * 180), "deg.txt")), "w") #src
 write(io, "TRF_s z_Bloch z_gBloch_Lorentzian z_gBloch_Gaussian z_gBloch_superLorentzian z_Sled_Lorentzian z_Sled_Gaussian z_Sled_superLorentzian z_Graham_spec_Lorentzian z_Graham_spec_Gaussian z_Graham_spec_superLorentzian z_Graham_SF_approx_Lorentzian z_Graham_SF_approx_Gaussian \n") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, @sprintf("%1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e %1.3e \n", #src
     Tʳᶠ[i],  #src
     z_Bloch[i],  #src

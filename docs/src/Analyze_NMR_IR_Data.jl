@@ -9,11 +9,10 @@ using DifferentialEquations
 using LinearAlgebra
 using LsqFit
 using Statistics
-import Pingouin
+using HypothesisTests
 using Printf
-using Formatting
 using Plots
-plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
+plotlyjs(bg=RGBA(31 / 255, 36 / 255, 36 / 255, 1.0), ticks=:native); #hide #!nb
 
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
 MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
@@ -26,7 +25,7 @@ include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"))
 # ### ``T_2^{*,f}`` Estimation
 # We estimate ``T_2^{*,f}`` by fitting a mono-exponential decay curve to the FID of the acquisition with ``T_\text{RF} = 22.8``μs and ``T_\text{i} = 5``s.
 M = load_Data(MnCl2_data(1))
-M = M[:,1]; # select Tᵢ = 5s
+M = M[:, 1]; # select Tᵢ = 5s
 
 # The data was measured at the following time points in units of seconds:
 T_dwell = 100e-6 # s
@@ -35,11 +34,11 @@ TE = T_dwell * ((1:length(M)) .+ 7) # s
 # Note that the signal is an FID, so the phrase *echo* time is a bit misleading.
 
 # The function [curve_fit](https://julianlsolvers.github.io/LsqFit.jl/latest/api/#LsqFit.curve_fit) from the [LsqFit.jl](https://julianlsolvers.github.io/LsqFit.jl/latest/) package is only implemented for real-valued models. To accommodate this, we need to split the data into its real and imaginary part:
-TEreal = [TE;TE]
-Mreal = [real(M);imag(M)];
+TEreal = [TE; TE]
+Mreal = [real(M); imag(M)];
 
 # Here, we are using a simple mono-exponential model with a complex-valued scaling factor `p[1] + 1im p[2]`, the decay time ``T_2^{*,f} =`` `p[3]`, and the Larmor frequency `p[4]`:
-FID_model(t, p) = @. [p[1] * exp(- t[1:end ÷ 2] / p[3]) * cos(p[4] * t[1:end ÷ 2]); p[2] * exp(- t[end ÷ 2 + 1:end] / p[3]) * sin(p[4] * t[end ÷ 2 + 1:end])];
+FID_model(t, p) = @. [p[1] * exp(-t[1:end÷2] / p[3]) * cos(p[4] * t[1:end÷2]); p[2] * exp(-t[end÷2+1:end] / p[3]) * sin(p[4] * t[end÷2+1:end])];
 
 # Fitting this model to the NMR data estimates ``T_2^{*,f}``:
 fit = curve_fit(FID_model, TEreal, Mreal, [1, 1, 0.1, 0])
@@ -58,14 +57,14 @@ plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T₂* = %2.3f ms", 1e3 * T�
 # The relative residual norm of the fit, i.e. ``||\text{residual}||_2/||M||_2`` is
 norm(fit.resid) / norm(M)
 
-# Despite its small ``\ell_2``-norm, the Shapiro-Wilk test indicates that the residual is not Gaussian or normal distributed at a significance level of `α=0.05`
-Pingouin.normality(fit.resid, α=0.05)
+# Despite its small ``\ell_2``-norm, the Shapiro-Wilk test rejects the null hypothesis `h_0` that the residual is Gaussian or normal distributed with a very small `p` value:
+ShapiroWilkTest(fit.resid)
 # We note that mono-exponential ``T_2^*`` decays assume a Lorentzian distributed magnetic field, which is in general an assumption rather than a well-founded theory.
 
 # ### Mono-Exponential IR Model
 # We performed several experiments in which we inverted the thermal equilibrium magnetization with rectangular π-pulses with the following pulse durations (in seconds):
 Tʳᶠmin = 22.8e-6 # s - shortest Tʳᶠ possible on the NMR
-TRF_scale = [1;2;5:5:40] # scaling factor
+TRF_scale = [1; 2; 5:5:40] # scaling factor
 Tʳᶠ = TRF_scale * Tʳᶠmin # s
 
 # and acquired inversion recovery data at exponentially spaced inversion times (in seconds):
@@ -79,8 +78,8 @@ Tᵢplot = exp.(range(log(Tᵢ[1]), log(Tᵢ[end]), length=500)); # s
 
 # After loading and normalizing the data
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
-for i = 1:length(TRF_scale)
-    M[:,i] = load_first_datapoint(MnCl2_data(TRF_scale[i]))
+for i ∈ eachindex(TRF_scale)
+    M[:, i] = load_first_datapoint(MnCl2_data(TRF_scale[i]))
 end
 M ./= maximum(M);
 
@@ -89,14 +88,14 @@ M ./= maximum(M);
 #src #############################################################################
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_data_MnCl2.txt")), "w") #src
 write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
 
-for j = 1:length(Tᵢ) #src
+for j ∈ eachindex(Tᵢ) #src
     write(io, "$(@sprintf("%.2e", Tᵢ[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
+    for i ∈ eachindex(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", M[j,i])) ") #src
     end #src
     write(io, " \n") #src
@@ -105,18 +104,18 @@ close(io) #src
 #src #############################################################################
 
 # we analyze each inversion recovery curve that corresponds to a different ``T_\text{RF}`` separately. This allows us to fit a simple mono-exponential model
-standard_IR_model(t, p) = @. p[1] - p[3] * exp(- t * p[2]);
+standard_IR_model(t, p) = @. p[1] - p[3] * exp(-t * p[2]);
 # where `p[1]` is the thermal equilibrium magnetization, `p[2]` ``= T_1``, and `p[1] - p[3]` is the magnetization right after the inversion pulse or, equivalently, `Minv = p[1] / p[3] - 1` is the inversion efficiency, which is 1 for an ideal π-pulse and smaller otherwise. The parameters are initialized with
 p0 = [1.0, 1.0, 2.0];
 
 # and we can loop over ``T_\text{RF}`` to perform the fits:
-param = similar(M[1,:], Vector{Float64}) #src
-R₁ = similar(M[1,:])
+param = similar(M[1, :], Vector{Float64}) #src
+R₁ = similar(M[1, :])
 Minv = similar(R₁)
 residual = similar(R₁)
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
-for i = 1:length(TRF_scale)
-    Mi = @view M[:,i]
+for i ∈ eachindex(TRF_scale)
+    Mi = @view M[:, i]
 
     fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
     param[i] = fit.param #src
@@ -135,17 +134,17 @@ display(p) #!md
 #src #############################################################################
 #src # export fitted curves
 #src #############################################################################
-Mp = [standard_IR_model(Tᵢplot, param[i]) for i=1:length(Tʳᶠ)] #src
+Mp = [standard_IR_model(Tᵢplot, param[i]) for i ∈ eachindex(Tʳᶠ)] #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_monoExp_fit_MnCl2.txt")), "w") #src
 write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
 
-for j = 1:length(Tᵢplot) #src
+for j ∈ eachindex(Tᵢplot) #src
     write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
+    for i ∈ eachindex(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", Mp[i][j])) ") #src
     end #src
     write(io, " \n") #src
@@ -177,32 +176,32 @@ function Bloch_IR_model(p, Tʳᶠ, Tᵢ, T2)
     R2 = 1 / T2
 
     M = zeros(Float64, length(Tᵢ), length(Tʳᶠ))
-    for i = 1:length(Tʳᶠ)
+    for i ∈ eachindex(Tʳᶠ)
         ## simulate inversion pulse
         ω₁ = π / Tʳᶠ[i]
         H = [-R2 -ω₁ 0 ;
               ω₁ -R₁ R₁;
                0   0 0 ]
 
-        m_inv = m0_inv * (exp(H * Tʳᶠ[i]) * [0,1,1])[2]
+        m_inv = m0_inv * (exp(H * Tʳᶠ[i])*[0, 1, 1])[2]
 
         ## simulate T1 recovery
         H = [-R₁ R₁*m0;
                0     0]
 
-        for j = 1:length(Tᵢ)
-            M[j,i] = m0 * (exp(H .* (Tᵢ[j] - Tʳᶠ[i] / 2)) * [m_inv,1])[1]
+        for j ∈ eachindex(Tᵢ)
+            M[j, i] = m0 * (exp(H .* (Tᵢ[j] - Tʳᶠ[i] / 2)) * [m_inv, 1])[1]
         end
     end
     return vec(M)
 end;
 
 # We use the previously estimated ``T_2^{*,f}`` value for the fit:
-fit = curve_fit((x, p) -> Bloch_IR_model(p, Tʳᶠ, Tᵢ, T₂star_MnCl2), 1:length(M), vec(M), [ 1, .8, 1])
+fit = curve_fit((x, p) -> Bloch_IR_model(p, Tʳᶠ, Tᵢ, T₂star_MnCl2), 1:length(M), vec(M), [1, 0.8, 1])
 
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
-for i=1:length(Tʳᶠ)
-    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+for i ∈ eachindex(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:, i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
     plot!(p, Tᵢplot, Bloch_IR_model(fit.param, Tʳᶠ[i], Tᵢplot, T₂star_MnCl2), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p) #!md
@@ -224,10 +223,10 @@ norm(fit.resid) / norm(M)
 # We repeat the ``T_2^{*,f}`` estimation for the bovine serum albumin (BSA) sample by fitting a mono-exponential decay curve to the FID of the acquisition with ``T_\text{RF} = 22.8``μs and ``T_\text{i} = 5``s.
 
 M = load_Data(BSA_data(1));
-M = M[:,1] # select Tᵢ = 5s
-Mreal = [real(M);imag(M)]
+M = M[:, 1] # select Tᵢ = 5s
+Mreal = [real(M); imag(M)]
 
-fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, .1, 0.0]);
+fit = curve_fit(FID_model, TEreal, Mreal, [1.0, 1.0, 0.1, 0.0]);
 
 # The estimated ``T_2^{*,f}`` of the BSA sample is
 T₂star_BSA = fit.param[3] # s
@@ -247,14 +246,14 @@ plot!(p, TE, abs.(Mfitted), label=@sprintf("fit with T₂* = %2.3f ms", 1e3 * T�
 norm(fit.resid) / norm(M)
 
 # Despite the small residual, the Shapiro-Wilk test indicates that the residual is not normal distributed for this sample either:
-Pingouin.normality(fit.resid, α=0.05)
+ShapiroWilkTest(fit.resid)
 
 
 # ### Mono-Exponential IR Model
 # We also fit a mono-exponential model to each inversion recovery curve of the BSA data:
 M = zeros(Float64, length(Tᵢ), length(TRF_scale))
-for i = 1:length(TRF_scale)
-    M[:,i] = load_first_datapoint(BSA_data(TRF_scale[i]))
+for i ∈ eachindex(TRF_scale)
+    M[:, i] = load_first_datapoint(BSA_data(TRF_scale[i]))
 end
 M ./= maximum(M)
 #src #############################################################################
@@ -262,14 +261,14 @@ M ./= maximum(M)
 #src #############################################################################
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_data_BSA.txt")), "w") #src
 write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
 
-for j = 1:length(Tᵢ) #src
+for j ∈ eachindex(Tᵢ) #src
     write(io, "$(@sprintf("%.2e", Tᵢ[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
+    for i ∈ eachindex(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", M[j,i])) ") #src
     end #src
     write(io, " \n") #src
@@ -278,8 +277,8 @@ close(io) #src
 #src #############################################################################
 
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
-for i = 1:length(TRF_scale)
-    Mi = @view M[:,i]
+for i ∈ eachindex(TRF_scale)
+    Mi = @view M[:, i]
 
     fit = curve_fit(standard_IR_model, Tᵢ, Mi, p0)
     param[i] = fit.param #src
@@ -297,17 +296,17 @@ display(p) #!md
 #src #############################################################################
 #src # export fitted curves
 #src #############################################################################
-Mp = [standard_IR_model(Tᵢplot, param[i]) for i=1:length(Tʳᶠ)] #src
+Mp = [standard_IR_model(Tᵢplot, param[i]) for i ∈ eachindex(Tʳᶠ)] #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_monoExp_fit_BSA.txt")), "w") #src
 write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
 
-for j = 1:length(Tᵢplot) #src
+for j ∈ eachindex(Tᵢplot) #src
     write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
+    for i ∈ eachindex(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", Mp[i][j])) ") #src
     end #src
     write(io, " \n") #src
@@ -352,13 +351,13 @@ function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
               0          0         0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
-    for i = 1:length(Tʳᶠ)
+    for i ∈ eachindex(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
         prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
-        for j = 1:length(TI)
-            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+        for j ∈ eachindex(TI)
+            M[j, i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2))*[m0f_inv * m[3], m[4], 1])[1]
         end
     end
     return vec(M)
@@ -366,20 +365,20 @@ end;
 
 # Here, we use assume a super-Lorentzian lineshape, whose Green's function is interpolated to speed up the fitting routine:
 T₂ˢ_min = 5e-6 # s
-G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ)/T₂ˢ_min);
+G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ) / T₂ˢ_min);
 
 # The fit is initialized with `p0 = [m0, m0f_inv, m0_s, R₁, T2_s, Rx]` and we set some reasonable bounds to the fitted parameters:
 p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
 pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
 pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
 
-fit_gBloch = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_gBloch = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1 / T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data align well:
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
-for i=1:length(Tʳᶠ)
-    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+for i ∈ eachindex(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:, i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1 / T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
@@ -406,17 +405,17 @@ stderror(fit_gBloch)
 #src #############################################################################
 #src # export fitted curves
 #src #############################################################################
-Mp = reshape(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
+Mp = reshape(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1 / T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_gBloch_fit.txt")), "w") #src
 write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
 
-for j = 1:length(Tᵢplot) #src
+for j ∈ eachindex(Tᵢplot) #src
     write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
+    for i ∈ eachindex(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", Mp[j,i])) ") #src
     end #src
     write(io, " \n") #src
@@ -442,25 +441,25 @@ function Graham_IR_model(p, Tʳᶠ, TI, R2f)
               0          0         0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
-    for i = 1:length(Tʳᶠ)
+    for i ∈ eachindex(Tʳᶠ)
         param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rx, R₁, T₂ˢ)
         prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
-        for j = 1:length(TI)
-            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+        for j ∈ eachindex(TI)
+            M[j, i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3], m[4], 1])[1]
         end
     end
     return vec(M)
 end
 
-fit_Graham = curve_fit((x, p) -> Graham_IR_model(p, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_Graham = curve_fit((x, p) -> Graham_IR_model(p, Tʳᶠ, Tᵢ, 1 / T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data align substantially worse:
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
-for i=1:length(Tʳᶠ)
-    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+for i ∈ eachindex(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:, i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢplot, 1 / T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
@@ -488,17 +487,17 @@ stderror(fit_Graham)
 #src # export data
 #src #############################################################################
 #src export fitted curves
-Mp = reshape(Graham_IR_model(fit_Graham.param, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
+Mp = reshape(Graham_IR_model(fit_Graham.param, Tʳᶠ, Tᵢplot, 1 / T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_Graham_fit.txt")), "w") #src
 write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
 
-for j = 1:length(Tᵢplot) #src
+for j ∈ eachindex(Tᵢplot) #src
     write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
+    for i ∈ eachindex(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", Mp[j,i])) ") #src
     end #src
     write(io, " \n") #src
@@ -522,25 +521,25 @@ function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
               0          0         0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
-    for i = 1:length(Tʳᶠ)
+    for i ∈ eachindex(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
         prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
-        for j = 1:length(TI)
-            M[j,i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3],m[4],1])[1]
+        for j ∈ eachindex(TI)
+            M[j, i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2))*[m0f_inv * m[3], m[4], 1])[1]
         end
     end
     return vec(M)
 end
 
-fit_Sled = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1/T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
+fit_Sled = curve_fit((x, p) -> Sled_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1 / T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
 # Visually, the plot and the data do not align well either:
 p = plot(xlabel="Tᵢ [s]", ylabel="zᶠ(Tʳᶠ, Tᵢ) [a.u.]")
-for i=1:length(Tʳᶠ)
-    scatter!(p, Tᵢ, M[:,i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
-    plot!(p, Tᵢplot, Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1/T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+for i ∈ eachindex(Tʳᶠ)
+    scatter!(p, Tᵢ, M[:, i], label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
+    plot!(p, Tᵢplot, Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ[i], Tᵢplot, 1 / T₂star_BSA), label=@sprintf("Tʳᶠ = %1.2es", Tʳᶠ[i]), color=i)
 end
 display(p) #!md
 #md Main.HTMLPlot(p) #hide
@@ -568,17 +567,17 @@ stderror(fit_Sled)
 #src # export data
 #src #############################################################################
 #src export fitted curves
-Mp = reshape(Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1/T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
+Mp = reshape(Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ, Tᵢplot, 1 / T₂star_BSA), length(Tᵢplot), length(Tʳᶠ)) #src
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_Sled_fit.txt")), "w") #src
 write(io, "TI_s") #src
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, " z_$(@sprintf("%.2e", Tʳᶠ[i]))") #src
 end #src
 write(io, " \n")  #src
 
-for j = 1:length(Tᵢplot) #src
+for j ∈ eachindex(Tᵢplot) #src
     write(io, "$(@sprintf("%.2e", Tᵢplot[j])) ") #src
-    for i = 1:length(Tʳᶠ) #src
+    for i ∈ eachindex(Tʳᶠ) #src
         write(io, "$(@sprintf("%.2e", Mp[j,i])) ") #src
     end #src
     write(io, " \n") #src
@@ -591,10 +590,10 @@ close(io) #src
 resid_gBlo = similar(Tʳᶠ)
 resid_Sled = similar(Tʳᶠ)
 resid_Grah = similar(Tʳᶠ)
-for i=1:length(Tʳᶠ)
-    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
-    resid_Grah[i] = norm(Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
-    resid_Sled[i] = norm(Sled_IR_model(  fit_Sled.param,   G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+for i ∈ eachindex(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1 / T₂star_BSA) .- M[:, i]) / norm(M[:, i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_Graham.param, Tʳᶠ[i], Tᵢ, 1 / T₂star_BSA) .- M[:, i]) / norm(M[:, i])
+    resid_Sled[i] = norm(Sled_IR_model(fit_Sled.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1 / T₂star_BSA) .- M[:, i]) / norm(M[:, i])
 end
 
 p = plot(xlabel="Tʳᶠ [s]", ylabel="relative residual")
@@ -609,7 +608,7 @@ scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_residuum_each_fit.txt")), "w") #src
 write(io, "TRF_ms Graham_percent Sled_percent gBloch_percent \n")  #src
 
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, "$(@sprintf("%.2e", 1e3 * Tʳᶠ[i])) ") #src
     write(io, "$(@sprintf("%.2e", 1e2 * resid_Grah[i])) ") #src
     write(io, "$(@sprintf("%.2e", 1e2 * resid_Sled[i])) ") #src
@@ -621,10 +620,10 @@ close(io) #src
 
 # This analysis examines the residuals from the actual fits, i.e. it uses the biophysical parameters of respective fit to model the signal. The disadvantage of this approach is that residuals at long ``T_\text{RF}`` are negatively affected by the poor fits of Graham's and Sled's models at short ``T_\text{RF}``. This problem is overcome by subtracting the measured signal from signal that is simulated with the biophysical parameters that were estimated by fitting the generalized Bloch model:
 
-for i=1:length(Tʳᶠ)
-    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
-    resid_Grah[i] = norm(Graham_IR_model(fit_gBloch.param, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA)                    .- M[:,i]) / norm(M[:,i])
-    resid_Sled[i] = norm(Sled_IR_model(  fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1/T₂star_BSA) .- M[:,i]) / norm(M[:,i])
+for i ∈ eachindex(Tʳᶠ)
+    resid_gBlo[i] = norm(gBloch_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1 / T₂star_BSA) .- M[:, i]) / norm(M[:, i])
+    resid_Grah[i] = norm(Graham_IR_model(fit_gBloch.param, Tʳᶠ[i], Tᵢ, 1 / T₂star_BSA) .- M[:, i]) / norm(M[:, i])
+    resid_Sled[i] = norm(Sled_IR_model(fit_gBloch.param, G_superLorentzian, Tʳᶠ[i], Tᵢ, 1 / T₂star_BSA) .- M[:, i]) / norm(M[:, i])
 end
 
 p = plot(xlabel="Tʳᶠ [s]", ylabel="relative residual")
@@ -641,7 +640,7 @@ scatter!(p, Tʳᶠ, resid_Sled, label="Sled's model")
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/IR_residuum_gBloch_est.txt")), "w") #src
 write(io, "TRF_ms Graham_percent Sled_percent gBloch_percent \n")  #src
 
-for i = 1:length(Tʳᶠ) #src
+for i ∈ eachindex(Tʳᶠ) #src
     write(io, "$(@sprintf("%.2e", 1e3 * Tʳᶠ[i])) ") #src
     write(io, "$(@sprintf("%.2e", 1e2 * resid_Grah[i])) ") #src
     write(io, "$(@sprintf("%.2e", 1e2 * resid_Sled[i])) ") #src

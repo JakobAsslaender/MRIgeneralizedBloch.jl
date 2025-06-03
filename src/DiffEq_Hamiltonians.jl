@@ -131,6 +131,8 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
 
     xys = real(cis(-ω0 * t) * quadgk(τ -> cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1^2 * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    ∂m∂t[5] = 0
+
     return ∂m∂t
 end
 
@@ -143,6 +145,8 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Rea
 
     xys = real(cis(-ω0 * t) * quadgk(τ -> ω1(τ) * cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1(t) * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    ∂m∂t[5] = 0
+
     return ∂m∂t
 end
 
@@ -155,6 +159,8 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Fun
 
     xys = real(cis(-φ(t)) * quadgk(τ -> ω1(τ) * cis(φ(τ)) * g((t - τ) / T2s) * mfun(p, τ; idxs=zs_idx), eps(), t, order=7)[1])
     ∂m∂t[4] = -B1^2 * ω1(t) * xys + Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s * R1s * m[5]
+    ∂m∂t[5] = 0
+
     return ∂m∂t
 end
 
@@ -168,7 +174,8 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{6,Any}, t)
     ω1, B1, ω0, R1s, T2s, g = p
 
     xys = real(cis(-ω0 * t) * quadgk(τ -> cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
-    ∂m∂t[1] = -B1^2 * ω1^2 * xys + R1s * (1 - m[1])
+    ∂m∂t[1] = -B1^2 * ω1^2 * xys + R1s * (m[2] - m[1])
+    ∂m∂t[2] = 0
     return ∂m∂t
 end
 
@@ -176,7 +183,8 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Rea
     ω1, B1, ω0, R1s, T2s, g = p
 
     xys = real(cis(-ω0 * t) * quadgk(τ -> ω1(τ) * cis(ω0 * τ) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
-    ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (1 - m[1])
+    ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (m[2] - m[1])
+    ∂m∂t[2] = 0
     return ∂m∂t
 end
 
@@ -184,7 +192,8 @@ function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::Tuple{Function,Real,Fun
     ω1, B1, φ, R1s, T2s, g = p
 
     xys = real(cis(-φ(t)) * quadgk(τ -> ω1(τ) * cis(φ(τ)) * g((t - τ) / T2s) * mfun(p, τ)[1], 0, t, order=7)[1])
-    ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (1 - m[1])
+    ∂m∂t[1] = -B1^2 * ω1(t) * xys + R1s * (m[2] - m[1])
+    ∂m∂t[2] = 0
     return ∂m∂t
 end
 
@@ -222,6 +231,7 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{6,Any}, t)
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - (R1f + Rx * m0s) * m[3] + Rx * (1 - m0s)  * m[4] + (1 - m0s) * R1f * m[5]
     ∂m∂t[4] =   Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] + m0s  * R1s * m[5]
+    ∂m∂t[5] = 0
     return ∂m∂t
 end
 
@@ -464,7 +474,7 @@ function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
     ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rx * m0s) * m[3] +       Rx * (1 - m0s)  * m[4] + (1 - m0s) * R1f * m[5]
     ∂m∂t[4] +=             +       Rx * m0s  * m[3] - (R1s + Rx * (1 - m0s)) * m[4] +      m0s  * R1s * m[5]
-    ∂m∂t[5] = 0.0
+    ∂m∂t[5] = 0
     return ∂m∂t
 end
 

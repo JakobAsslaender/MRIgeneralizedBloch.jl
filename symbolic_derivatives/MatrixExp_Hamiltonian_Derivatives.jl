@@ -50,4 +50,26 @@ for p ∈ [m0s, R1f, R2f, Rx, R1s, T2s, B1, ω0, R1a]
 end
 
 ##
-write("src/MatrixExp_Hamiltonian_Gradients.jl", fs_str)
+# Find all start and end markers
+starts = findall("#=", fs_str)
+ends   = findall("=#", fs_str)
+
+# Sanity check: number of starts and ends should match
+@assert length(starts) == length(ends) "Mismatched #= and =# markers"
+
+# Start with the part before the first block comment
+fsc_str = fs_str[1:starts[1][1]-1]
+
+# Append all non-comment regions
+for i in 1:length(starts)
+    from = ends[i][2] + 1
+    to = i == length(starts) ? lastindex(fs_str) : starts[i+1][1] - 1
+    global fsc_str *= fs_str[from:to]
+end
+
+# remove whitespace lines
+fsc_str = join(filter(x -> !isempty(strip(x)), split(fsc_str, '\n')), "\n")
+
+
+##
+write("src/MatrixExp_Hamiltonian_Gradients.jl", fsc_str)

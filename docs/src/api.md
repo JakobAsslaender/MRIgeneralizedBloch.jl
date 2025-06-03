@@ -1,5 +1,4 @@
 ```@meta
-Author = "Jakob Assländer"
 CurrentModule = MRIgeneralizedBloch
 ```
 
