@@ -70,7 +70,7 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
     dH = zeros(Float64, 22, 22)
 
     for r ∈ eachindex(rfphase_increment)
-        u_rot = z_rotation_propagator(rfphase_increment[r], grad_m0s())
+        u_rot = z_rotation_propagator(rfphase_increment[r], zeros(SMatrix{11, 11}))
         for g ∈ eachindex(grad_list)
             grad = grad_list[g]
 
