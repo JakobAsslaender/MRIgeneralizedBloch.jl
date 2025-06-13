@@ -53,6 +53,25 @@ export grad_T2s
 export grad_ω0
 export grad_B1
 
+
+export grad_m0_C
+export grad_m0_PG
+export grad_m0_BW
+export grad_m0_CFW
+export grad_Rx_C_CFW
+export grad_Rx_CFW_BW
+export grad_Rx_BW_PG
+export grad_Rx_C_BW
+export grad_Rx_PG_C
+export grad_R1_C
+export grad_R1_PG
+export grad_R1_BW
+export grad_R1_CFW
+export grad_R2_CFW
+export grad_R2_BW
+export grad_T2_C
+export grad_T2_PG
+
 abstract type grad_param end
 struct grad_m0s <: grad_param end
 struct grad_R1a <: grad_param end
@@ -63,6 +82,24 @@ struct grad_Rx  <: grad_param end
 struct grad_T2s <: grad_param end
 struct grad_ω0  <: grad_param end
 struct grad_B1  <: grad_param end
+
+struct grad_m0_C <: grad_param end
+struct grad_m0_PG <: grad_param end
+struct grad_m0_BW <: grad_param end
+struct grad_m0_CFW <: grad_param end
+struct grad_Rx_C_CFW <: grad_param end
+struct grad_Rx_CFW_BW <: grad_param end
+struct grad_Rx_BW_PG <: grad_param end
+struct grad_Rx_C_BW <: grad_param end
+struct grad_Rx_PG_C <: grad_param end
+struct grad_R1_C <: grad_param end
+struct grad_R1_PG <: grad_param end
+struct grad_R1_BW <: grad_param end
+struct grad_R1_CFW <: grad_param end
+struct grad_R2_CFW <: grad_param end
+struct grad_R2_BW <: grad_param end
+struct grad_T2_C <: grad_param end
+struct grad_T2_PG <: grad_param end
 
 include("DiffEq_Hamiltonians.jl")
 include("Linearized_R2s.jl")
@@ -78,5 +115,6 @@ include("OptimalControlHelpers.jl")
 
 include("4Comp_MatrixExp_Hamiltonians.jl")
 include("4Comp_MatrixExp_Solvers.jl")
+include("4Comp_MatrixExp_Hamiltonian_Gradients.jl")
 
 end
