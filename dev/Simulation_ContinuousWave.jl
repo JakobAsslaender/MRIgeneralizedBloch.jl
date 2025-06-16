@@ -1,7 +1,7 @@
 #md # [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/build_literate/Simulation_ContinuousWave.ipynb)
 
 # # Continuous Wave Simulation
-# The following code replicates the continuous wave simulation of Fig. 2 and is slightly more comprehensive in the sense that all discussed models are simulated. 
+# The following code replicates the continuous wave simulation of Fig. 2 and is slightly more comprehensive in the sense that all discussed models are simulated.
 
 # For these simulations we need the following packages:
 
@@ -10,7 +10,7 @@ using DifferentialEquations
 using QuadGK
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
- 
+
 # and we simulate an isolated semi-solid spin pool with the following parameters:
 R₁ = 1.0 # 1/s
 T₂ˢ = 10e-6 # s
@@ -26,24 +26,24 @@ Tʳᶠ = 2e-3 # s
 t = range(0, Tʳᶠ, length=1001) # time points for plotting
 tspan = (0.0, Tʳᶠ); # simulation range
 
-# These parameters correspond to Fig. 2b, the parameters for replicating Fig. 2a are `ω₁ = 200π` and `Tʳᶠ = 1`s. 
+# These parameters correspond to Fig. 2b, the parameters for replicating Fig. 2a are `ω₁ = 200π` and `Tʳᶠ = 1`s.
 
 # ## Lorentzian Lineshape
-# In this script, we simulate the three lineshapes separately, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth. 
+# In this script, we simulate the three lineshapes separately, starting with the Lorentzian lineshape for which the Bloch model provides a ground truth.
 
 # ### Bloch Model
-# We can formulate the [Bloch model](http://dx.doi.org/10.1103/PhysRev.70.460) as 
+# We can formulate the [Bloch model](http://dx.doi.org/10.1103/PhysRev.70.460) as
 # ```math
-# \partial_t \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix} 
-# -R_2 & -ω_0 & ω_1 & 0 \\ 
-# ω_0 & -R_2 & 0 & 0 \\  
-# -ω_1 & 0 & -R_1 & R_1 \\ 
+# \partial_t \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} = \begin{pmatrix}
+# -R_2 & -ω_0 & ω_1 & 0 \\
+# ω_0 & -R_2 & 0 & 0 \\
+# -ω_1 & 0 & -R_1 & R_1 \\
 # 0 & 0 & 0 & 0
 # \end{pmatrix} \begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix} ,
 # ```
 # where the matrix is the Hamiltonian of the Bloch model. For a constant ``ω_0`` and ``ω_1``, we can evaluate the Bloch model by taking the  matrix exponential of its Hamiltonian:
 
-H(ω₁, ω₀, R₂, R₁) = [-R₂  -ω₀  ω₁  0; 
+H(ω₁, ω₀, R₂, R₁) = [-R₂  -ω₀  ω₁  0;
                        ω₀ -R₂   0  0;
                       -ω₁   0 -R₁ R₁;
                         0   0   0  0]
@@ -59,7 +59,7 @@ end
 g_Lorentzian(ω₀) = T₂ˢ / π / (1 + (T₂ˢ * ω₀)^2)
 z_steady_state_Lorentzian = R₁ / (R₁ + π * ω₁^2 * g_Lorentzian(ω₀))
 
-# where `g_Lorentzian(ω₀)` is the Lorentzian lineshape. 
+# where `g_Lorentzian(ω₀)` is the Lorentzian lineshape.
 
 # ### Graham's Single Frequency Approximation
 # The lineshape is also used to calculate [Graham's single frequency approximation](http://doi.org/10.1002/jmri.1880070520), which describes an exponential decay with the RF-induced saturation rate `Rʳᶠ`:
@@ -74,7 +74,7 @@ z_Graham_Lorentzian = @. (Rʳᶠ * exp(-t * (R₁ + Rʳᶠ)) + R₁) / (R₁ + R
 # ```
 # where ``G(t-τ)`` is the Green's function. The Hamiltonian of this ODE is implemented in [`apply_hamiltonian_sled!`](@ref) and we solve this ODE with the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-z₀ = [1.0] # initial z-magnetization
+z₀ = [1.0, 1.0] # initial z-magnetization
 param = (ω₁, 1, ω₀, R₁, T₂ˢ, greens_lorentzian) # defined by apply_hamiltonian_sled!
 prob = ODEProblem(apply_hamiltonian_sled!, z₀, tspan, param)
 z_Sled_Lorentzian = solve(prob);
@@ -91,7 +91,7 @@ z_Sled_Lorentzian = solve(prob);
 # ```
 # The Hamiltonian of the IDE is implemented in [`apply_hamiltonian_gbloch!`](@ref) and we can solve this IDE with the [delay-differential equation (DDE)](https://diffeq.sciml.ai/stable/tutorials/dde_example/) solver of the [DifferentialEquations.jl](https://diffeq.sciml.ai/stable/) package:
 
-zfun(p, t) = [1.0] # initialize history function (will be populated with an interpolation by the DDE solver)
+zfun(p, t) = [1.0, 1.0] # initialize history function (will be populated with an interpolation by the DDE solver)
 
 param = (ω₁, 1, ω₀, R₁, T₂ˢ, greens_lorentzian) # defined by apply_hamiltonian_gbloch!
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, zfun, tspan, param)
@@ -107,7 +107,7 @@ plot!(p, 1e3t, (hcat(z_gBloch_Lorentzian(t).u...)'), label="generalized Bloch mo
 plot!(p, 1e3t, z_Bloch, label="Bloch model")
 #md Main.HTMLPlot(p) #hide
 
-# Zooming into the plot, reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and subtle, but existing differences when compared to the other models. Choosing a longer `T₂ˢ` amplifies these differences. 
+# Zooming into the plot, reveals virtually perfect (besides numerical differences) agreement between Bloch and generalized Bloch model and subtle, but existing differences when compared to the other models. Choosing a longer `T₂ˢ` amplifies these differences.
 
 # ## Gaussian Lineshape
 # We can repeat these simulations (with the exception of the Bloch model) for the Gaussian lineshape:
@@ -168,7 +168,7 @@ write(io, "t_s Lorentzian Gaussian superLorentzian \n") #src
 write(io, @sprintf("%1.3e %1.3e %1.3e %1.3e \n", 0, z_steady_state_Lorentzian, z_steady_state_Gaussian, z_steady_state_superLorentzian)) #src
 write(io, @sprintf("%1.3e %1.3e %1.3e %1.3e \n", t[end], z_steady_state_Lorentzian, z_steady_state_Gaussian, z_steady_state_superLorentzian)) #src
 close(io) #src
-    
+
 io = open(expanduser(string("~/Documents/Paper/2021_MT_IDE/Figures/CW_SpinDynamics_", version, ".txt")), "w") #src
 write(io, "t_s t_ms z_Bloch z_gBloch_Lorentzian z_gBloch_Gaussian z_gBloch_superLorentzian z_Graham_Lorentzian z_Graham_Gaussian z_Graham_superLorentzian z_Sled_Lorentzian z_Sled_Gaussian z_Sled_superLorentzian \n") #src
 for i = 1:30:length(t) #src

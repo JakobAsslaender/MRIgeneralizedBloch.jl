@@ -30,12 +30,12 @@ z_steady_state_Lorentzian = R₁ / (R₁ + π * ω₁^2 * g_Lorentzian(ω₀))
 Rʳᶠ = π * ω₁^2 * g_Lorentzian(ω₀)
 z_Graham_Lorentzian = @. (Rʳᶠ * exp(-t * (R₁ + Rʳᶠ)) + R₁) / (R₁ + Rʳᶠ);
 
-z₀ = [1.0] # initial z-magnetization
+z₀ = [1.0, 1.0] # initial z-magnetization
 param = (ω₁, 1, ω₀, R₁, T₂ˢ, greens_lorentzian) # defined by apply_hamiltonian_sled!
 prob = ODEProblem(apply_hamiltonian_sled!, z₀, tspan, param)
 z_Sled_Lorentzian = solve(prob);
 
-zfun(p, t) = [1.0] # initialize history function (will be populated with an interpolation by the DDE solver)
+zfun(p, t) = [1.0, 1.0] # initialize history function (will be populated with an interpolation by the DDE solver)
 
 param = (ω₁, 1, ω₀, R₁, T₂ˢ, greens_lorentzian) # defined by apply_hamiltonian_gbloch!
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, zfun, tspan, param)
