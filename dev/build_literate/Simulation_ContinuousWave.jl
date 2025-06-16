@@ -44,8 +44,8 @@ z_gBloch_Lorentzian = solve(prob);
 p = plot(xlabel="t [ms]", ylabel="zˢ(t)")
 plot!(p, 1e3t, zero(similar(t)) .+ z_steady_state_Lorentzian, label="Henkelman's steady-state")
 plot!(p, 1e3t, z_Graham_Lorentzian, label="Graham's model")
-plot!(p, 1e3t, (hcat(z_Sled_Lorentzian(t).u...)'), label="Sled's model")
-plot!(p, 1e3t, (hcat(z_gBloch_Lorentzian(t).u...)'), label="generalized Bloch model")
+plot!(p, 1e3t, hcat(z_Sled_Lorentzian(t).u...)[1,:], label="Sled's model")
+plot!(p, 1e3t, hcat(z_gBloch_Lorentzian(t).u...)[1,:], label="generalized Bloch model")
 plot!(p, 1e3t, z_Bloch, label="Bloch model")
 
 g_Gaussian(ω₀) = T₂ˢ / sqrt(2π) * exp(-(T₂ˢ * ω₀)^2 / 2)
@@ -64,8 +64,8 @@ z_gBloch_Gaussian = solve(prob)
 p = plot(xlabel="t [ms]", ylabel="zˢ(t)")
 plot!(p, 1e3t, zero(similar(t)) .+ z_steady_state_Gaussian, label="Henkelman's steady-state")
 plot!(p, 1e3t, z_Graham_Gaussian, label="Graham' model")
-plot!(p, 1e3t, (hcat(z_Sled_Gaussian(t).u...)'), label="Sled's model")
-plot!(p, 1e3t, (hcat(z_gBloch_Gaussian(t).u...)'), label="generalized Bloch model")
+plot!(p, 1e3t, hcat(z_Sled_Gaussian(t).u...)[1,:], label="Sled's model")
+plot!(p, 1e3t, hcat(z_gBloch_Gaussian(t).u...)[1,:], label="generalized Bloch model")
 
 g_superLorentzian(ω₀) = sqrt(2 / π) * T₂ˢ * quadgk(ct -> exp(-2 * (T₂ˢ * ω₀ / abs(3 * ct^2 - 1))^2) / abs(3 * ct^2 - 1), 0.0, sqrt(1 / 3), 1)[1]
 z_steady_state_superLorentzian = R₁ / (R₁ + π * ω₁^2 * g_superLorentzian(ω₀))
@@ -86,7 +86,7 @@ z_gBloch_superLorentzian = solve(prob)
 p = plot(xlabel="t [ms]", ylabel="zˢ(t)")
 plot!(p, 1e3t, zero(similar(t)) .+ z_steady_state_superLorentzian, label="Henkelman's steady-state")
 plot!(p, 1e3t, z_Graham_superLorentzian, label="Graham's model")
-plot!(p, 1e3t, (hcat(z_Sled_superLorentzian(t).u...)'), label="Sled's model")
-plot!(p, 1e3t, (hcat(z_gBloch_superLorentzian(t).u...)'), label="generalized Bloch model")
+plot!(p, 1e3t, hcat(z_Sled_superLorentzian(t).u...)[1,:], label="Sled's model")
+plot!(p, 1e3t, hcat(z_gBloch_superLorentzian(t).u...)[1,:], label="generalized Bloch model")
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
