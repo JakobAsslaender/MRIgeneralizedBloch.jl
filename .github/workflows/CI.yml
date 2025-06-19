@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: touch src/MatrixExp_Hamiltonian_Gradients.jl
+      - run: touch src/4Comp_MatrixExp_Hamiltonian_Gradients.jl
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
@@ -26,12 +27,15 @@ jobs:
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
       - run: julia --project=symbolic_derivatives symbolic_derivatives/MatrixExp_Hamiltonian_Derivatives.jl
+      - run: julia --project=symbolic_derivatives symbolic_derivatives/4Comp_MatrixExp_Hamiltonian_Derivatives.jl
       - run: cat src/MatrixExp_Hamiltonian_Gradients.jl
+      - run: cat src/4Comp_MatrixExp_Hamiltonian_Gradients.jl
       - name: Commit derivatives
         run: |
           git config --global user.name 'GitHubAction'
           git config --global user.email 'GitHubAction@users.noreply.github.com'
           git add src/MatrixExp_Hamiltonian_Gradients.jl
+          git add src/4Comp_MatrixExp_Hamiltonian_Gradients.jl
           git diff --cached --quiet || git commit -m "Update derivatives"
           git push
       - name: Get the commit hash
