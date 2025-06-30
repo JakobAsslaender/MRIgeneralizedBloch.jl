@@ -20,7 +20,7 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 - `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
 
 # Optional Keyword Arguments:
-- `isInversionPulse::Vector{Bool}`: Indicates all inversion pulses; must have the same length as α; the `default = [true; falses(length(ω1)-1)]` indicates that the first pulse is an inversion pulse and all others are not
+- `use_crusher::Vector{Bool}`: Indicates all pulses which are flanked by crusher gradients (i.e. inversion perparations); must have the same length as α; the `default = [true; falses(length(ω1)-1)]` indicates that the first pulse is an inversion perparation and all others are not
 
 # Examples
 ```jldoctest
@@ -30,7 +30,7 @@ julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) 
 ```
 c.f. [Optimal Control](@ref)
 """
-function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = [true; falses(length(ω1)-1)], nSeq = 1)
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; use_crusher = [true; falses(length(ω1)-1)], nSeq = 1)
     
     E_cat      = Vector{Array{SMatrix{11,11,Float64,121},3}}(undef, nSeq)
     dEdω1_cat  = similar(E_cat)
@@ -41,13 +41,13 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2
 
     ω1 = reshape(ω1,:,nSeq)
     TRF = reshape(TRF,:,nSeq)
-    isInversionPulse = reshape(isInversionPulse,:,nSeq)
+    use_crusher = reshape(use_crusher,:,nSeq)
     
     grad_ω1 = similar(ω1)
     grad_TRF = similar(ω1)
 
     Threads.@threads for iSeq = 1:nSeq
-        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:,iSeq], TRF[:,iSeq], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, isInversionPulse=isInversionPulse[:,iSeq])
+        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:,iSeq], TRF[:,iSeq], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, use_crusher=use_crusher[:,iSeq])
         E_cat[iSeq] = E
         dEdω1_cat[iSeq] = dEdω1
         dEdTRF_cat[iSeq] = dEdTRF
@@ -95,7 +95,7 @@ end
 
 
 
-function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list; rfphase_increment=[π], isInversionPulse = [true, falses(length(ω1)-1)...])
+function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list; rfphase_increment=[π], use_crusher = [true, falses(length(ω1)-1)...])
     E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
