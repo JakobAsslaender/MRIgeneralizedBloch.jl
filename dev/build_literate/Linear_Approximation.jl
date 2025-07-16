@@ -43,7 +43,7 @@ m0_6D = [0,0,m₀ᶠ,0,m₀ˢ,1]
 
 Mpi_appx = similar(Mpi_full)
 for i in eachindex(t)
-    H = exp(hamiltonian_linear(π/Tʳᶠ, 1, 0, t[i], m₀ˢ, R₁, Rₓ, R₁, R₂ᶠ, R₂ˢˡ(Tʳᶠ, π, 1, T₂ˢ)))
+    H = exp(hamiltonian_linear(π/Tʳᶠ, 1, 0, t[i], m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, π, 1, T₂ˢ)))
     Mpi_appx[i,:] = (H * m0_6D)[[1:3;5]]
 end
 
