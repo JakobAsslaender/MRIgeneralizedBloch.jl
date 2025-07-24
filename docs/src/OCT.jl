@@ -15,7 +15,7 @@ plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
 m0s = 0.15
 R1f = 0.5   # 1/s
 R2f = 15    # 1/s
-Rx = 30     # 1/s
+Rex = 30     # 1/s
 R1s = 3     # 1/s
 T2s = 10e-6 # s
 ω0 = 0      # rad/s
@@ -33,7 +33,7 @@ Npulses * TR
 R2slT = precompute_R2sl();
 
 # In the calculation of the CRB, we account for following gradients:
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
 
 # and we sum up the CRB of all parameters, weighted by the following vector:
 weights = transpose([0, 1, 0, 0, 0, 0, 0, 0, 0]);
@@ -60,7 +60,7 @@ p = plot(p1, p2, layout=(2, 1), legend=:none)
 #md Main.HTMLPlot(p) #hide
 
 # With above defined weights, the function [`MRIgeneralizedBloch.CRB_gradient_OCT`](@ref) returns the CRB
-(CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
+(CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
 CRBm0s
 
 # along with the gradients:
@@ -87,7 +87,7 @@ G = similar(x0);
 function fg!(F, G, x)
     ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; ω1_min = ω1_min, ω1_max = ω1_max, TRF_min = TRF_min, TRF_max = TRF_max)
 
-    (F, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
+    (F, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
     F = abs(F)
 
     F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; idx = .!isInversionPulse, λ=1e4)
@@ -116,7 +116,7 @@ result = optimize(Optim.only_fg!(fg!), # cost function
 α = ω1 .* TRF;
 
 # we analyze the CRB(m0s):
-(CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
+(CRBm0s, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights, isInversionPulse=isInversionPulse)
 CRBm0s
 
 # and observe a substantial reduction. Further, we plot the optimized control:
@@ -126,7 +126,7 @@ p = plot(p1, p2, layout=(2, 1), legend=:none)
 #md Main.HTMLPlot(p) #hide
 
 # To further analyze the results, we can calculate and plot all magnetization components:
-m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT; output=:realmagnetization)
+m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization)
 m = vec(m)
 
 xf = [m[i][1] for i=1:length(m)]

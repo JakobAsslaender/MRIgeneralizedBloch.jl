@@ -18,7 +18,7 @@ R1f = 0.5 # 1/s
 R2f = 13 # 1/s
 R1s = 3 # 1/s
 T2s = 12e-6 # s
-Rx = 17; # 1/s
+Rex = 17; # 1/s
 
 # For most parts of this tutorial, we assume a perfectly calibrated, on-resonant RF-pulse:
 B1 = 1
@@ -74,7 +74,7 @@ z_Graham(TRF)
 m0 = [0; 0; 1-m0s; m0s; 1];
 
 # To indicate to the `apply_hamiltonian_gbloch!` function that we would like to simulate a coupled spin system, we simple provide it with the properties of both pools in the following format:
-param = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G);
+param = (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G);
 
 # Thereafter, we can use the same function calls as above to simulate the spin dynamics:
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
@@ -121,7 +121,7 @@ z_Graham(TRF)
 
 # ### Coupled Spin System
 # We can perform the same change to `param` to simulate a coupled spin system:
-param = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
+param = (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)
 m0 = [0; 0; 1-m0s; m0s; 1]
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
 m_gBloch = solve(prob)
@@ -160,7 +160,7 @@ p = plot(f_φ, 0, TRF, xlabel="t [s]", ylabel="φ(t) [rad]", labels=:none)
 
 # This interface, of course, also allows for the simulation of an isolated semi-solid spin pool with above described modifications to `param`. For brevity, however, we here directly simulate a coupled spin pool starting from thermal equilibrium:
 m0 = [0, 0, 1-m0s, m0s, 1]
-p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
+p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rex, R1s, T2s, G)
 m_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))
 p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 #md Main.HTMLPlot(p) #hide
@@ -171,7 +171,7 @@ f_φ_or(t) = f_φ(t) + Δω0 * t; # rad
 
 # We can, additionally, change `B1` to demonstrate the robustness of adiabatic pulses:
 B1 = 1.2 # 20% miss-calibration
-p = (f_ω1, B1, f_φ_or, m0s, R1f, R2f, Rx, R1s, T2s, G)
+p = (f_ω1, B1, f_φ_or, m0s, R1f, R2f, Rex, R1s, T2s, G)
 m_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))
 p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 #md Main.HTMLPlot(p) #hide

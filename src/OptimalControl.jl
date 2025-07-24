@@ -1,5 +1,5 @@
 """
-    CRB, grad_ω1, grad_TRF = CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; isInversionPulse = [true; falses(length(ω1)-1)])
+    CRB, grad_ω1, grad_TRF = CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; use_crusher = [true; falses(length(ω1)-1)])
 
 Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wrt. `ω1` and `TRF`.
 
@@ -12,11 +12,11 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 - `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
-- `Rx::Real`: Exchange rate between the two spin pools in 1/seconds
+- `Rex::Real`: Exchange rate between the two spin pools in 1/seconds
 - `R1f::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
 - `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
-- `grad_list::Tuple{<:grad_param}`: Tuple that specifies the gradients that are calculated; the vector elements can either be any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `grad_list::Tuple{<:grad_param}`: Tuple that specifies the gradients that are calculated; the vector elements can either be any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
 
 # Optional Keyword Arguments:
@@ -24,13 +24,13 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 
 # Examples
 ```jldoctest
-julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) .* π, rand(100) .* 400e-6 .+ 100e-6, 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 2, 10e-6, precompute_R2sl(), [grad_m0s(), grad_R1f()], transpose([0, 1, 1]); isInversionPulse = [true, falses(99)...])
+julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) .* π, rand(100) .* 400e-6 .+ 100e-6, 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 2, 10e-6, precompute_R2sl(), [grad_m0s(), grad_R1f()], transpose([0, 1, 1]); use_crusher = [true, falses(99)...])
 (2.6266536440386683e20, [0.0, -8.357210433553662e19, 1.8062863407658156e20, -9.181952733568582e19, 2.0889419004304123e20, -1.0127412004909923e20, 1.1472963520187394e20, -6.048455202064828e19, 1.6635577264610125e20, -1.2997982001201938e20  …  -4.0462197701237735e19, 4.4051154836362985e19, -5.703747921741744e19, 1.1580676614266505e20, -1.2930234020298534e20, 1.4073548384507303e20, -9.192708958806614e19, 1.3584033382847213e20, -3.697066939905562e19, 6.313101282386484e19], [0.0, -7.51230331957692e23, 9.811932053428692e23, -1.0734285487552513e24, 6.675582483464475e23, -3.1051435697300785e23, 2.8969707405246626e23, -1.1612336440328984e24, 6.698477560905162e23, -1.8718360662340176e22  …  -2.7429211167215447e23, 2.5368127989367466e23, -6.640000159002342e23, 1.7977260470624765e23, -3.6616011555760077e23, 4.9307219096771845e23, -7.650701790011881e23, 4.5704084508410106e23, -1.0229952455676927e24, 9.526419421729279e23])
 
 ```
 c.f. [Optimal Control](@ref)
 """
-function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights; use_crusher = [true; falses(length(ω1)-1)], nSeq = 1)
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1)), nSeq = 1)
     
     E_cat      = Vector{Array{SMatrix{11,11,Float64,121},3}}(undef, nSeq)
     dEdω1_cat  = similar(E_cat)
@@ -41,13 +41,13 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2
 
     ω1 = reshape(ω1,:,nSeq)
     TRF = reshape(TRF,:,nSeq)
-    use_crusher = reshape(use_crusher,:,nSeq)
+    grad_moment = reshape(grad_moment,:,nSeq)
     
     grad_ω1 = similar(ω1)
     grad_TRF = similar(ω1)
 
     Threads.@threads for iSeq = 1:nSeq
-        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:,iSeq], TRF[:,iSeq], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, use_crusher=use_crusher[:,iSeq])
+        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:,iSeq], TRF[:,iSeq], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, grad_moment=grad_moment[:,iSeq])
         E_cat[iSeq] = E
         dEdω1_cat[iSeq] = dEdω1
         dEdTRF_cat[iSeq] = dEdTRF
@@ -74,8 +74,8 @@ end
 
 
 
-function OCT_TV_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, λ_TV)
-    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list)
+function OCT_TV_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights, λ_TV)
+    (E, dEdω1, dEdTRF) = calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list)
     Q = calcualte_cycle_propgator(E)
     Y = propagate_magnetization(Q, E)
 
@@ -95,7 +95,7 @@ end
 
 
 
-function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list; rfphase_increment=[π], use_crusher = [true, falses(length(ω1)-1)...])
+function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; rfphase_increment=[π], grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1)))
     E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
@@ -109,10 +109,10 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
             grad = grad_list[g]
 
             for t ∈ 1:length(ω1)
-                if isInversionPulse[t]
-                    calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+                if grad_moment[t] == :crusher
+                    calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache)
                 else
-                    calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+                    calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment[t])
                 end
             end
         end
@@ -120,13 +120,17 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s
     return (E, dEdω1, dEdTRF)
 end
 
-function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment)
 
-    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, Rx, R1s, 0.0, 0.0, 0.0, grad)
-    ux = xs_destructor(H_fp)
+    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, Rex, R1s, 0.0, 0.0, 0.0, grad)
+    if grad_moment == :spoiler
+        ux = xfs_destructor(H_fp)
+    else
+        ux = xs_destructor(H_fp)
+    end
     u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
 
-    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rx, R1s,
+    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rex, R1s,
         R2slT[1](TRF, ω1 * TRF, B1, T2s),
         R2slT[2](TRF, ω1 * TRF, B1, T2s),
         R2slT[3](TRF, ω1 * TRF, B1, T2s),
@@ -169,8 +173,8 @@ function calculte_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1,
     return nothing
 end
 
-function calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad, u_rot, _, _)
-    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rx, R1s, 0, 0, 0, grad))
+function calculate_inversion_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, _, _)
+    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
     u_fp = xs_destructor(u_fp) * u_fp
     u_pl = propagator_linear_inversion_pulse(ω1, TRF, B1,
         R2slT[1](TRF, ω1 * TRF, B1, T2s),

@@ -23,7 +23,7 @@ t = TR .* (1:length(TRF));
 m0s = 0.15
 R1f = 0.5 # 1/s
 R2f = 17 # 1/s
-Rx = 30 # 1/s
+Rex = 30 # 1/s
 R1s = 3 # 1/s
 T2s = 12e-6 # s
 ω0 = 100 # rad/s
@@ -33,7 +33,7 @@ B1 = 0.9; # in units of B1_nominal
 R2slT = precompute_R2sl();
 
 # and simulate the signal:
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
+s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT)
 s = vec(s)
 
 # To make this example a bit more realistic, we add complex valued Gaussian noise:
@@ -51,7 +51,7 @@ qM.R1f # 1/s
 #-
 qM.R2f # 1/s
 #-
-qM.Rx # 1/s
+qM.Rex # 1/s
 #-
 qM.R1s # 1/s
 #-
@@ -62,7 +62,7 @@ qM.ω0 # rad/s
 qM.B1 # 1/B1_nominal
 
 # We can also simulate the signal with the fitted parameters
-s_fitted = calculatesignal_linearapprox(α, TRF, TR, qM.ω0, qM.B1, qM.m0s, qM.R1f, qM.R2f, qM.Rx, qM.R1s, qM.T2s, R2slT)
+s_fitted = calculatesignal_linearapprox(α, TRF, TR, qM.ω0, qM.B1, qM.m0s, qM.R1f, qM.R2f, qM.Rex, qM.R1s, qM.T2s, R2slT)
 s_fitted = vec(s_fitted);
 
 # and compare it to the noisy data:
@@ -86,7 +86,7 @@ plot!(p, t, imag.(s_fitted), label="Im(s_fitted)")
 
 # `R2f  = (   0,  15,  Inf)`
 
-# `Rx   = (   0,  20,  Inf)`
+# `Rex   = (   0,  20,  Inf)`
 
 # `R1s  = (   0,   3,  Inf)`
 
@@ -128,7 +128,7 @@ qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u)
 # ## Apparent ``R_1``
 # Above fits tread `R1f` and `R1s` of the free and the semi-solid as independent parameters. As we discussed in our [paper](https://arxiv.org/pdf/2207.08259.pdf), many publications in the literature assume an apparent `R1a = R1f = R1s`. The corresponding model can be fitted by specifying `fit_apparentR1=true`:
 R1a = 1 # 1/s
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT)
+s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rex, R1a, T2s, R2slT)
 qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT)
 
 # Here, we specified the limits of `R1a` explicitly, which is optional.

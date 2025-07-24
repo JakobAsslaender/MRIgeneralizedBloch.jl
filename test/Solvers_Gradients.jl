@@ -3,6 +3,7 @@ using MRIgeneralizedBloch
 using DifferentialEquations
 using StaticArrays
 using Test
+using FiniteDifferences
 R2slT = precompute_R2sl()
 
 ## choose random parameters
@@ -12,98 +13,99 @@ TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 α[1] = π
 TRF[1] = 500e-6
 ω1 = α ./ TRF
-isInversionPulse = α .≈ π
+grad_moment = [:crusher; fill(:balanced,length(α)-1)]
 TR = 3.5e-3
 
-B1 = 1
-ω0 = 0
+B1 = 1.
+ω0 = 0.
 m0s = 0.25
 R1f = 0.3
-R1s = 2
+R1s = 2.
 R2f = 1 / 65e-3
 T2s = 10e-6
-Rx = 20
+Rex = 20.
 R1a = 0.7
 
 rtol = 1e-5
 
 ## m0s
-Δm0s = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_m0s(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s + Δm0s, R1f, R2f, Rx, R1s, T2s, R2slT)
+f_m0s(_m0s) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, _m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6), f_m0s, m0s)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_m0s(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / Δm0s
 @test g ≈ gfd rtol = rtol
 
 ## R1f
-ΔR1f = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_R1f(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f + ΔR1f, R2f, Rx, R1s, T2s, R2slT)
+f_R1f(_R1f) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, _R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6), f_R1f, R1f)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_R1f(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / ΔR1f
 @test g ≈ gfd rtol = rtol
 
 ## R2f
-ΔR2f = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_R2f(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f + ΔR2f, Rx, R1s, T2s, R2slT)
+f_R2f(_R2f) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, _R2f, Rex, R1s, T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6), f_R2f, R2f)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_R2f(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / ΔR2f
 @test g ≈ gfd rtol = rtol
 
-## Rx
-ΔRx = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_Rx(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx + ΔRx, R1s, T2s, R2slT)
+## Rex
+f_Rex(_Rex) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, _Rex, R1s, T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6), f_Rex, Rex)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_Rex(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / ΔRx
 @test g ≈ gfd rtol = rtol
 
 ## R1s
-ΔR1s = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_R1s(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s + ΔR1s, T2s, R2slT)
+f_R1s(_R1s) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, _R1s, T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6), f_R1s, R1s)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_R1s(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / ΔR1s
 @test g ≈ gfd rtol = rtol
 
 ## T2s
-ΔT2s = 1e-9
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_T2s(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s + ΔT2s, R2slT)
+f_T2s(_T2s) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, _T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6,max_range=1e-8), f_T2s, T2s)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_T2s(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / ΔT2s
-@test g ≈ gfd rtol = 5e-3 # not as precise because of the Higham's Complex Step Approximation
+@test g ≈ gfd rtol = 1e-4 # not as precise because of the Higham's Complex Step Approximation
 
 ## ω0
-Δω0 = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_ω0(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0 + Δω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
+f_ω0(_ω0) = vec(calculatesignal_linearapprox(α, TRF, TR, _ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment))
+gfd = reinterpret(ComplexF64, jacobian(central_fdm(5,1; factor=1e6), f_ω0, ω0)[1])
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_ω0(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / Δω0
 @test g ≈ gfd rtol = rtol
 
 ## B1
-ΔB1 = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list=(grad_B1(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1 + ΔB1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT)
+f_B1(_B1) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, _B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6), f_B1, B1)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=(grad_B1(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / ΔB1
-@test g ≈ gfd rtol = 5e-2 # not as precise because of the Higham's Complex Step Approximation
+@test g ≈ gfd rtol = 1e-4 # not as precise because of the Higham's Complex Step Approximation
 
 ## R1a
-ΔR1a = 1e-6
-s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rx, R1a, T2s, R2slT, grad_list=(grad_R1a(),))
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a + ΔR1a, R2f, Rx, R1a + ΔR1a, T2s, R2slT)
+R1a = 1.
+f_R1a(_R1a) = real.(vec(calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, _R1a, R2f, Rex, _R1a, T2s, R2slT; grad_moment)))
+gfd = jacobian(central_fdm(5,1; factor=1e6), f_R1a, R1a)[1]
+
+s0 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rex, R1a, T2s, R2slT, grad_list=(grad_R1a(),); grad_moment)
 
 g = s0[:,1,2]
-gfd = vec(s1 .- s0[:,1,1]) / ΔR1a
 @test g ≈ gfd rtol = rtol
