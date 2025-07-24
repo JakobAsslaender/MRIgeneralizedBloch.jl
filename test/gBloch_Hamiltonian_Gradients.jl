@@ -16,7 +16,7 @@ R1f = 0.3
 R1s = 2.0
 R2f = 1 / 65e-3
 T2s = 10e-6
-Rx = 30.0
+Rex = 30.0
 TRF = 500e-6
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(30)
 alg = MethodOfSteps(DP8())
@@ -35,13 +35,13 @@ gBloch_sol = solve(
         m0,
         mfun,
         (0, TRF),
-        (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, N),
     ),
     alg,
 )
 
 ## Analytical gradients (using ApproxFun)
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 m0 = zeros(5 * (length(grad_list) + 1), 1)
 m0[1] = 0.5 * (1 - m0s)
 m0[3] = 0.5 * (1 - m0s)
@@ -54,7 +54,7 @@ gBloch_sol_grad = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dGdT2s, grad_list),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G, dGdT2s, grad_list),
     ),
     alg,
 )
@@ -69,7 +69,7 @@ gBloch_sol_dm0s = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, (m0s + dm0s), R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, B1, ω0, (m0s + dm0s), R1f, R2f, Rex, R1s, T2s, N),
     ),
     alg,
 )
@@ -110,7 +110,7 @@ gBloch_sol_dR1f = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s, N),
+        (ω1, B1, ω0, m0s, (R1f + dR1f), R2f, Rex, R1s, T2s, N),
     ),
     alg,
 )
@@ -141,7 +141,7 @@ gBloch_sol_dR2f = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s, N),
+        (ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rex, R1s, T2s, N),
     ),
     alg,
 )
@@ -162,7 +162,7 @@ end
 @test dyf ≈ dyf_fd rtol = max_error
 @test dzf ≈ dzf_fd rtol = max_error
 
-## test derivative wrt. Rx
+## test derivative wrt. Rex
 dRx = 1e-6
 
 gBloch_sol_dRx = solve(
@@ -171,7 +171,7 @@ gBloch_sol_dRx = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, R1f, R2f, (Rx + dRx), R1s, T2s, N),
+        (ω1, B1, ω0, m0s, R1f, R2f, (Rex + dRx), R1s, T2s, N),
     ),
     alg,
 )
@@ -202,7 +202,7 @@ gBloch_sol_dR1s = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s, N),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rex, (R1s + dR1s), T2s, N),
     ),
     alg,
 )
@@ -233,7 +233,7 @@ gBloch_sol_dT2s = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s), N),
+        (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, (T2s + dT2s), N),
     ),
     alg,
 )
@@ -264,7 +264,7 @@ gBloch_sol_dω0 = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rex, R1s, T2s, N),
     ),
     alg,
 )
@@ -295,7 +295,7 @@ gBloch_sol_dB1 = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, (B1 + dB1), ω0, m0s, R1f, R2f, Rx, R1s, T2s, N),
+        (ω1, (B1 + dB1), ω0, m0s, R1f, R2f, Rex, R1s, T2s, N),
     ),
     alg,
 )
@@ -330,7 +330,7 @@ gBloch_sol = solve(
         m0,
         mfun,
         (0, TRF),
-        (ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, N),
+        (ω1, B1, ω0, m0s, R1a, R2f, Rex, R1a, T2s, N),
     ),
     alg,
 )
@@ -349,7 +349,7 @@ gBloch_sol_grad = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, G, dGdT2s, grad_list),
+        (ω1, B1, ω0, m0s, R1a, R2f, Rex, R1a, T2s, G, dGdT2s, grad_list),
     ),
     alg,
 )
@@ -364,7 +364,7 @@ gBloch_sol_dR1a = solve(
         m0,
         mfun,
         (0.0, TRF),
-        (ω1, B1, ω0, m0s, (R1a + dR1a), R2f, Rx, (R1a + dR1a), T2s, N),
+        (ω1, B1, ω0, m0s, (R1a + dR1a), R2f, Rex, (R1a + dR1a), T2s, N),
     ),
     alg,
 )

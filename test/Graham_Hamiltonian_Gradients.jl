@@ -16,17 +16,17 @@ R1f = 0.3
 R1s = 2.0
 R2f = 1 / 65e-3
 T2s = 10e-6
-Rx = 30.0
+Rex = 30.0
 TRF = 500e-6
 
 ## baseline IDE solution
 m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s)), ode_solver)
+Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s)), ode_solver)
 
 ## Analytical gradients (using ApproxFun)
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 
-Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s, grad_list)), ode_solver)
+Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s, grad_list)), ode_solver)
 
 ## FD derivative wrt. m0s
 dm0s = 1e-9
@@ -35,7 +35,7 @@ Graham_sol_dm0s = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, ω0, TRF, (m0s + dm0s), R1f, R2f, Rx, R1s, T2s),
+        (ω1, B1, ω0, TRF, (m0s + dm0s), R1f, R2f, Rex, R1s, T2s),
     ), ode_solver
 )
 
@@ -73,7 +73,7 @@ Graham_sol_dR1f = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, ω0, TRF, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s),
+        (ω1, B1, ω0, TRF, m0s, (R1f + dR1f), R2f, Rex, R1s, T2s),
     ), ode_solver
 )
 
@@ -101,7 +101,7 @@ Graham_sol_dR2f = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, ω0, TRF, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s),
+        (ω1, B1, ω0, TRF, m0s, R1f, (R2f + dR2f), Rex, R1s, T2s),
     ), ode_solver
 )
 
@@ -121,14 +121,14 @@ end
 @test dyf ≈ dyf_fd rtol = max_error
 @test dzf ≈ dzf_fd rtol = max_error
 
-## test derivative wrt. Rx
+## test derivative wrt. Rex
 dRx = 1e-6
 Graham_sol_dRx = solve(
     ODEProblem(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, ω0, TRF, m0s, R1f, R2f, (Rx + dRx), R1s, T2s),
+        (ω1, B1, ω0, TRF, m0s, R1f, R2f, (Rex + dRx), R1s, T2s),
     ), ode_solver
 )
 
@@ -157,7 +157,7 @@ Graham_sol_dR1s = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s),
+        (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, (R1s + dR1s), T2s),
     ), ode_solver
 )
 
@@ -186,7 +186,7 @@ Graham_sol_dT2s = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s)),
+        (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, (T2s + dT2s)),
     ), ode_solver
 )
 
@@ -214,7 +214,7 @@ Graham_sol_dω0 = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, (ω0 + dω0), TRF, m0s, R1f, R2f, Rx, R1s, T2s),
+        (ω1, B1, (ω0 + dω0), TRF, m0s, R1f, R2f, Rex, R1s, T2s),
     ), ode_solver
 )
 
@@ -241,7 +241,7 @@ Graham_sol_dB1 = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, (B1 + dB1), ω0, TRF, m0s, R1f, R2f, Rx, R1s, T2s),
+        (ω1, (B1 + dB1), ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s),
     ), ode_solver
 )
 
@@ -269,12 +269,12 @@ end
 R1a = 0.8
 # baseline IDE solution
 m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s)), ode_solver)
+Graham_sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rex, R1a, T2s)), ode_solver)
 
 ## Analytical gradients (using ApproxFun)
 grad_list = (grad_R1a(),)
 
-Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rx, R1a, T2s, grad_list)), ode_solver)
+Graham_sol_grad = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, [m0; zeros(5 * (length(grad_list)))], (0.0, TRF), (ω1, B1, ω0, TRF, m0s, R1a, R2f, Rex, R1a, T2s, grad_list)), ode_solver)
 
 ## FD derivative wrt. R1a
 dR1a = 1e-6
@@ -283,7 +283,7 @@ Graham_sol_dm0s = solve(
         apply_hamiltonian_graham_superlorentzian!,
         m0,
         (0.0, TRF),
-        (ω1, B1, ω0, TRF, m0s, R1a + dR1a, R2f, Rx, R1a + dR1a, T2s),
+        (ω1, B1, ω0, TRF, m0s, R1a + dR1a, R2f, Rex, R1a + dR1a, T2s),
     ), ode_solver
 )
 

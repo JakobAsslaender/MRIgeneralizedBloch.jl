@@ -1,6 +1,7 @@
 using BenchmarkTools
 using MRIgeneralizedBloch
 using Test
+using FiniteDifferences
 
 ##
 τmin = 0
@@ -32,19 +33,21 @@ print("Time to evaluate the interpolated super-Lorenzian Green's function:")
 t = 100e-6
 τ = 0
 T2s = 10e-6
-δT2s = eps()
 
 ## Lorentzian
 dGdT2s = dG_o_dT2s_x_T2s_lorentzian((t-τ)/T2s)/T2s
-dGdT2s_fd = (greens_lorentzian((t-τ)/(T2s + δT2s)) - greens_lorentzian((t-τ)/T2s)) / δT2s
+f_lorentzian(_T2s) = greens_lorentzian((t-τ)/_T2s) 
+dGdT2s_fd = grad(central_fdm(5,1; factor=1e6,max_range=1e-8), f_lorentzian, T2s)[1]
 @test dGdT2s ≈ dGdT2s_fd rtol = 1e-6
 
 ## Gaussian
 dGdT2s = dG_o_dT2s_x_T2s_gaussian((t-τ)/T2s)/T2s
-dGdT2s_fd = (greens_gaussian((t-τ)/(T2s + δT2s)) - greens_gaussian((t-τ)/T2s)) / δT2s
+f_gaussian(_T2s) = greens_gaussian((t-τ)/_T2s) 
+dGdT2s_fd = grad(central_fdm(5,1; factor=1e6,max_range=1e-8), f_gaussian, T2s)[1]
 @test dGdT2s ≈ dGdT2s_fd rtol = 1e-6
 
 ## super-Lorentzian
 dGdT2s = dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s
-dGdT2s_fd = (greens_superlorentzian((t-τ)/(T2s + δT2s)) - greens_superlorentzian((t-τ)/T2s)) / δT2s
-@test dGdT2s ≈ dGdT2s_fd rtol = 1e-4
+f_superlorentzian(_T2s) = greens_superlorentzian((t-τ)/_T2s) 
+dGdT2s_fd = grad(central_fdm(5,1; factor=1e6,max_range=1e-8), f_superlorentzian, T2s)[1]
+@test dGdT2s ≈ dGdT2s_fd rtol = 1e-6

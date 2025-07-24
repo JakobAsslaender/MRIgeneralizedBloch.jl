@@ -21,7 +21,7 @@ R1f = 0.3
 R1s = 2.0
 R2f = 1 / 65e-3
 T2s = 10e-6
-Rx = 30.0
+Rex = 30.0
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(30)
 
 # ApproxFun
@@ -31,24 +31,24 @@ dGdT2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, 100)
 
 ## baseline IDE solution
 m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()))
 
 
 ## Analytical gradients (using ApproxFun)
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rx(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 m0 = zeros(5 * (length(grad_list) + 1), 1)
 m0[1] = 0.5 * (1 - m0s)
 m0[3] = 0.5 * (1 - m0s)
 m0[4] = m0s
 m0[5] = 1.0
 
-gBloch_sol_grad = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G, dGdT2s, grad_list)), MethodOfSteps(Tsit5()))
+gBloch_sol_grad = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G, dGdT2s, grad_list)), MethodOfSteps(Tsit5()))
 
 ## FD derivative wrt. m0s
 dm0s = 1e-6
 
 m0 = m0[1:5]
-gBloch_sol_dm0s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, (m0s + dm0s), R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dm0s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, (m0s + dm0s), R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()))
 
 t = 0:1e-5:TRF
 dxf = similar(t)
@@ -80,7 +80,7 @@ end
 ## test derivative wrt. R1f
 dR1f = 1e-9
 
-gBloch_sol_dR1f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, (R1f + dR1f), R2f, Rx, R1s, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dR1f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, (R1f + dR1f), R2f, Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1f(t[i])[1] - gBloch_sol(t[i])[1]) / dR1f
@@ -102,7 +102,7 @@ end
 ## test derivative wrt. R2f
 dR2f = 1e-8
 
-gBloch_sol_dR2f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rx, R1s, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dR2f = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, (R2f + dR2f), Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR2f(t[i])[1] - gBloch_sol(t[i])[1]) / dR2f
@@ -120,10 +120,10 @@ end
 @test dyf ≈ dyf_fd rtol = max_error
 @test dzf ≈ dzf_fd rtol = max_error
 
-## test derivative wrt. Rx
+## test derivative wrt. Rex
 dRx = 1e-6
 
-gBloch_sol_dRx = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, (Rx + dRx), R1s, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dRx = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, (Rex + dRx), R1s, T2s, G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dRx(t[i])[1] - gBloch_sol(t[i])[1]) / dRx
@@ -145,7 +145,7 @@ end
 ## test derivative wrt. R1s
 dR1s = 1e-5
 
-gBloch_sol_dR1s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, (R1s + dR1s), T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dR1s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, (R1s + dR1s), T2s, G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1s(t[i])[1] - gBloch_sol(t[i])[1]) / dR1s
@@ -167,7 +167,7 @@ end
 ## test derivative wrt. T2s
 dT2s = 1e-13
 
-gBloch_sol_dT2s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, (T2s + dT2s), G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dT2s = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, (T2s + dT2s), G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dT2s(t[i])[1] - gBloch_sol(t[i])[1]) / dT2s
@@ -189,7 +189,7 @@ end
 ## test derivative wrt. ω0
 dω0 = 1e2
 
-gBloch_sol_dω0 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dω0 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, (ω0 + dω0), m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dω0(t[i])[1] - gBloch_sol(t[i])[1]) / dω0
@@ -209,7 +209,7 @@ end
 ## test derivative wrt. B1
 dB1 = 1e-9
 
-gBloch_sol_dB1 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, (B1 + dB1), ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dB1 = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, (B1 + dB1), ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dB1(t[i])[1] - gBloch_sol(t[i])[1]) / dB1
@@ -235,7 +235,7 @@ R1a = 1
 
 # baseline IDE solution
 m0 = [0.5 * (1 - m0s), 0.0, 0.5 * (1 - m0s), m0s, 1.0]
-gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1a, R2f, Rex, R1a, T2s, G)), MethodOfSteps(Tsit5()))
 
 # Analytical gradients (using ApproxFun)
 grad_list = (grad_R1a(),)
@@ -245,13 +245,13 @@ m0[3] = 0.5 * (1 - m0s)
 m0[4] = m0s
 m0[5] = 1.0
 
-gBloch_sol_grad = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1a, R2f, Rx, R1a, T2s, G, dGdT2s, grad_list)), MethodOfSteps(Tsit5()))
+gBloch_sol_grad = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, R1a, R2f, Rex, R1a, T2s, G, dGdT2s, grad_list)), MethodOfSteps(Tsit5()))
 
 # test derivative wrt. R1a
 dR1a = 1e-9
 m0 = m0[1:5]
 
-gBloch_sol_dR1a = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, (R1a + dR1a), R2f, Rx, (R1a + dR1a), T2s, G)), MethodOfSteps(Tsit5()))
+gBloch_sol_dR1a = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), (f_ω1, B1, ω0, m0s, (R1a + dR1a), R2f, Rex, (R1a + dR1a), T2s, G)), MethodOfSteps(Tsit5()))
 
 for i ∈ eachindex(t)
     dxf_fd[i] = (gBloch_sol_dR1a(t[i])[1] - gBloch_sol(t[i])[1]) / dR1a
