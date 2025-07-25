@@ -35,7 +35,7 @@ m = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl)) *
 
 
 ## derivative wrt. m0s
-f_m0s(_m0s) = exp(hamiltonian_linear(ω1, B1, ω0, TRF, _m0s, R1f, R2f, Rex, R1s, _R2sl)) * m0
+f_m0s = _m0s -> exp(hamiltonian_linear(ω1, B1, ω0, TRF, _m0s, R1f, R2f, Rex, R1s, _R2sl)) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6), f_m0s, m0s)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _dR2sldT2s, _dR2sldB1, grad_m0s())) * m0g
@@ -44,7 +44,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 
 ## test derivative wrt. R1f
-f_R1f(_R1f) = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, _R1f, R2f, Rex, R1s, _R2sl)) * m0
+f_R1f = _R1f -> exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, _R1f, R2f, Rex, R1s, _R2sl)) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6), f_R1f, R1f)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _dR2sldT2s, _dR2sldB1, grad_R1f())) * m0g
@@ -53,7 +53,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 
 ## test derivative wrt. R2f
-f_R2f(_R2f) = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, _R2f, Rex, R1s, _R2sl)) * m0
+f_R2f = _R2f -> exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, _R2f, Rex, R1s, _R2sl)) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6), f_R2f, R2f)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _dR2sldT2s, _dR2sldB1, grad_R2f())) * m0g
@@ -62,7 +62,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 
 ## test derivative wrt. Rex
-f_Rex(_Rex) = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, _Rex, R1s, _R2sl)) * m0
+f_Rex = _Rex -> exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, _Rex, R1s, _R2sl)) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6), f_Rex, Rex)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _dR2sldT2s, _dR2sldB1, grad_Rex())) * m0g
@@ -71,7 +71,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 
 ## test derivative wrt. R1s
-f_R1s(_R1s) = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, _R1s, _R2sl)) * m0
+f_R1s = _R1s -> exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, _R1s, _R2sl)) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6), f_R1s, R1s)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _dR2sldT2s, _dR2sldB1, grad_R1s())) * m0g
@@ -80,7 +80,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 
 ## test derivative wrt. T2s
-f_T2s(_T2s) = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF,α,B1,_T2s))) * m0
+f_T2s = _T2s -> exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF,α,B1,_T2s))) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6,max_range=1e-8), f_T2s, T2s)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _dR2sldT2s, _dR2sldB1, grad_T2s())) * m0g
@@ -88,7 +88,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 
 ## test derivative wrt. ω0
-f_ω0(_ω0) = exp(hamiltonian_linear(ω1, B1, _ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl)) * m0
+f_ω0 = _ω0 -> exp(hamiltonian_linear(ω1, B1, _ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl)) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6), f_ω0, ω0)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _dR2sldT2s, _dR2sldB1, grad_ω0())) * m0g
@@ -97,7 +97,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 
 ## test derivative wrt. B1
-f_B1(_B1) = exp(hamiltonian_linear(ω1, _B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF,α,_B1,T2s))) * m0
+f_B1 =_B1 -> exp(hamiltonian_linear(ω1, _B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF,α,_B1,T2s))) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6,max_range=1e-2), f_B1, B1)[1]
 
 
@@ -108,7 +108,7 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, _R2sl, _
 
 ## test derivative wrt. R1a
 R1a = 1.
-f_R1a(_R1a) = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, _R1a, R2f, Rex, _R1a, _R2sl)) * m0
+f_R1a = _R1a -> exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, _R1a, R2f, Rex, _R1a, _R2sl)) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6), f_R1a, R1a)[1]
 
 mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1a, R2f, Rex, R1a, _R2sl, _dR2sldT2s, _dR2sldB1, grad_R1a())) * m0g
@@ -126,7 +126,7 @@ mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB
 
 
 ## test derivative wrt. T2s
-f_inv_T2s(_T2s) = propagator_linear_inversion_pulse(ω1, TRF, B1, R2sl(TRF,α,B1,_T2s), undef, undef, undef) * m0 
+f_inv_T2s = _T2s -> propagator_linear_inversion_pulse(ω1, TRF, B1, R2sl(TRF,α,B1,_T2s), undef, undef, undef) * m0 
 mfd = jacobian(central_fdm(5,1; factor=1e6,max_range=1e-8), f_inv_T2s, T2s)[1]
 
 mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_T2s()) * m0g
@@ -135,7 +135,7 @@ mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB
 
 
 ## test derivative wrt. B1
-f_inv_B1(_B1) = propagator_linear_inversion_pulse(ω1, TRF, _B1, R2sl(TRF, α, (_B1), T2s), undef, undef, undef) * m0 
+f_inv_B1 = _B1 -> propagator_linear_inversion_pulse(ω1, TRF, _B1, R2sl(TRF, α, (_B1), T2s), undef, undef, undef) * m0 
 mfd = jacobian(central_fdm(5,1; factor=1e6, max_range=1e-2), f_inv_B1, B1)[1]
 
 mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_B1()) * m0g
