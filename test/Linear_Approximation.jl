@@ -14,7 +14,7 @@ R1f = 0.3 # 1/s
 R1s = 2.0 # 1/s
 R2f = 1 / 50e-3 # 1/s
 T2s = 10e-6 # s
-Rx = 70 # 1/s
+Rex = 70 # 1/s
 
 ## pre-calcualtions
 G = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF) / T2s)
@@ -33,8 +33,8 @@ M_full = zeros(length(ω1), 4)
 M_appx = similar(M_full)
 
 for i in eachindex(ω1)
-    M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8())).u[end][1:4]
-    u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2sl(TRF, α[i], 1, T2s))) * u0_6D
+    M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(DP8())).u[end][1:4]
+    u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF, α[i], 1, T2s))) * u0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
 
@@ -42,10 +42,10 @@ end
 
 ## benchmark the different solvers (excecute one line at a time to provoke individual results to be printed)
 print("Time to solve the full gene. Bloch IDE for 100us π-pulse:")
-@btime solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rx, R1s, T2s, G)), MethodOfSteps(DP8()))
+@btime solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(DP8()))
 
 print("Time to solve the linear approximation for 100us π-pulse:")
-@btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1f, R2f, Rx, R1s, R2sl(TRF, α[end-1], 1, T2s))) * u0_6D
+@btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF, α[end-1], 1, T2s))) * u0_6D
 
 ## ##########################################################################################################
 # Test gradients
