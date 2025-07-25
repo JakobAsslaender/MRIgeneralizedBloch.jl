@@ -55,8 +55,8 @@ w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 
 (F0, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
 
-f_ω1(_ω1)   = calc_CRB(_ω1, TRF,w,grad_moment)
-f_TRF(_TRF) = calc_CRB( ω1,_TRF,w,grad_moment)
+f_ω1 = _ω1  -> calc_CRB(_ω1, TRF,w,grad_moment)
+f_TRF =_TRF -> calc_CRB( ω1,_TRF,w,grad_moment)
 
 _grad_ω1_fd  = grad(central_fdm(5,1; factor=1e6), f_ω1, ω1)[1] # Finite Difference gradient: ω1
 @test grad_ω1 ≈ _grad_ω1_fd rtol = 1e-3
