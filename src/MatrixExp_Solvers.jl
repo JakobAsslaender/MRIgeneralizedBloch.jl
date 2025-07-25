@@ -2,7 +2,7 @@
 # main call function
 ############################################################################
 """
-    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, output=:complexsignal, isInversionPulse = [true; falses(length(α)-1)]])
+    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, output=:complexsignal, grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(α)))
 
 Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Lorentzian lineshape.
 
@@ -28,7 +28,7 @@ Optional:
 - `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calculated assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initialization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
 - `preppulse=false`: if `true`, a `α/2 - TR/2` preparation is applied. In the case of `m0=:IR`, it is applied after the inversion pulse based on `α[2]`, otherwise it is based on `α[1]`
 - `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs, 1]`
-- `isInversionPulse::Vector{Bool}`: Indicates all inversion pulses; must have the same length as α; the `default = [true; falses(length(α)-1)]` indicates that the first pulse is an inversion pulse and all others are not
+- `grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(α))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher, :ideal_FLASH). :balanced simulates a TR with all gradient moments nulled. :spoiler sets all transverse magnetization to zero before and after the RF pulse. :crusher suppresses the FID path of this TR (e.g. CPMG-like inversion). :ideal_FLASH nulls all transverse magnetization at the end of TR, hence RF-spoiling does not matter. 
 
 # Examples
 ```jldoctest

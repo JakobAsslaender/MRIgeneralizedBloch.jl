@@ -216,6 +216,8 @@ Calculate second order penalty of variations of the flip angle α and adds in pl
 # Optional Keyword Arguments:
 - `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
+- `grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher). Skip :crusher and :spoiler TRs second order penalty
+
 
 # Examples
 ```jldoctest
@@ -231,18 +233,18 @@ julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ
 0.3272308747790844
 ```
 """
-function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, use_crusher = [true; falses(length(ω1)-1)])
+function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1)))
 
     ω1 = reshape(ω1,:,nSeq)
     TRF = reshape(TRF, :, nSeq)
     grad_ω1 = reshape(grad_ω1, :, nSeq)
     grad_TRF = reshape(grad_TRF, :, nSeq)
-    use_crusher = reshape(use_crusher,:,nSeq)
+    grad_moment = reshape(grad_moment,:,nSeq)
     F = 0
 
     for iSeq in axes(ω1,2)
         α = ω1[:, iSeq] .* TRF[:, iSeq]
-        idx = .~use_crusher[:,iSeq]
+        idx = grad_moment[:,iSeq] .== :balanced
 
         T = sum(idx)
 
@@ -335,6 +337,7 @@ Calculate the total variation penalty of `TRF` and add to `grad_TRF` in place.
 # Optional Keyword Arguments:
 - `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
+- `grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher). Skip :crusher and :spoiler TRs for the TRF TV penalty
 
 # Examples
 ```jldoctest
@@ -348,12 +351,12 @@ julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
 1.5456176321183175e-5
 ```
 """
-function TRF_TV!(grad_TRF, ω1, TRF;  λ = 1,  use_crusher = [true; falses(length(ω1)-1)])
+function TRF_TV!(grad_TRF, ω1, TRF;  λ = 1,  grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1)))
     idx = trues(size(TRF))
     T = length(TRF)
 
     for t = 1:(T - 1)
-        idx[t] = !(use_crusher[t] || use_crusher[t+1])
+        idx[t] = ((grad_moment[t] != :balanced) || (grad_moment[t+1] != :balanced))
     end
 
     F = 0
