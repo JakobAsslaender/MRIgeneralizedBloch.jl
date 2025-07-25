@@ -2,7 +2,7 @@
 # main call function
 ############################################################################
 """
-    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, output=:complexsignal, grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(α)))
+    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, output=:complexsignal, grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(α)))
 
 Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Lorentzian lineshape.
 
@@ -28,7 +28,7 @@ Optional:
 - `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calculated assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initialization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
 - `preppulse=false`: if `true`, a `α/2 - TR/2` preparation is applied. In the case of `m0=:IR`, it is applied after the inversion pulse based on `α[2]`, otherwise it is based on `α[1]`
 - `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs, 1]`
-- `grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(α))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher, :ideal_FLASH). :balanced simulates a TR with all gradient moments nulled. :spoiler sets all transverse magnetization to zero before and after the RF pulse. :crusher suppresses the FID path of this TR (e.g. CPMG-like inversion). :ideal_FLASH nulls all transverse magnetization at the end of TR, hence RF-spoiling does not matter. 
+- `grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(α))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher, :ideal_FLASH). :balanced simulates a TR with all gradient moments nulled. :spoiler sets all transverse magnetization to zero before and after the RF pulse. :crusher suppresses the FID path of this TR (e.g. CPMG-like inversion). :ideal_FLASH nulls all transverse magnetization at the end of TR, hence RF-spoiling does not matter. 
 
 # Examples
 ```jldoctest
@@ -60,14 +60,14 @@ julia> calculatesignal_linearapprox(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 
     0.06223633770306246 + 0.0im
 ```
 """
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(α)))
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(α)))
 
     R2s, dR2sdT2s, dR2sdB1 = evaluate_R2sl_vector(abs.(α), TRF, B1, T2s, R2slT, grad_list)
 
     return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list, rfphase_increment, m0, preppulse, output, grad_moment)
 end
 
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(α)))
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(α)))
     if isempty(grad_list)
         grad_list = (undef,)
     end

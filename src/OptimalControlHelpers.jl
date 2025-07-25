@@ -216,7 +216,7 @@ Calculate second order penalty of variations of the flip angle α and adds in pl
 # Optional Keyword Arguments:
 - `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
-- `grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher). Skip :crusher and :spoiler TRs second order penalty
+- `grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher). Skip :crusher and :spoiler TRs second order penalty
 
 
 # Examples
@@ -233,7 +233,7 @@ julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ
 0.3272308747790844
 ```
 """
-function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1)))
+function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(ω1)))
 
     ω1 = reshape(ω1,:,nSeq)
     TRF = reshape(TRF, :, nSeq)
@@ -337,7 +337,7 @@ Calculate the total variation penalty of `TRF` and add to `grad_TRF` in place.
 # Optional Keyword Arguments:
 - `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
-- `grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher). Skip :crusher and :spoiler TRs for the TRF TV penalty
+- `grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher). Skip :crusher and :spoiler TRs for the TRF TV penalty
 
 # Examples
 ```jldoctest
@@ -351,7 +351,7 @@ julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
 1.5456176321183175e-5
 ```
 """
-function TRF_TV!(grad_TRF, ω1, TRF;  λ = 1,  grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1)))
+function TRF_TV!(grad_TRF, ω1, TRF;  λ = 1,  grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(ω1)))
     idx = trues(size(TRF))
     T = length(TRF)
 

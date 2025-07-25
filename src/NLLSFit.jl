@@ -49,7 +49,7 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 # Examples
 c.f. [Non-Linear Least Square Fitting](@ref)
 """
-function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR;
+function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(α)),
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
     m0s  = (   0, 0.2,    1),
@@ -68,7 +68,7 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR;
     R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
     ) where T <: Real
 
-    fit_gBloch(data, [α], [TRF], TR;
+    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], 
     reM0 = reM0,
     imM0 = imM0,
     m0s  = m0s ,
@@ -88,7 +88,7 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR;
     )
 end
 
-function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR;
+function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill(ntuple(i -> i == 1 ? :spoiler : :balanced, length(α),length(α))),
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
     m0s  = (   0, 0.2,    1),
@@ -141,7 +141,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR;
 
         m = zeros(ComplexF64,size(α[1],1),length(α))
         Threads.@threads for i ∈ eachindex(α)
-            m[:,i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT))
+            m[:,i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i]))
         end
 
         m = vec(m)
@@ -157,7 +157,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR;
 
         M = zeros(ComplexF64,size(α[1],1),length(α),length(grad_list)+1)
         Threads.@threads for i ∈ eachindex(α)
-            M[:,i,:] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=grad_list), dims=2)
+            M[:,i,:] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=grad_list; grad_moment=grad_moment[i]), dims=2)
         end
         M = reshape(M,:,length(grad_list)+1)
 

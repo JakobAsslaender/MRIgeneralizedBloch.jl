@@ -10,7 +10,7 @@ Npulse = 100
 TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 α[1] = π
 TRF[1] = 500e-6
-isInversionPulse = [true; falses(length(α)-1)]
+grad_moment = [:crusher; fill(:balanced, length(α)-1)]
 ω1 = α ./ TRF
 TR = 3.5e-3
 
@@ -27,19 +27,12 @@ grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2
 w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 
 
-## ########################################################################
-# simulate one loop
-###########################################################################
-s1d = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list)
-
-s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, isInversionPulse)
-
-@test s1 ≈ s1d
+s1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
 
 ## ########################################################################
 # simulate two loops
 ###########################################################################
-s2 = calculatesignal_linearapprox([α; α], [TRF; TRF], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, isInversionPulse = [isInversionPulse; isInversionPulse])
+s2 = calculatesignal_linearapprox([α; α], [TRF; TRF], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=[grad_moment; grad_moment])
 
 @test s1 ≈ s2[1:end÷2,:,:]
 @test s1 ≈ s2[end÷2+1:end,:,:]
@@ -47,7 +40,7 @@ s2 = calculatesignal_linearapprox([α; α], [TRF; TRF], TR, ω0, B1, m0s, R1f, R
 ## ########################################################################
 # simulate tree loops
 ###########################################################################
-s3 = calculatesignal_linearapprox([α; α; α], [TRF; TRF; TRF], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, isInversionPulse = [isInversionPulse; isInversionPulse; isInversionPulse])
+s3 = calculatesignal_linearapprox([α; α; α], [TRF; TRF; TRF], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=[grad_moment; grad_moment; grad_moment])
 
 @test s1 ≈ s3[1:end÷3,:,:]
 @test s1 ≈ s3[end÷3+1:2*end÷3,:,:]
