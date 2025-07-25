@@ -59,7 +59,7 @@ struct grad_R1a <: grad_param end
 struct grad_R1f <: grad_param end
 struct grad_R1s <: grad_param end
 struct grad_R2f <: grad_param end
-struct grad_Rex  <: grad_param end
+struct grad_Rex <: grad_param end
 struct grad_T2s <: grad_param end
 struct grad_ω0  <: grad_param end
 struct grad_B1  <: grad_param end

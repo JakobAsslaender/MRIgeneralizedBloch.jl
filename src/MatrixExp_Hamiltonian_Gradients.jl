@@ -25,7 +25,7 @@ function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, dR2sdT
             end
         end
 end
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type::grad_Rx)
+function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rx, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type::grad_Rex)
      @inbounds begin
             begin
                 begin

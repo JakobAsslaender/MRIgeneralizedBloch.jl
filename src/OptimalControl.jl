@@ -20,11 +20,12 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 - `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
 
 # Optional Keyword Arguments:
-- `use_crusher::Vector{Bool}`: Indicates all pulses which are flanked by crusher gradients (i.e. inversion perparations); must have the same length as α; the `default = [true; falses(length(ω1)-1)]` indicates that the first pulse is an inversion perparation and all others are not
+- `grad_moment = ntuple(i -> i == 1 ? :spoiled : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler, :crusher). :balanced simulates a TR with all gradient moments nulled. :spoiler sets all transverse magnetization to zero before and after the RF pulse. :crusher suppresses the FID path of this TR (e.g. CPMG-like inversion). 
+- `nSeq = 1`: Allows multiple flip angle pattern to be jointly optimized. CRB (and derivatives) are calucluted by taking the joint signal of all flip angle patterns. The periodic boundary conditions of the magnetization are calucluted within each flip angle pattern.
 
 # Examples
 ```jldoctest
-julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) .* π, rand(100) .* 400e-6 .+ 100e-6, 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 2, 10e-6, precompute_R2sl(), [grad_m0s(), grad_R1f()], transpose([0, 1, 1]); use_crusher = [true, falses(99)...])
+julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(rand(100) .* π, rand(100) .* 400e-6 .+ 100e-6, 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 2, 10e-6, precompute_R2sl(), [grad_m0s(), grad_R1f()], transpose([0, 1, 1])])
 (2.6266536440386683e20, [0.0, -8.357210433553662e19, 1.8062863407658156e20, -9.181952733568582e19, 2.0889419004304123e20, -1.0127412004909923e20, 1.1472963520187394e20, -6.048455202064828e19, 1.6635577264610125e20, -1.2997982001201938e20  …  -4.0462197701237735e19, 4.4051154836362985e19, -5.703747921741744e19, 1.1580676614266505e20, -1.2930234020298534e20, 1.4073548384507303e20, -9.192708958806614e19, 1.3584033382847213e20, -3.697066939905562e19, 6.313101282386484e19], [0.0, -7.51230331957692e23, 9.811932053428692e23, -1.0734285487552513e24, 6.675582483464475e23, -3.1051435697300785e23, 2.8969707405246626e23, -1.1612336440328984e24, 6.698477560905162e23, -1.8718360662340176e22  …  -2.7429211167215447e23, 2.5368127989367466e23, -6.640000159002342e23, 1.7977260470624765e23, -3.6616011555760077e23, 4.9307219096771845e23, -7.650701790011881e23, 4.5704084508410106e23, -1.0229952455676927e24, 9.526419421729279e23])
 
 ```
