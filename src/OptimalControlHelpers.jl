@@ -109,14 +109,15 @@ function apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; fixed_α = [true; false
    
     G_TRF = similar(grad_TRF)
     G_ω1  = similar(grad_ω1)
+    
 
-    G_TRF[.~fixed_α] .=  grad_TRF[.~fixed_α]                                              .* (TRF_max     - TRF_min    ) / 2
-    G_TRF[  fixed_α] .= (grad_TRF[  fixed_α] .- π ./ TRF[fixed_α].^2 .* grad_ω1[fixed_α]) .* (TRF_inv_max - TRF_inv_min) / 2
+    G_TRF[.~fixed_α] .=  grad_TRF[.~fixed_α]                                              .* (TRF_max[.~fixed_α] - TRF_min[.~fixed_α]) / 2
+    G_TRF[  fixed_α] .= (grad_TRF[  fixed_α] .- π ./ TRF[fixed_α].^2 .* grad_ω1[fixed_α]) .* (TRF_max[  fixed_α] - TRF_min[  fixed_α]) / 2
 
-    G_ω1[.~fixed_α] .= grad_ω1[.~fixed_α]  .* ( ω1_max -  ω1_min) / 2
+    G_ω1[.~fixed_α] .= grad_ω1[.~fixed_α]  .* ( ω1_max[.~fixed_α] -  ω1_min[.~fixed_α]) / 2
     G_ω1[  fixed_α] .= 0
 
-    G .= [G_ω1;G_TRF]
+    G .= [G_ω1; G_TRF]
     G .*= sech.(x).^2
 
     return G
@@ -276,7 +277,7 @@ function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, grad_m
         end
 
         if grad_TRF !== nothing
-            grad_TRFi = @view grad_TRF_reshape[idx,:]
+            grad_TRFi = @view grad_TRF[idx,:]
             grad_TRFi[end-1, iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * ω1i[end-1]
             grad_TRFi[end  , iSeq] -= 2λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * ω1i[end]
             grad_TRFi[1    , iSeq] +=  λ * (αi[end-1] / 2 - αi[end] + αi[1] / 2) * ω1i[1]
