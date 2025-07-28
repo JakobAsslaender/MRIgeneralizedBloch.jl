@@ -63,12 +63,12 @@ julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1
 function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)
     m0f = 1 - m0s
     H = @SMatrix [
-             -R2f   -ω0         B1 * ω1         0               0         0;
-               ω0  -R2f               0         0               0         0;
+             -R2f   -ω0          B1 * ω1         0                0         0;
+               ω0  -R2f                0         0                0         0;
          -B1 * ω1     0 -R1f - Rex * m0s         0        Rex * m0f R1f * m0f;
-                0     0               0      -R2s         B1 * ω1         0;
-                0     0        Rex * m0s  -B1 * ω1 -R1s - Rex * m0f R1s * m0s;
-                0     0               0         0               0         0]
+                0     0                0      -R2s          B1 * ω1         0;
+                0     0         Rex * m0s  -B1 * ω1 -R1s - Rex * m0f R1s * m0s;
+                0     0                0         0                0         0]
     return H * T
 end
 
@@ -76,7 +76,7 @@ function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s, _, _,
     return hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)
 end
 
-function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, _, _)
+function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, _, _)
     Hs = @SMatrix [    -R2s         B1 * ω1;
                    -B1 * ω1               0]
     Us = exp(Hs * T)
@@ -91,7 +91,7 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, _, _)
     return U
 end
 
-function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, _, grad_type::grad_param)
+function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, _, grad_type::grad_param)
     Hs = @SMatrix [    -R2s         B1 * ω1;
                    -B1 * ω1               0]
     Us = exp(Hs * T)
@@ -111,7 +111,7 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, _, grad_type::gra
     return U
 end
 
-function propagator_linear_inversion_pulse(ω1, T, B1, R2s, dR2sdT2s, _, grad_type::grad_T2s)
+function propagator_linear_crushed_pulse(ω1, T, B1, R2s, dR2sdT2s, _, grad_type::grad_T2s)
     Hs = @SMatrix [    -R2s  B1 * ω1;
                    -B1 * ω1        0]
     Us = exp(Hs * T)
@@ -138,7 +138,7 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2s, dR2sdT2s, _, grad_ty
     return U
 end
 
-function propagator_linear_inversion_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_type::grad_B1)
+function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_type::grad_B1)
     Hs = @SMatrix [    -R2s  B1 * ω1;
                    -B1 * ω1        0]
     Us = exp(Hs * T)
@@ -200,11 +200,11 @@ function xs_destructor(_::SMatrix{11, 11})
     Diagonal(SVector{11}(1,1,1,0,1,1,1,1,0,1,1))
 end
 
-function xfs_destructor(_::SMatrix{6, 6})
+function xy_destructor(_::SMatrix{6, 6})
     Diagonal(SVector{6}(0,0,1,0,1,1))
 end
 
-function xfs_destructor(_::SMatrix{11, 11})
+function xy_destructor(_::SMatrix{11, 11})
     Diagonal(SVector{11}(0,0,1,0,1,0,0,1,0,1,1))
 end
 

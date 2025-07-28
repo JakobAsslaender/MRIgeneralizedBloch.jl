@@ -6,7 +6,7 @@
         m0s  = (   0, 0.2,    1),
         R1f  = (   0, 0.3,  Inf),
         R2f  = (   0,  15,  Inf),
-        Rex   = (   0,  20,  Inf),
+        Rex  = (   0,  20,  Inf),
         R1s  = (   0,   3,  Inf),
         T2s  = (8e-6,1e-5,12e-6),
         ω0   = (-Inf,   0,  Inf),
@@ -49,13 +49,13 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 # Examples
 c.f. [Non-Linear Least Square Fitting](@ref)
 """
-function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = ntuple(i -> i == 1 ? :spoiler : :balanced, length(α)),
+function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(α)),
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
     m0s  = (   0, 0.2,    1),
     R1f  = (   0, 0.3,  Inf),
     R2f  = (   0,  15,  Inf),
-    Rex   = (   0,  20,  Inf),
+    Rex  = (   0,  20,  Inf),
     R1s  = (   0,   3,  Inf),
     T2s  = (8e-6,1e-5,12e-6),
     ω0   = (-Inf,   0,  Inf),
@@ -68,33 +68,16 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = ntupl
     R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
     ) where T <: Real
 
-    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], 
-    reM0 = reM0,
-    imM0 = imM0,
-    m0s  = m0s ,
-    R1f  = R1f ,
-    R2f  = R2f ,
-    Rex   = Rex  ,
-    R1s  = R1s ,
-    T2s  = T2s ,
-    ω0   = ω0  ,
-    B1   = B1  ,
-    R1a  = R1a ,
-    u    = u,
-    fit_apparentR1 = fit_apparentR1,
-    show_trace = show_trace,
-    maxIter = maxIter,
-    R2slT = R2slT
-    )
+    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, R1a, u, fit_apparentR1, show_trace, maxIter, R2slT)
 end
 
-function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill(ntuple(i -> i == 1 ? :spoiler : :balanced, length(α),length(α))),
+function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill(ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(α[1])), length(α)),
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
     m0s  = (   0, 0.2,    1),
     R1f  = (   0, 0.3,  Inf),
     R2f  = (   0,  15,  Inf),
-    Rex   = (   0,  20,  Inf),
+    Rex  = (   0,  20,  Inf),
     R1s  = (   0,   3,  Inf),
     T2s  = (8e-6,1e-5,12e-6),
     ω0   = (-Inf,   0,  Inf),
@@ -216,7 +199,7 @@ function Base.getindex(A::qMTparam, i...)
         A.m0s[i...]          ,
         A.R1f[i...]          ,
         A.R2f[i...]          ,
-        A.Rex[i...]           ,
+        A.Rex[i...]          ,
         A.R1s[i...]          ,
         A.T2s[i...]          ,
         A.ω0[i...]           ,
@@ -230,7 +213,7 @@ function Base.setindex!(A::qMTparam, v::qMTparam, i...)
     A.m0s[i...]           = v.m0s
     A.R1f[i...]           = v.R1f
     A.R2f[i...]           = v.R2f
-    A.Rex[i...]            = v.Rex
+    A.Rex[i...]           = v.Rex
     A.R1s[i...]           = v.R1s
     A.T2s[i...]           = v.T2s
     A.ω0[i...]            = v.ω0

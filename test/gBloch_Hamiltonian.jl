@@ -40,12 +40,12 @@ u_gBloch = sol.u[end]
 
 ## Solve original Bloch-McConnell with Lorentzian lineshape
 H = @SMatrix [
-    -R2f  -ω0       B1*ω1      0           0       0
-      ω0 -R2f           0      0           0       0
+    -R2f  -ω0        B1*ω1      0            0       0
+      ω0 -R2f            0      0            0       0
   -B1*ω1    0 -R1f-Rex*m0s      0      Rex*m0f R1f*m0f
-       0    0           0   -R2s       B1*ω1       0
+       0    0            0   -R2s        B1*ω1       0
        0    0      Rex*m0s -B1*ω1 -R1s-Rex*m0f R1s*m0s
-       0    0           0      0           0       0
+       0    0            0      0            0       0
 ]
 
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, ms, 1]

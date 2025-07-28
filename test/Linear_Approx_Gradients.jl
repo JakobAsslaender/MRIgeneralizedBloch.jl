@@ -1,10 +1,10 @@
 using DifferentialEquations
 using Test
 using MRIgeneralizedBloch
-using MRIgeneralizedBloch: hamiltonian_linear, propagator_linear_inversion_pulse
+using MRIgeneralizedBloch: hamiltonian_linear, propagator_linear_crushed_pulse
 using FiniteDifferences
 
-## 
+##
 max_error = 1e-5
 
 ## set parameters
@@ -120,24 +120,24 @@ mg = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1a, R2f, Rex, R1a, _R2sl, _
 # inversion pulse
 ###########################################################################
 ## derivative wrt. m0s
-mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_m0s()) * m0g
+mg = propagator_linear_crushed_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_m0s()) * m0g
 
 @test mg[6:10] ≈ zeros(5) atol = max_error
 
 
 ## test derivative wrt. T2s
-f_inv_T2s = _T2s -> propagator_linear_inversion_pulse(ω1, TRF, B1, R2sl(TRF,α,B1,_T2s), undef, undef, undef) * m0 
+f_inv_T2s = _T2s -> propagator_linear_crushed_pulse(ω1, TRF, B1, R2sl(TRF,α,B1,_T2s), undef, undef, undef) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6,max_range=1e-8), f_inv_T2s, T2s)[1]
 
-mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_T2s()) * m0g
+mg = propagator_linear_crushed_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_T2s()) * m0g
 
 @test mg[6:10] ≈ mfd[1:5] rtol = max_error
 
 
 ## test derivative wrt. B1
-f_inv_B1 = _B1 -> propagator_linear_inversion_pulse(ω1, TRF, _B1, R2sl(TRF, α, (_B1), T2s), undef, undef, undef) * m0 
+f_inv_B1 = _B1 -> propagator_linear_crushed_pulse(ω1, TRF, _B1, R2sl(TRF, α, (_B1), T2s), undef, undef, undef) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6, max_range=1e-2), f_inv_B1, B1)[1]
 
-mg = propagator_linear_inversion_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_B1()) * m0g
+mg = propagator_linear_crushed_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_B1()) * m0g
 
 @test mg[6:10] ≈ mfd[1:5] rtol = max_error

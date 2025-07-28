@@ -6,7 +6,7 @@ using FiniteDifferences
 R2slT = precompute_R2sl()
 
 function calc_CRB(ω1,TRF,w,grad_moment)
-    s = calculatesignal_linearapprox(ω1.*TRF, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)    
+    s = calculatesignal_linearapprox(ω1.*TRF, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
     s = reshape(s, size(s,1)*size(s,2), size(s,3))
     return real(w * diag(inv(s' * s)))
 end
@@ -19,7 +19,7 @@ TRF[1] = 500e-6
 ω1 = α ./ TRF
 TR = 3.5e-3
 
-grad_moment = [:spoiler; fill(:balanced,length(ω1)-1)]
+grad_moment = [:spoiler_dual; fill(:balanced,length(ω1)-1)]
 
 B1 = 1
 ω0 = 0

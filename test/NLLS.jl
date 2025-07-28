@@ -27,7 +27,7 @@ T2s = 12e-6 # s
 ω0 = 100 # rad/s
 B1 = 0.9 # in units of B1_nominal
 
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment); 
+s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment);
 qM = fit_gBloch(vec(s), α, TRF, TR; R2slT=R2slT, grad_moment)
 
 @test qM.M0  ≈ 1   rtol = 1e-3
@@ -51,7 +51,7 @@ qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u, grad_moment)
 @test qM.m0s ≈ m0s rtol = 1e-3
 @test qM.R1f ≈ R1f rtol = 1e-3
 @test qM.R2f ≈ R2f rtol = 1e-3
-@test qM.Rex  ≈ Rex  rtol = 1e-3
+@test qM.Rex ≈ Rex rtol = 1e-3
 @test qM.R1s ≈ R1s rtol = 1e-3
 @test qM.T2s ≈ T2s rtol = 1e-3
 @test qM.ω0  ≈ ω0  rtol = 1e-3
@@ -68,7 +68,7 @@ qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R2slT=R2slT, grad_mome
 @test qM.m0s ≈ m0s rtol = 1e-3
 @test qM.R1f ≈ R1a rtol = 1e-3
 @test qM.R2f ≈ R2f rtol = 1e-3
-@test qM.Rex  ≈ Rex  rtol = 1e-3
+@test qM.Rex ≈ Rex rtol = 1e-3
 @test qM.T2s ≈ T2s rtol = 1e-3
 @test qM.ω0  ≈ ω0  rtol = 1e-3
 @test qM.B1  ≈ B1  rtol = 1e-3
