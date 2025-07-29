@@ -49,7 +49,7 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 # Examples
 c.f. [Non-Linear Least Square Fitting](@ref)
 """
-function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(α)),
+function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)],
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
     m0s  = (   0, 0.2,    1),
@@ -71,7 +71,7 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = ntupl
     fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, R1a, u, fit_apparentR1, show_trace, maxIter, R2slT)
 end
 
-function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill(ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(α[1])), length(α)),
+function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill([i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α[1])], length(α)),
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
     m0s  = (   0, 0.2,    1),

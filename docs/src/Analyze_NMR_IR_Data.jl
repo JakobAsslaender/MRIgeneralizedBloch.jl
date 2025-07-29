@@ -15,11 +15,11 @@ using Plots
 plotlyjs(bg=RGBA(31 / 255, 36 / 255, 36 / 255, 1.0), ticks=:native); #hide #!nb
 
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
-MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
-BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
+MnCl2_data(TRF_scale) = "https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20($TRF_scale)/1/data.2d?raw=true"
+BSA_data(TRF_scale)   = "https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20($TRF_scale)/1/data.2d?raw=true";
 
 # which can be loaded with functions implemented in this file:
-include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"));
+include("$(pathof(MRIgeneralizedBloch))/../../docs/src/load_NMR_data.jl");
 
 # ## MnCl``_2`` Sample
 # ### ``T_2^{*,f}`` Estimation

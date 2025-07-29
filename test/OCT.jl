@@ -5,21 +5,21 @@ using StaticArrays
 using FiniteDifferences
 R2slT = precompute_R2sl()
 
-function calc_CRB(ω1,TRF,w,grad_moment)
-    s = calculatesignal_linearapprox(ω1.*TRF, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
-    s = reshape(s, size(s,1)*size(s,2), size(s,3))
+function calc_CRB(ω1, TRF, w, grad_moment)
+    s = calculatesignal_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
+    s = reshape(s, size(s, 1) * size(s, 2), size(s, 3))
     return real(w * diag(inv(s' * s)))
 end
 
 ##
 Npulse = 100
-α = [π; abs.(π/2 * sin.(π * ((0:Npulse-2) / (Npulse-2)) ))]
+α = [π; abs.(π / 2 * sin.(π * ((0:Npulse-2) / (Npulse - 2))))]
 TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 TRF[1] = 500e-6
 ω1 = α ./ TRF
 TR = 3.5e-3
 
-grad_moment = [:spoiler_dual; fill(:balanced,length(ω1)-1)]
+grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)]
 
 B1 = 1
 ω0 = 0
@@ -31,7 +31,7 @@ T2s = 10e-6
 Rex = 20
 
 grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
-w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
+w = transpose([1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0, 0] .^ 2)
 
 ## ########################################################################
 # Test dCRBdm
@@ -53,15 +53,16 @@ w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 ###########################################################################
 # CRB_gradient_OCT: analytical
 
-(F0, grad_ω1, grad_TRF) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+_, _, _ = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w) # test default grad_moment
+F0, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
 
-f_ω1 = _ω1  -> calc_CRB(_ω1, TRF,w,grad_moment)
-f_TRF =_TRF -> calc_CRB( ω1,_TRF,w,grad_moment)
+f_ω1 = _ω1 -> calc_CRB(_ω1, TRF, w, grad_moment)
+f_TRF = _TRF -> calc_CRB(ω1, _TRF, w, grad_moment)
 
-_grad_ω1_fd  = grad(central_fdm(5,1; factor=1e6), f_ω1, ω1)[1] # Finite Difference gradient: ω1
+_grad_ω1_fd = grad(central_fdm(5, 1; factor=1e6), f_ω1, ω1)[1] # Finite Difference gradient: ω1
 @test grad_ω1 ≈ _grad_ω1_fd rtol = 1e-3
 
-_grad_TRF_fd = grad(central_fdm(5,1; factor=1e6, max_range=5e-8), f_TRF, TRF)[1] # Finite Difference gradient: TRF
+_grad_TRF_fd = grad(central_fdm(5, 1; factor=1e6, max_range=5e-8), f_TRF, TRF)[1] # Finite Difference gradient: TRF
 @test grad_TRF ≈ _grad_TRF_fd rtol = 1e-3
 
 
@@ -74,11 +75,11 @@ TRF = [TRF; TRF]
 grad_moment = [grad_moment; grad_moment]
 
 ##
-(F0, grad_ω1_2, grad_TRF_2) = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment,nSeq=2)
+F0, grad_ω1_2, grad_TRF_2 = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment, nSeq=2)
 grad_ω1_2 .*= 4
 grad_TRF_2 .*= 4
 
-@test grad_ω1 ≈ grad_ω1_2[1:end÷2]       rtol = 1e-5
-@test grad_ω1 ≈ grad_ω1_2[end÷2+1:end]   rtol = 1e-5
-@test grad_TRF ≈ grad_TRF_2[1:end÷2]     rtol = 1e-5
+@test grad_ω1 ≈ grad_ω1_2[1:end÷2] rtol = 1e-5
+@test grad_ω1 ≈ grad_ω1_2[end÷2+1:end] rtol = 1e-5
+@test grad_TRF ≈ grad_TRF_2[1:end÷2] rtol = 1e-5
 @test grad_TRF ≈ grad_TRF_2[end÷2+1:end] rtol = 1e-5

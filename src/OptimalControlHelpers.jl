@@ -79,7 +79,6 @@ julia> x = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF)
   -0.9746661706753423
 ```
 """
-
 function bound_ω1_TRF!(ω1, TRF; ω1_min  = zeros(length(ω1)),
                                 ω1_max  = fill(2e3π, length(ω1)),
                                 TRF_min = fill(100e-6, length(TRF)),
@@ -100,8 +99,7 @@ function bound_ω1_TRF!(ω1, TRF; ω1_min  = zeros(length(ω1)),
     return x
 end
 
-function apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; fixed_α = ntuple(i -> i == 1 ? true : false, length(grad_ω1)),
-                                                        ω1_min  = zeros(length(grad_ω1)),
+function apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min  = zeros(length(grad_ω1)),
                                                         ω1_max  = fill(2e3π  , length(grad_ω1)),
                                                         TRF_min = fill(100e-6, length(grad_TRF)),
                                                         TRF_max = fill(500e-6, length(grad_TRF)))
@@ -109,13 +107,10 @@ function apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; fixed_α = ntuple(i -> 
     _, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; ω1_min, ω1_max, TRF_min, TRF_max)
 
     G_ω1  = @view G[1:length(grad_ω1)]
-    G_TRF = @view G[length(grad_ω1):end]
+    G_TRF = @view G[length(grad_ω1)+1:end]
 
-    G_ω1[  fixed_α] .= 0
-    G_ω1[.~fixed_α] .= grad_ω1[.~fixed_α]  .* ( ω1_max[.~fixed_α] -  ω1_min[.~fixed_α]) / 2
-
-    G_TRF[  fixed_α] .= (grad_TRF[  fixed_α] .- π ./ TRF[fixed_α].^2 .* grad_ω1[fixed_α]) .* (TRF_max[fixed_α] - TRF_min[fixed_α]) / 2
-    G_TRF[.~fixed_α] .=  grad_TRF[.~fixed_α]                                              .* (TRF_max          - TRF_min         ) / 2
+    G_ω1 .= grad_ω1 .* (ω1_max .- ω1_min) ./ 2
+    G_TRF .= grad_TRF .* (TRF_max .- TRF_min) ./ 2
 
     G .*= sech.(x).^2
     return G
@@ -139,7 +134,7 @@ Calculate second order penalty of variations of the flip angle α and adds in pl
 # Optional Keyword Arguments:
 - `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
-- `grad_moment = ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler_dual, :crusher). Skip :crusher and :spoiler_dual TRs second order penalty
+- `grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)]`: Different types of gradient moments of each TR are possible (:balanced, :spoiler_dual, :crusher). Skip :crusher and :spoiler_dual TRs second order penalty
 
 # Examples
 ```jldoctest
@@ -155,7 +150,7 @@ julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ
 0.3272308747790844
 ```
 """
-function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, grad_moment = ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(ω1)))
+function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)])
     ω1 = reshape(ω1,:,nSeq)
     TRF = reshape(TRF, :, nSeq)
     grad_ω1 = reshape(grad_ω1, :, nSeq)
@@ -234,7 +229,7 @@ Calculate the total variation penalty of `TRF` and add to `grad_TRF` in place.
 # Optional Keyword Arguments:
 - `idx::Vector{Bool}`: index of flip angles that are considered. Set individual individual pulses to `false` to exclude, e.g., inversion pulses
 - `λ::Real`: regularization parameter
-- `grad_moment = ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(ω1))`: Different types of gradient moments of each TR are possible (:balanced, :spoiler_dual, :crusher). Skip :crusher and :spoiler_dual TRs for the TRF TV penalty
+- `grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)]`: Different types of gradient moments of each TR are possible (:balanced, :spoiler_dual, :crusher). Skip :crusher and :spoiler_dual TRs for the TRF TV penalty
 
 # Examples
 ```jldoctest
@@ -248,7 +243,7 @@ julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
 1.5456176321183175e-5
 ```
 """
-function TRF_TV!(grad_TRF, ω1, TRF; λ = 1, grad_moment = ntuple(i -> i == 1 ? :spoiler_dual : :balanced, length(ω1)))
+function TRF_TV!(grad_TRF, ω1, TRF; λ = 1, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)])
     T = length(TRF)
 
     idx = grad_moment .!== :balanced
