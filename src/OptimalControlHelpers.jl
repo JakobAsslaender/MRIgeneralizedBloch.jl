@@ -244,19 +244,17 @@ julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
 ```
 """
 function TRF_TV!(grad_TRF, ω1, TRF; λ = 1, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)])
-    T = length(TRF)
-
-    idx = grad_moment .!== :balanced
+    idx = grad_moment .== :balanced
 
     F = 0
-    for t = 1:(T - 1)
+    for t = 1:(length(TRF) - 1)
         if idx[t] && idx[t + 1]
             F += abs(TRF[t + 1] - TRF[t])
         end
     end
 
     if grad_TRF !== nothing
-        for t = 1:(T - 1)
+        for t = 1:(length(TRF) - 1)
             if idx[t] && idx[t + 1]
                 grad_TRF[t]     -= λ * sign(TRF[t + 1] - TRF[t])
                 grad_TRF[t + 1] += λ * sign(TRF[t + 1] - TRF[t])
