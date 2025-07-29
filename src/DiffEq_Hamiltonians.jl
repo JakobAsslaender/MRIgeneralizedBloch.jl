@@ -40,7 +40,6 @@ Optional:
 ```jldoctest
 julia> using DifferentialEquations
 
-
 julia> α = π/2;
 
 julia> TRF = 100e-6;
@@ -65,7 +64,6 @@ julia> Rex = 30;
 
 julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 
-
 julia> m0 = [0; 0; 1-m0s; m0s; 1];
 
 julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5);
@@ -77,49 +75,38 @@ t: 9-element Vector{Float64}:
  0.0
  1.375006182301112e-7
  1.512506800531223e-6
- 8.042561696923577e-6
- 2.107848894861101e-5
- 3.9114182159866e-5
- 6.26879358261189e-5
- 9.147711414688425e-5
+ 8.042561462897698e-6
+ 2.107848848643912e-5
+ 3.911418153169565e-5
+ 6.268793403244071e-5
+ 9.147711277097536e-5
  0.0001
 u: 9-element Vector{Vector{Float64}}:
  [0.0, 0.0, 0.8, 0.2, 1.0]
  [0.0017278806030763402, 0.0, 0.7999981340131751, 0.19999953350448, 1.0]
  [0.019004717382235078, 0.0, 0.7997742277135814, 0.19994357804868362, 1.0]
- [0.10079111348917136, 0.0, 0.7936248122939504, 0.19842287240368398, 1.0]
- [0.2600257867257624, 0.0, 0.7565529666157949, 0.1898191304278861, 1.0]
- [0.46104237829774064, 0.0, 0.6537239462232086, 0.16937683398576228, 1.0]
- [0.6661740376622253, 0.0, 0.44261209248221817, 0.13589311206074786, 1.0]
- [0.7923117772809817, 0.0, 0.10713073823030607, 0.09390260581965477, 1.0]
- [0.7994211188442756, 0.0, 0.0004403374305009168, 0.08214809659226184, 1.0]
+ [0.10079111057210487, 0.0, 0.7936248126644649, 0.19842287249439766, 1.0]
+ [0.26002578123515735, 0.0, 0.7565529685035107, 0.18981913084469726, 1.0]
+ [0.46104237185160846, 0.0, 0.6537239507723229, 0.16937683480955013, 1.0]
+ [0.6661740252095096, 0.0, 0.4426121112504473, 0.1358931147134579, 1.0]
+ [0.7923117749819578, 0.0, 0.10713075535178414, 0.09390260775253706, 1.0]
+ [0.7994211188442862, 0.0, 0.00044033743049392323, 0.0821480965922669, 1.0]
 
 julia> using Plots
 
 julia> plot(sol, labels=["xf" "yf" "zf" "zs" "1"], xlabel="t (s)", ylabel="m(t)");
 
-
-
-
 julia> dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, TRF / T2s);
-
 
 julia> grad_list = (grad_R2f(), grad_m0s());
 
-
 julia> m0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];
-
 
 julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5 + 5*length(grad_list));
 
 julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)));
 
-
-
-
 julia> plot(sol);
-
-
 ```
 """
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
@@ -701,7 +688,6 @@ Apply Sled's Hamiltonian to `m` and write the resulting derivative wrt. time int
 ```jldoctest
 julia> using DifferentialEquations
 
-
 julia> α = π/2;
 
 julia> TRF = 100e-6;
@@ -729,15 +715,12 @@ t: 3-element Vector{Float64}:
  0.0001
 u: 3-element Vector{Vector{Float64}}:
  [1.0]
- [0.6313928231811967]
- [0.4895365449661915]
+ [0.6313928231811964]
+ [0.4895365449661911]
 
 julia> using Plots
 
 julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
-
-
-
 ```
 """
 function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,Function}, t)

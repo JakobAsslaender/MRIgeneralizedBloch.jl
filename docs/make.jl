@@ -57,7 +57,7 @@ end
 DocMeta.setdocmeta!(MRIgeneralizedBloch, :DocTestSetup, :(using MRIgeneralizedBloch); recursive=true)
 
 makedocs(;
-    doctest = false,
+    doctest = true,
     modules=[MRIgeneralizedBloch],
     authors="Jakob Asslaender <jakob.asslaender@nyumc.org> and contributors",
     repo="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/{commit}{path}#{line}",

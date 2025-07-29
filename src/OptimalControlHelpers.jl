@@ -17,10 +17,10 @@ Transform a vector of length `2Npulses` with values in the range `[-Inf, Inf]` i
 
 # Examples
 ```jldoctest
-julia> x = 1000 * randn(2 * 100);
+julia> x = repeat(range(-1000.0, 1000.0, 100), 2);
 
 julia> ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x)
-([0.0, 6283.185307179586, 0.0, 0.0, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 0.0, 0.0  …  0.0, 0.0, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 0.0, 0.0, 1.4115403811440933e-9, 0.0], [0.0005, 0.0001, 0.0001, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0001, 0.0005  …  0.0005, 0.0005, 0.0001, 0.0001, 0.0001, 0.0004999999277453363, 0.0005, 0.0001, 0.0001, 0.0001])
+([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586], [0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001  …  0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005])
 ```
 """
 function get_bounded_ω1_TRF(x; ω1_min  = zeros(length(x)÷2),
@@ -51,32 +51,32 @@ Bound the controls `ω1` and `TRF` (over-written in place) and return a vector o
 
 # Examples
 ```jldoctest
-julia> ω1 = 4000π * rand(100);
+julia> ω1 = collect(range(0, 2000π, 100));
 
-julia> TRF = 500e-6 * rand(100);
+julia> TRF = collect(range(100e-6, 500e-6, 100));
 
 julia> x = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF)
 200-element Vector{Float64}:
-  Inf
-   0.3084393995336273
-  -0.222010414402936
-   0.1981882670715111
-  Inf
-  -0.3590504865635206
-  Inf
-  Inf
-  Inf
-  Inf
-   ⋮
-  -1.3069326972020265
  -Inf
-   4.449542946745821
-   0.06378289522574039
-   0.2699178281115771
-   1.271412541641303
-  -0.46991502137668045
-  -1.4377324062335655
-  -0.9746661706753423
+  -2.2924837393352853
+  -1.9407818989717183
+  -1.7328679513998637
+  -1.5837912652403254
+  -1.4669284349179519
+  -1.3704200119626004
+  -1.2879392139968635
+  -1.2157089824185072
+  -1.151292546497023
+   ⋮
+   1.2157089824185072
+   1.2879392139968635
+   1.3704200119626009
+   1.4669284349179519
+   1.5837912652403245
+   1.7328679513998637
+   1.9407818989717212
+   2.2924837393352826
+  Inf
 ```
 """
 function bound_ω1_TRF!(ω1, TRF; ω1_min  = zeros(length(ω1)),
@@ -138,16 +138,16 @@ Calculate second order penalty of variations of the flip angle α and adds in pl
 
 # Examples
 ```jldoctest
-julia> ω1 = 4000π * rand(100);
+julia> ω1 = range(0, 2000π, 100);
 
-julia> TRF = 500e-6 * rand(100);
+julia> TRF = range(100e-6, 500e-6, 100);
 
 julia> grad_ω1 = similar(ω1);
 
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1e-3)
-0.3272308747790844
+0.005015194549476384
 ```
 """
 function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1, nSeq = 1, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)])
@@ -233,14 +233,14 @@ Calculate the total variation penalty of `TRF` and add to `grad_TRF` in place.
 
 # Examples
 ```jldoctest
-julia> ω1 = 4000π * rand(100);
+julia> ω1 = range(0, 2000π, 100);
 
-julia> TRF = 500e-6 * rand(100);
+julia> TRF = range(100e-6, 500e-6, 100);
 
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; λ = 1e-3)
-1.5456176321183175e-5
+3.9595959595959597e-7
 ```
 """
 function TRF_TV!(grad_TRF, ω1, TRF; λ = 1, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)])
@@ -286,16 +286,16 @@ Calculate RF power penalty and add the gradients in place.
 
 # Examples
 ```jldoctest
-julia> ω1 = 4000π * rand(100);
+julia> ω1 = range(0, 4000π, 100);
 
-julia> TRF = 500e-6 * rand(100);
+julia> TRF = range(100e-6, 500e-6, 100);
 
 julia> grad_ω1 = similar(ω1);
 
 julia> grad_TRF = similar(ω1);
 
 julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, Pmax=3e6, TR=3.5e-3)
-1.8164296101582284e14
+9.418321886730644e15
 ```
 """
 function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3, nSeq = 1)
