@@ -18,7 +18,7 @@ The simulation assumes a sequence of rectangular RF-pulses with varying flip ang
 - `R1s::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
 - `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 
-Optional:
+# Optional Arguments:
 - `grad_list=()`: Tuple that specifies the gradients that are calculated; the Tuple can either be empty `()` for no gradient, or contain any subset/order of `grad_list=(grad_m0s(), grad_R1s(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `Ncyc=2`: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time.
 - `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
@@ -28,28 +28,28 @@ Optional:
 ```jldoctest
 julia> calculatesignal_gbloch_ide(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6)
 100×1 Matrix{ComplexF64}:
-  -0.007966316445310042 + 0.0im
-  0.0012590590420428018 - 0.0im
-  -0.006088855588249666 + 0.0im
-  0.0024187389409130967 - 0.0im
-  -0.004361339394954306 + 0.0im
-  0.0034891358222515325 - 0.0im
-  -0.002763371060585602 + 0.0im
-   0.004483217942995635 - 0.0im
- -0.0012812573504847467 + 0.0im
-  0.0054088540365259665 - 0.0im
+   -0.00796631644531007 + 0.0im
+  0.0012590590420428205 - 0.0im
+  -0.006088855588249691 + 0.0im
+  0.0024187389409131197 - 0.0im
+  -0.004361339394954331 + 0.0im
+  0.0034891358222515524 - 0.0im
+  -0.002763371060585636 + 0.0im
+   0.004483217942995653 - 0.0im
+ -0.0012812573504847615 + 0.0im
+   0.005408854036525993 - 0.0im
                         ⋮
-    0.01776080827316687 - 0.0im
-    0.01757611897551337 + 0.0im
-   0.017813950946116902 - 0.0im
-    0.01764385633643125 + 0.0im
-   0.017863575856212174 - 0.0im
-   0.017706926034820727 + 0.0im
-   0.017909914934264855 - 0.0im
-   0.017765650374172267 + 0.0im
-    0.01795318489372212 - 0.0im
+   0.017760808273166815 - 0.0im
+   0.017576118975513207 + 0.0im
+    0.01781395094611691 - 0.0im
+    0.01764385633643116 + 0.0im
+   0.017863575856212212 - 0.0im
+   0.017706926034820686 + 0.0im
+   0.017909914934264932 - 0.0im
+   0.017765650374172208 + 0.0im
+    0.01795318489372217 - 0.0im
 
-julia> calculatesignal_gbloch_ide(ones(100)*π/2, ones(100)*5e-4, 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6; grad_list=(grad_R1f(), grad_T2s()), output=:realmagnetization)
+julia> calculatesignal_gbloch_ide(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6; grad_list=(grad_R1f(), grad_T2s()), output=:realmagnetization)
 100×15 transpose(::Matrix{Float64}) with eltype Float64:
  -0.00796627   0.0   0.000637773  …   0.0   -10.8757  -335.26   0.0
   0.00125903  -0.0  -0.00700671      -0.0   125.882   -326.977  0.0
@@ -202,7 +202,7 @@ julia> calculatesignal_graham_ode(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 
    0.01820486087666247 - 0.0im
   0.018029363102616942 + 0.0im
   0.018257820142563285 - 0.0im
-  0.018096168912466275 + 0.0im
+  0.018096168912466272 + 0.0im
   0.018307337729978272 - 0.0im
   0.018158444501175694 + 0.0im
    0.01835363622965519 - 0.0im

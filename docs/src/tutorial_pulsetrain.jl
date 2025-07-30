@@ -11,11 +11,11 @@ plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
 # and we use the pulse train described in the paper [Rapid quantitative magnetization transfer imaging: utilizing the hybrid state and the generalized Bloch model](https://arxiv.org/pdf/2207.08259.pdf):
 control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../docs/control_MT_v3p2_TR3p5ms_discretized.mat")))
 α   = control["alpha"]
-TRF = control["TRF"];
-grad_moment = [:crusher; fill(:balanced, length(α)-1)]
+TRF = control["TRF"]
+grad_moment = [i == 1 ? :crusher : :balanced for i ∈ eachindex(α)];
 
-# and
-TR = 3.5e-3; # S
+# The vector `grad_moment` defines the gradient moments for each TR. Further, we define
+TR = 3.5e-3; # s
 
 # The control has the following shape:
 t = TR .* (1:length(TRF))
@@ -29,7 +29,7 @@ p = plot(p1, p2, layout=(2,1))
 m0s = 0.15
 R1f = 0.5   # 1/s
 R2f = 15    # 1/s
-Rex = 30     # 1/s
+Rex = 30    # 1/s
 R1s = 3     # 1/s
 T2s = 10e-6 # s
 ω0 = 0      # rad/s
@@ -64,11 +64,11 @@ m_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex
     output=:realmagnetization, grad_moment)
 
 p = plot(xlabel="t (s)", ylabel="magnetization (normalized)"; legend=:topleft)
-plot!(p, t, [m_linapp[i][1] for i=1:size(m_linapp,1)] ./ (1 - m0s), label="xᶠ / m₀ᶠ")
-plot!(p, t, [m_linapp[i][2] for i=1:size(m_linapp,1)] ./ (1 - m0s), label="yᶠ / m₀ᶠ")
-plot!(p, t, [m_linapp[i][3] for i=1:size(m_linapp,1)] ./ (1 - m0s), label="zᶠ / m₀ᶠ")
-plot!(p, t, [m_linapp[i][4] for i=1:size(m_linapp,1)] ./      m0s , label="xˢ / m₀ˢ")
-plot!(p, t, [m_linapp[i][5] for i=1:size(m_linapp,1)] ./      m0s , label="zˢ / m₀ˢ")
+plot!(p, t, [m_linapp[i][1] for i ∈ axes(m_linapp,1)] ./ (1 - m0s), label="xᶠ / m₀ᶠ")
+plot!(p, t, [m_linapp[i][2] for i ∈ axes(m_linapp,1)] ./ (1 - m0s), label="yᶠ / m₀ᶠ")
+plot!(p, t, [m_linapp[i][3] for i ∈ axes(m_linapp,1)] ./ (1 - m0s), label="zᶠ / m₀ᶠ")
+plot!(p, t, [m_linapp[i][4] for i ∈ axes(m_linapp,1)] ./      m0s , label="xˢ / m₀ˢ")
+plot!(p, t, [m_linapp[i][5] for i ∈ axes(m_linapp,1)] ./      m0s , label="zˢ / m₀ˢ")
 #md Main.HTMLPlot(p) #hide
 
 # ## Gradients
@@ -84,7 +84,7 @@ plot!(p, t, real.(s_linapp[:,1,1]       ), label="Re(∂s/∂M₀ )*M₀")
 plot!(p, t, real.(s_linapp[:,1,2] .* m0s), label="Re(∂s/∂m₀ˢ)*m₀ˢ")
 plot!(p, t, real.(s_linapp[:,1,3] .* R1f), label="Re(∂s/∂R₁ᶠ)*R₁ᶠ")
 plot!(p, t, real.(s_linapp[:,1,4] .* R2f), label="Re(∂s/∂R₂ᶠ)*R₂ᶠ")
-plot!(p, t, real.(s_linapp[:,1,5] .* Rex ), label="Re(∂s/∂Rₓ )*Rₓ ")
+plot!(p, t, real.(s_linapp[:,1,5] .* Rex), label="Re(∂s/∂Rₓ )*Rₓ ")
 plot!(p, t, real.(s_linapp[:,1,6] .* R1s), label="Re(∂s/∂R₁ˢ)*R₁ˢ")
 plot!(p, t, real.(s_linapp[:,1,7] .* T2s), label="Re(∂s/∂T₂ˢ)*T₂ˢ")
 plot!(p, t, real.(s_linapp[:,1,8] .* ω0 ), label="Re(∂s/∂ω₀ )*ω₀ ")

@@ -22,7 +22,7 @@ The simulation assumes a sequence of rectangular RF-pulses with varying flip ang
 - `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
 
-Optional:
+# Optional Arguments:
 - `grad_list=(undef,)`: Tuple that specifies the gradients that are calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `rfphase_increment=[π]::Vector{Real}`: Increment of the RF phase between consecutive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array.
 - `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calculated assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initialization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
@@ -38,25 +38,25 @@ julia> calculatesignal_linearapprox(range(0, π/2, 100), fill(5e-4, 100), 4e-3, 
 100×1×1 Array{ComplexF64, 3}:
 [:, :, 1] =
                   -0.0 - 0.0im
- 0.0019738333472518535 + 0.0im
-   0.00218756542837078 + 0.0im
-  0.004164448431837324 + 0.0im
-  0.004592307591163216 + 0.0im
-  0.006593922316239837 + 0.0im
-  0.007231933411392494 + 0.0im
-   0.00927379103757742 + 0.0im
+  0.001973833347251853 + 0.0im
+ 0.0021875654283707796 + 0.0im
+  0.004164448431837323 + 0.0im
+  0.004592307591163215 + 0.0im
+  0.006593922316239835 + 0.0im
+  0.007231933411392493 + 0.0im
+  0.009273791037577417 + 0.0im
   0.010115002530621257 + 0.0im
-  0.012207846285906883 + 0.0im
+  0.012207846285906878 + 0.0im
                        ⋮
-   0.13200818588649146 + 0.0im
+   0.13200818588649144 + 0.0im
    0.13125741802520272 + 0.0im
-    0.1304655306901449 + 0.0im
-   0.12961406988250931 + 0.0im
-    0.1287244900784642 + 0.0im
-   0.12778027457741703 + 0.0im
-   0.12680111371298095 + 0.0im
-   0.12577221756507706 + 0.0im
-   0.12471167167688701 + 0.0im
+   0.13046553069014488 + 0.0im
+    0.1296140698825093 + 0.0im
+   0.12872449007846418 + 0.0im
+     0.127780274577417 + 0.0im
+   0.12680111371298092 + 0.0im
+   0.12577221756507703 + 0.0im
+   0.12471167167688699 + 0.0im
 ```
 """
 function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])

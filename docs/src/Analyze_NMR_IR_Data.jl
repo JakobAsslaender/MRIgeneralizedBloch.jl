@@ -348,7 +348,7 @@ function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
 
     H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
              m0s*Rex -R₁-m0f*Rex R₁*m0s;
-              0          0         0 ]
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
@@ -438,7 +438,7 @@ function Graham_IR_model(p, Tʳᶠ, TI, R2f)
 
     H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
              m0s*Rex -R₁-m0f*Rex R₁*m0s;
-              0          0         0 ]
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
@@ -518,7 +518,7 @@ function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
 
     H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
              m0s*Rex -R₁-m0f*Rex R₁*m0s;
-              0          0         0 ]
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)

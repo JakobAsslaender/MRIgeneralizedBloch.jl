@@ -459,8 +459,8 @@ function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{
 
     ∂m∂t[1] = - R2f * m[1] - ω0  * m[2] + B1 * ω1 * m[3]
     ∂m∂t[2] =   ω0  * m[1] - R2f * m[2]
-    ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rex * m0s) * m[3] +       Rex * (1 - m0s)  * m[4] + (1 - m0s) * R1f * m[5]
-    ∂m∂t[4] +=             +       Rex * m0s  * m[3] - (R1s + Rex * (1 - m0s)) * m[4] +      m0s  * R1s * m[5]
+    ∂m∂t[3] = - B1 * ω1  * m[1] - (R1f + Rex * m0s) * m[3] +        Rex * (1 - m0s)  * m[4] + (1 - m0s) * R1f * m[5]
+    ∂m∂t[4] +=                  +        Rex * m0s  * m[3] - (R1s + Rex * (1 - m0s)) * m[4] +      m0s  * R1s * m[5]
     ∂m∂t[5] = 0
     return ∂m∂t
 end
@@ -669,9 +669,9 @@ end
 Apply Sled's Hamiltonian to `m` and write the resulting derivative wrt. time into `∂m∂t`.
 
 # Arguments
-- `∂m∂t::Vector{<:Real}`: Vector of length 1 describing to derivative of `m` wrt. time; this vector can contain any value, which is replaced by `H * m`
-- `m::Vector{<:Real}`: Vector of length 1 describing the `zs` magnetization
-- `p::NTuple{6 or 10, Any}`: `(ω1, B1, ω0, R1s, T2s, g)` for a simulating an isolated semi-solid pool or `(ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, g)` for simulating a coupled spin system; with
+    - `∂m∂t::Vector{<:Real}`: Vector of length 1 describing to derivative of `m` wrt. time; this vector can contain any value, which is replaced by `H * m`
+    - `m::Vector{<:Real}`: Vector of length 1 describing the `zs` magnetization
+    - `p::NTuple{6 or 10, Any}`: `(ω1, B1, ω0, R1s, T2s, g)` for a simulating an isolated semi-solid pool or `(ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, g)` for simulating a coupled spin system; with
     - `ω1::Real`: Rabi frequency in rad/s (rotation about the y-axis) or
     - `ω1(t)::Function`: Rabi frequency in rad/s as a function of time for shaped RF-pulses
     - `B1::Real`: B1 scaling normalized so that `B1=1` corresponds to a perfectly calibrated RF field

@@ -19,7 +19,7 @@ If a gradient is supplied, it returns a 11x11 (static) matrix with the dimension
 - `R1s::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
 - `R2s::Real`: Transversal relaxation rate of the semi-solid pool in 1/seconds; this number can be calculated with the first function returned by [`precompute_R2sl`](@ref) to implement the linear approximation described in the generalized Bloch paper
 
-Optional:
+# Optional Arguments:
 - `dR2sdT2s::Real`: Derivative of linearized R2sl wrt. the actual T2s; only required if `grad_type = grad_T2s()`; this number can be calculated with the second function returned by [`precompute_R2sl`](@ref)
 - `dR2sdB1::Real`: Derivative of linearized R2sl wrt. B1; only required if `grad_type = grad_B1()`; this number can be calculated with the third function returned by [`precompute_R2sl`](@ref)
 - `grad_type::grad_param`: `grad_m0s()`, `grad_R1f()`, `grad_R1s()`, `grad_R2f()`, `grad_Rex()`, `grad_T2s()`, `grad_ω0()`, or `grad_B1()`; create one hamiltonian for each desired gradient
@@ -67,7 +67,7 @@ function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)
                ω0  -R2f                0         0                0         0;
          -B1 * ω1     0 -R1f - Rex * m0s         0        Rex * m0f R1f * m0f;
                 0     0                0      -R2s          B1 * ω1         0;
-                0     0         Rex * m0s  -B1 * ω1 -R1s - Rex * m0f R1s * m0s;
+                0     0        Rex * m0s  -B1 * ω1 -R1s - Rex * m0f R1s * m0s;
                 0     0                0         0                0         0]
     return H * T
 end

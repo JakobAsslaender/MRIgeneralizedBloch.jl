@@ -87,7 +87,7 @@ plot!(p, t, imag.(s_fitted), label="Im(s_fitted)")
 
 # `R2f  = (   0,  15,  Inf)`
 
-# `Rex   = (   0,  20,  Inf)`
+# `Rex  = (   0,  20,  Inf)`
 
 # `R1s  = (   0,   3,  Inf)`
 

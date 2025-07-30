@@ -15,7 +15,7 @@ plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
 m0s = 0.15
 R1f = 0.5   # 1/s
 R2f = 15    # 1/s
-Rex = 30     # 1/s
+Rex = 30    # 1/s
 R1s = 3     # 1/s
 T2s = 10e-6 # s
 ω0 = 0      # rad/s
@@ -45,10 +45,10 @@ weights = transpose([0, 1, 0, 0, 0, 0, 0, 0, 0]);
 # initialize with a constant `TRF = 300μs`:
 TRF = fill(300e-6, length(α));
 
-# and define the first RF pulse as a 500μs inversion pulse by modifying vectors accordingly and by defining that spoilers are played out before and after the π-pulse.
+# and define the first RF pulse as a 500μs inversion pulse by modifying vectors accordingly and by defining that spoilers are played out before and after the inversion pulse:
 α[1] = π
 TRF[1] = 500e-6
-grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)]
+grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)];
 
 # We note that inversion pulses are not optimized by this toolbox. We calculate the initial ``ω_1``
 ω1 = α ./ TRF;
@@ -72,9 +72,9 @@ p = plot(p1, p2, layout=(2, 1), legend=:none)
 # Note that we remove the oscillating nature of the gradient for the display.
 
 # In this example, we limit the control to the following bounds
-ω1_min  = fill(0,      length(ω1)) # rad/s
-ω1_max  = fill(2e3π,   length(ω1)) # rad/s
-TRF_min = fill(100e-6, length(ω1)) # s
+ω1_min  = fill(0,      length(ω1))  # rad/s
+ω1_max  = fill(2e3π,   length(ω1))  # rad/s
+TRF_min = fill(100e-6, length(ω1))  # s
 TRF_max = fill(500e-6, length(ω1)); # s
 
 # and the function [`MRIgeneralizedBloch.bound_ω1_TRF!`](@ref) modifies `ω1` and `TRF` to comply with these bounds and returns a single vector in the range `[-Inf, Inf]` that relates to the bounded control by a `tanh` transformation:
