@@ -91,7 +91,7 @@ function fg!(F, G, x)
     F = abs(F)
 
     F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; grad_moment, λ=1e4)
-    F += MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e-3, Pmax=3e6, TR=TR)
+    F += MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e-3, Pmax=3e6, TR)
     F += MRIgeneralizedBloch.TRF_TV!(grad_TRF, ω1, TRF; grad_moment, λ=1e3)
 
     MRIgeneralizedBloch.apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min, ω1_max, TRF_min, TRF_max)

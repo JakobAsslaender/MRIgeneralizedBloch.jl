@@ -174,16 +174,7 @@ function propagate_magnetization_linear!(S, m, ω1, B1, ω0, TRF, TR, m0s, R1f, 
 end
 
 function pulse_propagators(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, grad_moment)
-    if grad_moment == :crusher # refocus the transverse magnetization that existed before the RF pulse, but crush the FID path of this pulse
-        u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
-        u_fp = xs_destructor(u_fp) * u_fp
-        u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1, R2s, dR2sdT2s, dR2sdB1, grad)
-    elseif grad_moment == :spoiler_dual # destroy transverse magnetization before and after RF pulse
-        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
-        u_fp = xs_destructor(u_fp) * u_fp
-        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
-        u_pl = xy_destructor(u_pl) * u_pl * xy_destructor(u_pl)
-    elseif grad_moment == :balanced # balance all moments
+    if grad_moment == :balanced # balance all moments
         u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
         u_fp = xs_destructor(u_fp) * u_fp
         u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
@@ -192,6 +183,15 @@ function pulse_propagators(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, 
         u_fp = xs_destructor(u_fp) * u_fp
         u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
         u_pl = u_pl * xy_destructor(u_pl)
+    elseif grad_moment == :spoiler_dual # destroy transverse magnetization before and after RF pulse
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+        u_fp = xs_destructor(u_fp) * u_fp
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
+        u_pl = xy_destructor(u_pl) * u_pl * xy_destructor(u_pl)
+    elseif grad_moment == :crusher # refocus the transverse magnetization that existed before the RF pulse, but crush the FID path of this pulse
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+        u_fp = xs_destructor(u_fp) * u_fp
+        u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1, R2s, dR2sdT2s, dR2sdB1, grad)
     else
         error("Unknown gradient moment type.")
     end
