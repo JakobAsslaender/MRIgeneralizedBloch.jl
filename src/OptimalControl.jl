@@ -33,12 +33,12 @@ c.f. [Optimal Control](@ref)
 """
 function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)], nSeq=1)
 
-    E_cat = Vector{Array{SMatrix{11,11,Float64,121},3}}(undef, nSeq)
-    dEdω1_cat = similar(E_cat)
-    dEdTRF_cat = similar(E_cat)
+    E = Vector{Array{SMatrix{11,11,Float64},3}}(undef, nSeq)
+    dEdω1 = similar(E)
+    dEdTRF = similar(E)
 
-    Q_cat = Vector{Array{SMatrix{11,11,Float64}}}(undef, nSeq)
-    Y_cat = Vector{Array{SVector{11,Float64}}}(undef, nSeq)
+    Q = Vector{Array{SMatrix{11,11,Float64}}}(undef, nSeq)
+    Y = Vector{Array{SVector{11,Float64}}}(undef, nSeq)
 
     ω1 = reshape(ω1, :, nSeq)
     TRF = reshape(TRF, :, nSeq)
@@ -47,21 +47,17 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R
     grad_ω1 = similar(ω1)
     grad_TRF = similar(ω1)
 
-    Threads.@threads for iSeq = 1:nSeq
-        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, grad_moment=grad_moment[:, iSeq])
-        E_cat[iSeq] = E
-        dEdω1_cat[iSeq] = dEdω1
-        dEdTRF_cat[iSeq] = dEdTRF
-
-        Q_cat[iSeq] = calcualte_cycle_propgator(E_cat[iSeq])
-        Y_cat[iSeq] = propagate_magnetization(Q_cat[iSeq], E_cat[iSeq])
+    Threads.@threads for iSeq ∈ eachindex(E)
+        E[iSeq], dEdω1[iSeq], dEdTRF[iSeq] = @views calculate_propagators_ω1(ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, grad_moment=grad_moment[:, iSeq])
+        Q[iSeq] = calcualte_cycle_propgator(E[iSeq])
+        Y[iSeq] = propagate_magnetization(Q[iSeq], E[iSeq])
     end
 
-    CRB, d = dCRBdm(cat(Y_cat..., dims=1), weights)
+    CRB, d = dCRBdm(Y, weights)
 
-    for iSeq = 1:nSeq
-        P = calculate_adjoint_state(d, Q_cat[iSeq], E_cat[iSeq], iSeq)
-        grad_ω1[:, iSeq], grad_TRF[:, iSeq] = calculate_gradient_inner_product(P, Y_cat[iSeq], E_cat[iSeq], dEdω1_cat[iSeq], dEdTRF_cat[iSeq])
+    for iSeq ∈ eachindex(E)
+        P = calculate_adjoint_state(d[iSeq], Q[iSeq], E[iSeq])
+        grad_ω1[:, iSeq], grad_TRF[:, iSeq] = calculate_gradient_inner_product(P, Y[iSeq], E[iSeq], dEdω1[iSeq], dEdTRF[iSeq])
     end
 
     return CRB, vec(grad_ω1), vec(grad_TRF)
@@ -186,23 +182,23 @@ function propagate_magnetization(Q, E)
 end
 
 # the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them.
-function calculate_adjoint_state(d, Q, E, iSeq)
+function calculate_adjoint_state(d, Q, E)
     P = similar(E, Array{Float64})
     λ = @view P[end, :, :]
 
-    for g in 1:size(E, 3), r in 1:size(E, 2)
-        λ[r, g] = d(size(E, 1) + (iSeq - 1) * size(E, 1), r, g)
+    for g ∈ 1:size(E, 3), r ∈ 1:size(E, 2)
+        λ[r, g] = d(size(E, 1), r, g)
     end
 
     for r ∈ axes(E, 2)
         for t = size(E, 1)-1:-1:1
             λ[r, 1] = transpose(E[t+1, r, 1]) * λ[r, 1]
-            λ[r, 1] += d(t + (iSeq - 1) * size(E, 1), r, 1)
+            λ[r, 1] += d(t, r, 1)
             for g = 2:size(E, 3)
                 λ[r, g] = transpose(E[t+1, r, g][6:10, :]) * λ[r, g][6:10]
                 λ[r, 1][1:5] .+= λ[r, g][1:5]
                 # λ[r,1][end]  += λ[r,g][end]
-                λ[r, g] .+= d(t + (iSeq - 1) * size(E, 1), r, g)
+                λ[r, g] .+= d(t, r, g)
             end
         end
 
@@ -219,7 +215,7 @@ function calculate_adjoint_state(d, Q, E, iSeq)
         end
 
         # step 5: propagate adjoint state
-        for t in size(E, 1):-1:2
+        for t ∈ size(E, 1):-1:2
             for g ∈ axes(E, 3)
                 _E = E[mod(t, size(E, 1))+1, r, g]
                 if g == 1
@@ -229,7 +225,7 @@ function calculate_adjoint_state(d, Q, E, iSeq)
                     P[t-1, r, 1][1:5] .+= P[t-1, r, g][1:5]
                     P[t-1, r, 1][end] += P[t-1, r, g][end]
                 end
-                P[t-1, r, g] .+= d(t + (iSeq - 1) * size(E, 1), r, g)
+                P[t-1, r, g] .+= d(t, r, g)
             end
 
             # for g = 2:length(grad_list)
@@ -242,56 +238,48 @@ function calculate_adjoint_state(d, Q, E, iSeq)
 end
 
 function dCRBdm(Y, w)
-    _dCRBdx = Array{Float64}(undef, size(Y, 1), size(Y, 2), size(Y, 3) + 1)
-    _dCRBdy = similar(_dCRBdx)
-    F = zeros(ComplexF64, size(Y, 3) + 1, size(Y, 3) + 1)
-    dFdy = similar(F)
-    tmp  = similar(F)
-
-    for g2 in 0:size(Y, 3), g1 in 0:size(Y, 3), r ∈ axes(Y, 2), t ∈ axes(Y, 1)
-        if g1 == 0
-            s1 = Y[t, r, 1][1] - 1im * Y[t, r, 1][2]
-        else
-            s1 = Y[t, r, g1][6] - 1im * Y[t, r, g1][7]
-        end
-        if g2 == 0
-            s2 = Y[t, r, 1][1] + 1im * Y[t, r, 1][2]
-        else
-            s2 = Y[t, r, g2][6] + 1im * Y[t, r, g2][7]
-        end
+    N_grad = size(Y[1], 3) # w/o M0
+    F = zeros(ComplexF64, N_grad + 1, N_grad + 1)
+    for iSeq ∈ eachindex(Y), g2 ∈ 0:N_grad, g1 ∈ 0:N_grad, r ∈ axes(Y[iSeq], 2), t ∈ axes(Y[iSeq], 1)
+        s1 = g1 == 0 ? Y[iSeq][t, r, 1][1] - 1im * Y[iSeq][t, r, 1][2] : Y[iSeq][t, r, g1][6] - 1im * Y[iSeq][t, r, g1][7]
+        s2 = g2 == 0 ? Y[iSeq][t, r, 1][1] + 1im * Y[iSeq][t, r, 1][2] : Y[iSeq][t, r, g2][6] + 1im * Y[iSeq][t, r, g2][7]
         F[g1+1, g2+1] += s1 * s2
     end
 
     Fi = inv(F)
     CRB = w * real.(diag(Fi))
 
-    for g1 in 0:size(Y, 3), r ∈ axes(Y, 2), t ∈ axes(Y, 1)
+    _dCRBdx = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2), size(Yi, 3) + 1) for Yi ∈ Y]
+    _dCRBdy = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2), size(Yi, 3) + 1) for Yi ∈ Y]
+    dFdy = similar(F)
+    tmp  = similar(F)
+    for iSeq ∈ eachindex(Y), g1 ∈ 0:N_grad, r ∈ axes(Y[iSeq], 2), t ∈ axes(Y[iSeq], 1)
         # derivative wrt. x
         dFdy .= 0
-        dFdy[g1+1, 1] = Y[t, r, 1][1] + 1im * Y[t, r, 1][2]
-        dFdy[1, g1+1] = Y[t, r, 1][1] - 1im * Y[t, r, 1][2]
-        for g2 ∈ axes(Y, 3)
-            dFdy[g1+1, g2+1] = Y[t, r, g2][6] + 1im * Y[t, r, g2][7]
-            dFdy[g2+1, g1+1] = Y[t, r, g2][6] - 1im * Y[t, r, g2][7]
+        dFdy[g1+1, 1] = Y[iSeq][t, r, 1][1] + 1im * Y[iSeq][t, r, 1][2]
+        dFdy[1, g1+1] = Y[iSeq][t, r, 1][1] - 1im * Y[iSeq][t, r, 1][2]
+        for g2 ∈ axes(Y[iSeq], 3)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, r, g2][6] + 1im * Y[iSeq][t, r, g2][7]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, r, g2][6] - 1im * Y[iSeq][t, r, g2][7]
         end
         dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdx[t, r, g1+1] = real.(w * diag(dFdy))
+        _dCRBdx[iSeq][t, r, g1+1] = real.(w * diag(dFdy))
 
         # derivative wrt. y
         dFdy .= 0
-        dFdy[g1+1, 1] = Y[t, r, 1][2] - 1im * Y[t, r, 1][1]
-        dFdy[1, g1+1] = Y[t, r, 1][2] + 1im * Y[t, r, 1][1]
-        for g2 ∈ axes(Y, 3)
-            dFdy[g1+1, g2+1] = Y[t, r, g2][7] - 1im * Y[t, r, g2][6]
-            dFdy[g2+1, g1+1] = Y[t, r, g2][7] + 1im * Y[t, r, g2][6]
+        dFdy[g1+1, 1] = Y[iSeq][t, r, 1][2] - 1im * Y[iSeq][t, r, 1][1]
+        dFdy[1, g1+1] = Y[iSeq][t, r, 1][2] + 1im * Y[iSeq][t, r, 1][1]
+        for g2 ∈ axes(Y[iSeq], 3)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, r, g2][7] - 1im * Y[iSeq][t, r, g2][6]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, r, g2][7] + 1im * Y[iSeq][t, r, g2][6]
         end
         dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdy[t, r, g1+1] = real.(w * diag(dFdy))
+        _dCRBdy[iSeq][t, r, g1+1] = real.(w * diag(dFdy))
     end
 
-    d(t, r, g) = @SVector [_dCRBdx[t, r, 1], _dCRBdy[t, r, 1], 0, 0, 0, _dCRBdx[t, r, g+1], _dCRBdy[t, r, g+1], 0, 0, 0, 0]
+    d = [(t, r, g) -> @SVector [_dCRBdx[iSeq][t, r, 1], _dCRBdy[iSeq][t, r, 1], 0, 0, 0, _dCRBdx[iSeq][t, r, g+1], _dCRBdy[iSeq][t, r, g+1], 0, 0, 0, 0] for iSeq ∈ eachindex(_dCRBdx)]
 
     return CRB, d
 end
@@ -300,30 +288,17 @@ function calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
     grad_ω1 = zeros(size(E, 1))
     grad_TRF = zeros(size(E, 1))
 
-    for g ∈ axes(Y, 3), r ∈ axes(Y, 2)
+    for g ∈ axes(Y, 3), r ∈ axes(Y, 2), t ∈ axes(Y, 1)
+        tm1 = mod1(t - 1, size(Y, 1))
         if g == 1
-            grad_ω1[1] -= transpose(P[end, r, g]) * (dEdω1[1, r, g] * Y[end, r, g])
-            grad_TRF[1] -= transpose(P[end, r, g]) * (dEdTRF[1, r, g] * Y[end, r, g])
+            grad_ω1[t] -= transpose(P[tm1, r, g]) * (dEdω1[t, r, g] * Y[tm1, r, g])
+            grad_TRF[t] -= transpose(P[tm1, r, g]) * (dEdTRF[t, r, g] * Y[tm1, r, g])
         else
-            a = dEdω1[1, r, g] * Y[end, r, g]
-            b = dEdTRF[1, r, g] * Y[end, r, g]
+            a = dEdω1[t, r, g] * Y[tm1, r, g]
+            b = dEdTRF[t, r, g] * Y[tm1, r, g]
             @inbounds for i = 6:10
-                grad_ω1[1] -= P[end, r, g][i] * a[i]
-                grad_TRF[1] -= P[end, r, g][i] * b[i]
-            end
-        end
-    end
-
-    for g ∈ axes(Y, 3), r ∈ axes(Y, 2), t ∈ 2:size(Y, 1)
-        if g == 1
-            grad_ω1[t] -= transpose(P[t-1, r, g]) * (dEdω1[t, r, g] * Y[t-1, r, g])
-            grad_TRF[t] -= transpose(P[t-1, r, g]) * (dEdTRF[t, r, g] * Y[t-1, r, g])
-        else
-            a = dEdω1[t, r, g] * Y[t-1, r, g]
-            b = dEdTRF[t, r, g] * Y[t-1, r, g]
-            @inbounds for i = 6:10
-                grad_ω1[t] -= P[t-1, r, g][i] * a[i]
-                grad_TRF[t] -= P[t-1, r, g][i] * b[i]
+                grad_ω1[t] -= P[tm1, r, g][i] * a[i]
+                grad_TRF[t] -= P[tm1, r, g][i] * b[i]
             end
         end
     end
