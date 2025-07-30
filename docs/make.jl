@@ -61,7 +61,7 @@ makedocs(;
     doctestfilters = [r"\s*-?(\d+)\.(\d{4})\d*\s*"], # Ignore any digit after the 4th digit after a decimal, throughout the docs
     modules=[MRIgeneralizedBloch],
     authors="Jakob Asslaender <jakob.asslaender@nyumc.org> and contributors",
-    repo="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/{commit}{path}#{line}",
+    repo = Documenter.Remotes.GitHub("JakobAsslaender", "MRIgeneralizedBloch.jl"),
     sitename="MRIgeneralizedBloch.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
