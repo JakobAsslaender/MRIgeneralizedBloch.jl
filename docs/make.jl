@@ -16,7 +16,7 @@ const ROOT_DIR = joinpath(@__DIR__, "build")
 const PLOT_DIR = joinpath(ROOT_DIR, "plots")
 function Base.show(io::IO, ::MIME"text/html", p::HTMLPlot)
     mkpath(PLOT_DIR)
-    path = joinpath(PLOT_DIR, string(UInt32(floor(rand()*1e9)), ".html"))
+    path = joinpath(PLOT_DIR, string(UInt32(floor(rand() * 1e9)), ".html"))
     Plots.savefig(p.p, path)
     if get(ENV, "CI", "false") == "true" # for prettyurl
         print(io, "<object type=\"text/html\" data=\"../../$(relpath(path, ROOT_DIR))\" style=\"width:100%;height:425px;\"></object>")
@@ -51,16 +51,17 @@ for file in files
     file_path = joinpath(@__DIR__, "src/", file)
     Literate.markdown(file_path, OUTPUT)
     Literate.notebook(file_path, OUTPUT, preprocess=notebook_filter; execute=false)
-    Literate.script(  file_path, OUTPUT)
+    Literate.script(file_path, OUTPUT)
 end
 
 DocMeta.setdocmeta!(MRIgeneralizedBloch, :DocTestSetup, :(using MRIgeneralizedBloch); recursive=true)
 
 makedocs(;
-    doctest = false,
+    doctest=true,
+    doctestfilters = [r"\s*-?(\d+)\.(\d{4})\d*\s*"], # Ignore any digit after the 4th digit after a decimal, throughout the docs
     modules=[MRIgeneralizedBloch],
     authors="Jakob Asslaender <jakob.asslaender@nyumc.org> and contributors",
-    repo="https://github.com/JakobAsslaender/MRIgeneralizedBloch.jl/blob/{commit}{path}#{line}",
+    repo = Documenter.Remotes.GitHub("JakobAsslaender", "MRIgeneralizedBloch.jl"),
     sitename="MRIgeneralizedBloch.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
@@ -90,5 +91,5 @@ run(`sed -i'.old' 's/var darkPreference = false/var darkPreference = true/g' doc
 
 deploydocs(;
     repo="github.com/JakobAsslaender/MRIgeneralizedBloch.jl",
-    push_preview = true,
+    push_preview=true,
 )

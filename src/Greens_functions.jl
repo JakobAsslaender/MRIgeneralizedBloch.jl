@@ -120,7 +120,7 @@ julia> τ = 0;
 julia> T2s = 10e-6;
 
 julia> dGdT2s = dG_o_dT2s_x_T2s_superlorentzian((t-τ)/T2s)/T2s
-15253.095033670965
+15253.09503367097
 ```
 """
 dG_o_dT2s_x_T2s_superlorentzian(κ) = quadgk(ζ -> exp(-κ^2 * (3ζ^2 - 1)^2 / 8) * (κ^2 * (3ζ^2 - 1)^2 / 4), 0, sqrt(1/3), 1, order = 100)[1]
@@ -146,9 +146,8 @@ julia> greens_superlorentzian((t-τ)/T2s)
 
 julia> Gint = interpolate_greens_function(greens_superlorentzian, 0, 20);
 
-
 julia> Gint((t-τ)/T2s)
-0.14712468680944407
+0.14712468680944413
 ```
 """
 function interpolate_greens_function(f, κmin, κmax)

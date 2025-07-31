@@ -19,7 +19,7 @@ R1s = 3
 R2f = 13
 T2s = 12e-6
 R2s = 1 / T2s
-Rx = 17
+Rex = 17
 
 # random initial m0
 ms = 0.3543 * m0s
@@ -52,10 +52,10 @@ u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), 
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
-p = (α/TRF, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
+p = (α/TRF, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)
 u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(RK4())).u[end]
 
-p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
+p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rex, R1s, T2s, G)
 u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(RK4())).u[end]
 
 @test u_ω1Number ≈ u_ω1Function
@@ -130,7 +130,7 @@ mt_gBloch = (t) -> (x_gBloch(t) + 1im * y_gBloch(t)) * exp(1im * (f_φ(t)))
 
 ## Solve org. Bloch-McConnell for coupled pool system
 function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{9,Any}, t)
-    f_ω1, B1, f_ω0, m0s, R1f, R2f, Rx, R1s, T2s = p
+    f_ω1, B1, f_ω0, m0s, R1f, R2f, Rex, R1s, T2s = p
     ω1 = f_ω1(t)
     ω0 = f_ω0(t)
     R2s = 1/T2s
@@ -138,10 +138,10 @@ function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{9,Any}, t)
     H = [
             -R2f  -ω0       B1*ω1      0     0            0       0
               ω0 -R2f           0      0     0            0       0
-          -B1*ω1    0 -R1f-Rx*m0s      0     0       Rx*m0f R1f*m0f
+          -B1*ω1    0 -R1f-Rex*m0s      0    0       Rex*m0f R1f*m0f
                0    0           0   -R2s   -ω0        B1*ω1       0
                0    0           0     ω0  -R2s            0       0
-               0    0      Rx*m0s -B1*ω1     0  -R1s-Rx*m0f R1s*m0s
+               0    0      Rex*m0s -B1*ω1    0  -R1s-Rex*m0f R1s*m0s
                0    0           0      0     0            0       0
     ]
     ∂m∂t .= H * m
@@ -149,13 +149,13 @@ function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{9,Any}, t)
 end
 
 m0 = [0, 0, 1-m0s, 0, 0, m0s, 1]
-p = (f_ω1, B1, f_ω0, m0s, R1f, R2f, Rx, R1s, T2s)
+p = (f_ω1, B1, f_ω0, m0s, R1f, R2f, Rex, R1s, T2s)
 u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p))
 
 # Solve gen. Bloch for isolated semi-solid spin pool
 m0 = [0, 0, 1-m0s, m0s, 1]
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
-p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
+p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rex, R1s, T2s, G)
 u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(RK4()))
 
 xs_gBloch(t) =  B1 * quadgk(x -> f_ω1(x) * cos(f_φ(x)) * G((t - x) / T2s) * u_gBloch(x)[4], 0, t, order=100)[1]
