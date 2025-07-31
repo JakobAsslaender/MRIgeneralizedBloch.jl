@@ -161,7 +161,6 @@ function antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1f
 end
 
 function propagate_magnetization_linear!(S, m, ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
-
     u_rot = z_rotation_propagator(rfphase_increment, grad)
     ms_setindex!(S, m, 1, grad)
     for i = 2:length(ω1)
