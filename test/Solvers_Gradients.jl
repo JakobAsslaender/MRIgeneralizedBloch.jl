@@ -13,17 +13,17 @@ TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 α[1] = π
 TRF[1] = 500e-6
 ω1 = α ./ TRF
-grad_moment = [:crusher; fill(:balanced,length(α)-1)]
+grad_moment = [i == 1 ? :crusher : :balanced for i ∈ eachindex(α)]
 TR = 3.5e-3
 
-B1 = 1.
-ω0 = 0.
+B1 = 1.0
+ω0 = 0.0
 m0s = 0.25
 R1f = 0.3
-R1s = 2.
+R1s = 2.0
 R2f = 1 / 65e-3
 T2s = 10e-6
-Rex = 20.
+Rex = 20.0
 R1a = 0.7
 
 rtol = 1e-5

@@ -13,7 +13,7 @@ Npulse = 500
 # TRF .= 1e-3 # long TRF to make Graham and gBloch match better
 TRF = 100e-6 .+ 400e-6 * rand(Npulse)
 TRF[1] = 500e-6
-grad_moment = [:crusher; fill(:balanced, length(α)-1)]
+grad_moment = [i == 0 ? :crusher : :balanced for i ∈ eachindex(α)]
 
 TR = 3.5e-3
 

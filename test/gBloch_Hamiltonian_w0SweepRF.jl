@@ -138,10 +138,10 @@ function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{9,Any}, t)
     H = [
             -R2f  -ω0       B1*ω1      0     0            0       0
               ω0 -R2f           0      0     0            0       0
-          -B1*ω1    0 -R1f-Rex*m0s      0     0       Rex*m0f R1f*m0f
+          -B1*ω1    0 -R1f-Rex*m0s      0    0       Rex*m0f R1f*m0f
                0    0           0   -R2s   -ω0        B1*ω1       0
                0    0           0     ω0  -R2s            0       0
-               0    0      Rex*m0s -B1*ω1     0  -R1s-Rex*m0f R1s*m0s
+               0    0      Rex*m0s -B1*ω1    0  -R1s-Rex*m0f R1s*m0s
                0    0           0      0     0            0       0
     ]
     ∂m∂t .= H * m
