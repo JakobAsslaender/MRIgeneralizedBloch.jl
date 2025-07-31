@@ -1,11 +1,11 @@
 """
-    CRB, grad_ω1, grad_TRF = CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)])
+    CRB, grad_ω1, grad_TRF = CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
 
 Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wrt. `ω1` and `TRF`.
 
 # Arguments
-- `ω1::Vector{Real}`: Control vector of `length = Npulses`
-- `TRF::Vector{Real}`: Control vector of `length = Npulses`
+- `ω1::Vector{Real}`: Control vector of `length = Npulses` (matrix if more than 1 sequence are optimized)
+- `TRF::Vector{Real}`: Control vector of `length = Npulses` (matrix if more than 1 sequence are optimized)
 - `TR::Real`: Repetition time in seconds
 - `ω0::Real`: Off-resonance frequency in rad/s
 - `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
@@ -20,8 +20,7 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 - `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
 
 # Optional Keyword Arguments:
-- `grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)]`: Different types of gradient moments of each TR are possible (`:balanced`, `:crusher`, `:spoiler_dual`, `:spoiler_prepulse`). `:balanced` simulates a TR with all gradient moments nulled. `:crusher` assumes equivalent (non-zero) gradient moments before and simulates the refocussing path of the extended phase graph. `:spoiler_prepulse` nulls all transverse magnetization before the RF pulse, emulating an idealized FLASH. `:spoiler_dual` nulls all transverse magnetization before and after the RF pulse.
-- `nSeq = 1`: Allows multiple flip angle pattern to be jointly optimized. CRB (and derivatives) are calucluted by taking the joint signal of all flip angle patterns. The periodic boundary conditions of the magnetization are calucluted within each flip angle pattern.
+- `grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)]`: Different types of gradient moments of each TR are possible (`:balanced`, `:crusher`, `:spoiler_dual`, `:spoiler_prepulse`). `:balanced` simulates a TR with all gradient moments nulled. `:crusher` assumes equivalent (non-zero) gradient moments before and simulates the refocussing path of the extended phase graph. `:spoiler_prepulse` nulls all transverse magnetization before the RF pulse, emulating an idealized FLASH. `:spoiler_dual` nulls all transverse magnetization before and after the RF pulse.
 
 # Examples
 ```jldoctest
@@ -31,18 +30,14 @@ julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(range(pi/2
 ```
 c.f. [Optimal Control](@ref)
 """
-function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)], nSeq=1)
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
+    nSeq = size(ω1, 2)
 
     E = Vector{Array{SMatrix{11,11,Float64},3}}(undef, nSeq)
     dEdω1 = similar(E)
     dEdTRF = similar(E)
-
-    Q = Vector{Array{SMatrix{11,11,Float64}}}(undef, nSeq)
-    Y = Vector{Array{SVector{11,Float64}}}(undef, nSeq)
-
-    ω1 = reshape(ω1, :, nSeq)
-    TRF = reshape(TRF, :, nSeq)
-    grad_moment = reshape(grad_moment, :, nSeq)
+    Q = Vector{Array{SMatrix{11,11,Float64},2}}(undef, nSeq)
+    Y = Vector{Array{SVector{11,Float64},3}}(undef, nSeq)
 
     grad_ω1 = similar(ω1)
     grad_TRF = similar(ω1)
@@ -60,12 +55,11 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R
         grad_ω1[:, iSeq], grad_TRF[:, iSeq] = calculate_gradient_inner_product(P, Y[iSeq], E[iSeq], dEdω1[iSeq], dEdTRF[iSeq])
     end
 
-    return CRB, vec(grad_ω1), vec(grad_TRF)
+    return CRB, grad_ω1, grad_TRF
 end
 
 
-
-function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; rfphase_increment=[π], grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)])
+function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; rfphase_increment=[π], grad_moment)
     E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
     dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
@@ -154,7 +148,7 @@ function calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, r, g, ω1, TR
 end
 
 function calcualte_cycle_propgator(E)
-    Q = Array{SMatrix{11,11,Float64}}(undef, size(E, 2), size(E, 3))
+    Q = Array{SMatrix{11,11,Float64},2}(undef, size(E, 2), size(E, 3))
 
     for g ∈ axes(E, 3), r ∈ axes(E, 2)
         A = E[1, r, g]

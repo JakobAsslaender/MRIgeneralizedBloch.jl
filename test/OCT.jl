@@ -69,13 +69,13 @@ _grad_TRF_fd = grad(central_fdm(5, 1; factor=1e6, max_range=5e-8), f_TRF, TRF)[1
 ## ########################################################################
 # Test OCT gradients: double loop
 ###########################################################################
-α = [α; α]
-ω1 = [ω1; ω1]
-TRF = [TRF; TRF]
-grad_moment = [grad_moment; grad_moment]
+α = hcat(α, α)
+ω1 = hcat(ω1, ω1)
+TRF = hcat(TRF, TRF)
+grad_moment = hcat(grad_moment, grad_moment)
 
 ##
-F0, grad_ω1_2, grad_TRF_2 = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment, nSeq=2)
+F0, grad_ω1_2, grad_TRF_2 = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
 grad_ω1_2 .*= 4
 grad_TRF_2 .*= 4
 
@@ -83,3 +83,68 @@ grad_TRF_2 .*= 4
 @test grad_ω1 ≈ grad_ω1_2[end÷2+1:end] rtol = 1e-5
 @test grad_TRF ≈ grad_TRF_2[1:end÷2] rtol = 1e-5
 @test grad_TRF ≈ grad_TRF_2[end÷2+1:end] rtol = 1e-5
+
+
+## ########################################################################
+# Test helper functions
+###########################################################################
+ω1_min=fill(π/2e-3, size(ω1))
+ω1_max=fill(π/1e-3, size(ω1))
+TRF_min=fill(200e-6, size(TRF))
+TRF_max=fill(400e-6, size(TRF))
+
+_ω1 = copy(ω1)
+_TRF = copy(TRF)
+
+x = MRIgeneralizedBloch.bound_ω1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+ω1_b, TRF_b = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
+
+@test ω1_b ≈ _ω1
+@test TRF_b ≈ _TRF
+@test all(ω1_b .<= ω1_max)
+@test all(ω1_b .>= ω1_min)
+@test all(TRF_b .<= TRF_max)
+@test all(TRF_b .>= TRF_min)
+
+##
+ω1_min=zeros(size(ω1))
+ω1_max=fill(1e6, size(ω1))
+TRF_min=fill(0, size(TRF))
+TRF_max=fill(1, size(TRF))
+
+_ω1 = copy(ω1)
+_TRF = copy(TRF)
+
+x = MRIgeneralizedBloch.bound_ω1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+ω1_b, TRF_b = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
+
+@test ω1_b ≈ ω1
+@test TRF_b ≈ TRF
+@test ω1_b ≈ _ω1
+@test TRF_b ≈ _TRF
+@test all(ω1_b .<= ω1_max)
+@test all(ω1_b .>= ω1_min)
+@test all(TRF_b .<= TRF_max)
+@test all(TRF_b .>= TRF_min)
+
+##
+function fg!(F, G, x)
+    ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
+
+    F, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+    F = abs(F)
+
+    F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; grad_moment, λ=1e4)
+    F += MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e-3, Pmax=3e6, TR)
+    F += MRIgeneralizedBloch.TRF_TV!(grad_TRF, TRF; grad_moment, λ=1e3)
+
+    MRIgeneralizedBloch.apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+    return F
+end
+
+G = similar(x)
+G_fd = grad(central_fdm(5, 1; factor=1e6), x -> fg!(nothing, G, x), x)[1] # Finite Difference gradient: TRF
+
+F = fg!(nothing, G, x)
+
+@test G ≈ G_fd rtol = 1e-2
