@@ -32,7 +32,7 @@ TRF = fill(300e-6, length(α));
 
 α[1] = π
 TRF[1] = 500e-6
-grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)];
+grad_moment = [i == 1 ? :crusher : :balanced for i ∈ eachindex(α)];
 
 ω1 = α ./ TRF;
 

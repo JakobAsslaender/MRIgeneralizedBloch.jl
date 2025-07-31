@@ -41,7 +41,7 @@ s = vec(s)
 s .+= 0.01 * randn(ComplexF64, size(s));
 
 # Now we can fit the model to the noisy data:
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, grad_moment)
+qM = fit_gBloch(s, α, TRF, TR; R2slT, grad_moment)
 
 # The last keyword argument is optional. It allows to recycle the precomputed `R2sl`, which improves speed. If not specified, it is re-calculated internally.
 
@@ -100,10 +100,10 @@ plot!(p, t, imag.(s_fitted), label="Im(s_fitted)")
 # where the three entries refer to `(minimum, start_value, maximum)` (cf. [`fit_gBloch`](@ref)).
 
 # With keyword arguments, one can modify each of these bounds. For example:
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5), grad_moment)
+qM = fit_gBloch(s, α, TRF, TR; R2slT, m0s  = (0.1, 0.3, 0.5), grad_moment)
 
 # starts the fit at `m0s = 0.3` and uses a lower bound of `0.1` and an upper bound of `0.5`. Alternatively, one also fix parameters to specified values:
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1, grad_moment)
+qM = fit_gBloch(s, α, TRF, TR; R2slT, ω0 = 0, B1 = 1, grad_moment)
 
 # In this case, the derivatives wrt. `ω0` and `B1` are not calculated and the result is accordingly
 qM.ω0
@@ -123,13 +123,13 @@ u = u[:,1:9];
 sc = u' * s
 
 # and fitted by calling [`fit_gBloch`](@ref) with the keyword argument `u=u`:
-qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u, grad_moment)
+qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment)
 
 
 # ## Apparent ``R_1``
 # Above fits tread `R1f` and `R1s` of the free and the semi-solid as independent parameters. As we discussed in our [paper](https://arxiv.org/pdf/2207.08259.pdf), many publications in the literature assume an apparent `R1a = R1f = R1s`. The corresponding model can be fitted by specifying `fit_apparentR1=true`:
 R1a = 1 # 1/s
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_moment)
-qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT, grad_moment)
+qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT, grad_moment)
 
 # Here, we specified the limits of `R1a` explicitly, which is optional.

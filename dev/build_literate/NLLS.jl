@@ -28,7 +28,7 @@ s = vec(s)
 
 s .+= 0.01 * randn(ComplexF64, size(s));
 
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, grad_moment)
+qM = fit_gBloch(s, α, TRF, TR; R2slT, grad_moment)
 
 qM.m0s
 
@@ -55,9 +55,9 @@ plot!(p, t, imag.(s), label="Im(s)")
 plot!(p, t, real.(s_fitted), label="Re(s_fitted)")
 plot!(p, t, imag.(s_fitted), label="Im(s_fitted)")
 
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, m0s  = (0.1, 0.3, 0.5), grad_moment)
+qM = fit_gBloch(s, α, TRF, TR; R2slT, m0s  = (0.1, 0.3, 0.5), grad_moment)
 
-qM = fit_gBloch(s, α, TRF, TR; R2slT=R2slT, ω0 = 0, B1 = 1, grad_moment)
+qM = fit_gBloch(s, α, TRF, TR; R2slT, ω0 = 0, B1 = 1, grad_moment)
 
 qM.ω0
 
@@ -72,10 +72,10 @@ u = u[:,1:9];
 
 sc = u' * s
 
-qM = fit_gBloch(sc, α, TRF, TR; R2slT=R2slT, u=u, grad_moment)
+qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment)
 
 R1a = 1 # 1/s
 s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_moment)
-qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT=R2slT, grad_moment)
+qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT, grad_moment)
 
 # This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl

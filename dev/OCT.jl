@@ -45,10 +45,10 @@ weights = transpose([0, 1, 0, 0, 0, 0, 0, 0, 0]);
 # initialize with a constant `TRF = 300μs`:
 TRF = fill(300e-6, length(α));
 
-# and define the first RF pulse as a 500μs inversion pulse by modifying vectors accordingly and by defining that spoilers are played out before and after the inversion pulse:
+# and define the first RF pulse as a 500μs inversion pulse by modifying vectors accordingly and by defining that crushers are played out before and after the inversion pulse:
 α[1] = π
 TRF[1] = 500e-6
-grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)];
+grad_moment = [i == 1 ? :crusher : :balanced for i ∈ eachindex(α)];
 
 # We note that inversion pulses are not optimized by this toolbox. We calculate the initial ``ω_1``
 ω1 = α ./ TRF;
