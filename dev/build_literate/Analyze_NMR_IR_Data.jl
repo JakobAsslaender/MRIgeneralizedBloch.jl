@@ -8,10 +8,10 @@ using Printf
 using Plots
 plotlyjs(bg=RGBA(31 / 255, 36 / 255, 36 / 255, 1.0), ticks=:native); #hide
 
-MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
-BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
+MnCl2_data(TRF_scale) = "https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20($TRF_scale)/1/data.2d?raw=true"
+BSA_data(TRF_scale)   = "https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20($TRF_scale)/1/data.2d?raw=true";
 
-include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"));
+include("$(pathof(MRIgeneralizedBloch))/../../docs/src/load_NMR_data.jl");
 
 M = load_Data(MnCl2_data(1))
 M = M[:, 1]; # select Tᵢ = 5s
@@ -189,7 +189,7 @@ mean(R₁) # 1/s
 std(R₁) # 1/s
 
 function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
     m0f = 1 - m0s
     ω₁ = π ./ Tʳᶠ
 
@@ -197,13 +197,13 @@ function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
     m_fun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 
-    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
-             m0s*Rx -R₁-m0f*Rx R₁*m0s;
-              0          0         0 ]
+    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
+             m0s*Rex -R₁-m0f*Rex R₁*m0s;
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
-        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rex, R₁, T₂ˢ, G)
         prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
@@ -242,24 +242,24 @@ R₁ = fit_gBloch.param[4] # 1/s
 
 T₂ˢ = 1e6fit_gBloch.param[5] # μs
 
-Rx = fit_gBloch.param[6] # 1/s
+Rex = fit_gBloch.param[6] # 1/s
 
 stderror(fit_gBloch)
 
 function Graham_IR_model(p, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
     m0f = 1 - m0s
     ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
 
-    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
-             m0s*Rx -R₁-m0f*Rx R₁*m0s;
-              0          0         0 ]
+    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
+             m0s*Rex -R₁-m0f*Rex R₁*m0s;
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
-        param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rx, R₁, T₂ˢ)
+        param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rex, R₁, T₂ˢ)
         prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
@@ -291,24 +291,24 @@ R₁ = fit_Graham.param[4] # 1/s
 
 T₂ˢ = 1e6fit_Graham.param[5] # μs
 
-Rx = fit_Graham.param[6] # 1/s
+Rex = fit_Graham.param[6] # 1/s
 
 stderror(fit_Graham)
 
 function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
     m0f = 1 - m0s
     ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
 
-    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
-             m0s*Rx -R₁-m0f*Rx R₁*m0s;
-              0          0         0 ]
+    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
+             m0s*Rex -R₁-m0f*Rex R₁*m0s;
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
-        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rex, R₁, T₂ˢ, G)
         prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
@@ -340,7 +340,7 @@ R₁ = fit_Sled.param[4] # 1/s
 
 T₂ˢ = 1e6fit_Sled.param[5] # μs
 
-Rx = fit_Sled.param[6] # 1/s
+Rex = fit_Sled.param[6] # 1/s
 
 stderror(fit_Sled)
 

@@ -10,7 +10,7 @@ R1f = 0.5 # 1/s
 R2f = 13 # 1/s
 R1s = 3 # 1/s
 T2s = 12e-6 # s
-Rx = 17; # 1/s
+Rex = 17; # 1/s
 
 B1 = 1
 ω0 = 0; # rad/s
@@ -43,7 +43,7 @@ z_Graham(TRF)
 
 m0 = [0; 0; 1-m0s; m0s; 1];
 
-param = (ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G);
+param = (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G);
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
 m_gBloch = solve(prob)
@@ -73,7 +73,7 @@ z_gBloch(TRF)[1]
 
 z_Graham(TRF)
 
-param = (f_ω1, B1, ω0, m0s, R1f, R2f, Rx, R1s, T2s, G)
+param = (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)
 m0 = [0; 0; 1-m0s; m0s; 1]
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), param)
 m_gBloch = solve(prob)
@@ -96,7 +96,7 @@ p = plot(f_ω0, 0, TRF, xlabel="t [s]", ylabel="ω₀(t) [rad/s]", labels=:none)
 p = plot(f_φ, 0, TRF, xlabel="t [s]", ylabel="φ(t) [rad]", labels=:none)
 
 m0 = [0, 0, 1-m0s, m0s, 1]
-p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rx, R1s, T2s, G)
+p = (f_ω1, B1, f_φ, m0s, R1f, R2f, Rex, R1s, T2s, G)
 m_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))
 p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 
@@ -104,7 +104,7 @@ p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ
 f_φ_or(t) = f_φ(t) + Δω0 * t; # rad
 
 B1 = 1.2 # 20% miss-calibration
-p = (f_ω1, B1, f_φ_or, m0s, R1f, R2f, Rx, R1s, T2s, G)
+p = (f_ω1, B1, f_φ_or, m0s, R1f, R2f, Rex, R1s, T2s, G)
 m_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))
 p = plot(m_gBloch, xlabel="t [s]", ylabel="m(t)", idxs=1:4, labels=["xᶠ" "yᶠ" "zᶠ" "zˢ"])
 

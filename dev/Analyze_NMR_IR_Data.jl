@@ -15,11 +15,11 @@ using Plots
 plotlyjs(bg=RGBA(31 / 255, 36 / 255, 36 / 255, 1.0), ticks=:native); #hide #!nb
 
 # The raw data is stored in a separate [github repository](https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData) and the following functions return the URL to the individual files:
-MnCl2_data(TRF_scale) = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true")
-BSA_data(TRF_scale)   = string("https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20(", TRF_scale, ")/1/data.2d?raw=true");
+MnCl2_data(TRF_scale) = "https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210419_1mM_MnCl2/ja_IR_v2%20($TRF_scale)/1/data.2d?raw=true"
+BSA_data(TRF_scale)   = "https://github.com/JakobAsslaender/MRIgeneralizedBloch_NMRData/blob/main/20210416_15%25BSA_2ndBatch/ja_IR_v2%20($TRF_scale)/1/data.2d?raw=true";
 
 # which can be loaded with functions implemented in this file:
-include(string(pathof(MRIgeneralizedBloch), "/../../docs/src/load_NMR_data.jl"));
+include("$(pathof(MRIgeneralizedBloch))/../../docs/src/load_NMR_data.jl");
 
 # ## MnCl``_2`` Sample
 # ### ``T_2^{*,f}`` Estimation
@@ -338,7 +338,7 @@ std(R₁) # 1/s
 # ### Global IR Fit - Generalized Bloch Model
 # In order to repeat the global fit that includes all ``T_\text{RF}`` values, we have to account for the spin dynamics in the semi-solid pool during the RF-pulse. First, we do this with the proposed generalized Bloch model:
 function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
     m0f = 1 - m0s
     ω₁ = π ./ Tʳᶠ
 
@@ -346,13 +346,13 @@ function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
     m_fun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 
-    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
-             m0s*Rx -R₁-m0f*Rx R₁*m0s;
-              0          0         0 ]
+    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
+             m0s*Rex -R₁-m0f*Rex R₁*m0s;
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
-        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rex, R₁, T₂ˢ, G)
         prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
@@ -367,7 +367,7 @@ end;
 T₂ˢ_min = 5e-6 # s
 G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ) / T₂ˢ_min);
 
-# The fit is initialized with `p0 = [m0, m0f_inv, m0_s, R₁, T2_s, Rx]` and we set some reasonable bounds to the fitted parameters:
+# The fit is initialized with `p0 = [m0, m0f_inv, m0_s, R₁, T2_s, Rex]` and we set some reasonable bounds to the fitted parameters:
 p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
 pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
 pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
@@ -397,7 +397,7 @@ R₁ = fit_gBloch.param[4] # 1/s
 #-
 T₂ˢ = 1e6fit_gBloch.param[5] # μs
 #-
-Rx = fit_gBloch.param[6] # 1/s
+Rex = fit_gBloch.param[6] # 1/s
 # with the uncertainties (in the same order)
 stderror(fit_gBloch)
 
@@ -430,19 +430,19 @@ close(io) #src
 # ### Global IR Fit - Graham's Spectral Model
 # For comparison, we repeat the same fit with [Graham's spectral model](http://dx.doi.org/10.1002/jmri.1880070520):
 function Graham_IR_model(p, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
     m0f = 1 - m0s
     ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
 
-    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
-             m0s*Rx -R₁-m0f*Rx R₁*m0s;
-              0          0         0 ]
+    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
+             m0s*Rex -R₁-m0f*Rex R₁*m0s;
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
-        param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rx, R₁, T₂ˢ)
+        param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rex, R₁, T₂ˢ)
         prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
@@ -478,7 +478,7 @@ R₁ = fit_Graham.param[4] # 1/s
 #-
 T₂ˢ = 1e6fit_Graham.param[5] # μs
 #-
-Rx = fit_Graham.param[6] # 1/s
+Rex = fit_Graham.param[6] # 1/s
 # with the uncertainties (in the same order)
 stderror(fit_Graham)
 
@@ -510,19 +510,19 @@ close(io) #src
 # ### Global IR Fit - Sled's Model
 # We also performed the fit with [Sled's model](http://dx.doi.org/10.1006/jmre.2000.2059):
 function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rx) = p
+    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
     m0f = 1 - m0s
     ω₁ = π ./ Tʳᶠ
 
     m0vec = [0, 0, m0f, m0s, 1]
 
-    H = [-R₁-m0s*Rx     m0f*Rx R₁*m0f;
-             m0s*Rx -R₁-m0f*Rx R₁*m0s;
-              0          0         0 ]
+    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
+             m0s*Rex -R₁-m0f*Rex R₁*m0s;
+              0           0          0 ]
 
     M = zeros(Float64, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
-        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rx, R₁, T₂ˢ, G)
+        param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rex, R₁, T₂ˢ, G)
         prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
         m = solve(prob).u[end]
 
@@ -558,7 +558,7 @@ R₁ = fit_Sled.param[4] # 1/s
 #-
 T₂ˢ = 1e6fit_Sled.param[5] # μs
 #-
-Rx = fit_Sled.param[6] # 1/s
+Rex = fit_Sled.param[6] # 1/s
 # with the uncertainties (in the same order)
 stderror(fit_Sled)
 

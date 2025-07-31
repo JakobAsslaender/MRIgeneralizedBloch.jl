@@ -79,7 +79,7 @@ M ./= maximum(M);
 
 # We model the steady-state magnetization as described by [Henkelman et al.](https://doi.org/10.1002/mrm.1910290607):
 function Henkelman_model(x, p; lineshape=:superLorentzian) 
-    (m0, m0s, R1f, R1s, T2f, T2s, Rx) = p
+    (m0, m0s, R1f, R1s, T2f, T2s, Rex) = p
 
     m0s /= 1 - m0s # switch from m0s + m0f = 1 to m0f = 1 normalization
 
@@ -96,11 +96,11 @@ function Henkelman_model(x, p; lineshape=:superLorentzian)
         Rrf_s = @. π * ω1^2 * g_superLorentzian(Δ, T2s)
     end
 
-    m = @. m0 * (R1s * Rx * m0s + Rrf_s * R1f + R1f * R1s + R1f * Rx) / ((R1f + Rrf_f + Rx * m0s) * (R1s + Rrf_s + Rx) - Rx^2 * m0s)
+    m = @. m0 * (R1s * Rex * m0s + Rrf_s * R1f + R1f * R1s + R1f * Rex) / ((R1f + Rrf_f + Rex * m0s) * (R1s + Rrf_s + Rex) - Rex^2 * m0s)
     return m
 end;
 
-# Here, we use a fitting routine to demonstrate the best possible fit with each of the three lineshapes. We define an initialization for the fitting routine `p0 = [m0, m0s, R1f, R1s, T2f, T2s, Rx]` and set some reasonable bounds:
+# Here, we use a fitting routine to demonstrate the best possible fit with each of the three lineshapes. We define an initialization for the fitting routine `p0 = [m0, m0s, R1f, R1s, T2f, T2s, Rex]` and set some reasonable bounds:
 p0   = [  1,0.01,   1,   5,0.052,  1e-5, 40]
 pmin = [  0,   0,   0,   0,0.052,  1e-6,  1]
 pmax = [Inf,   1, Inf, Inf,0.052, 10e-3,100];
