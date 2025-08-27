@@ -39,7 +39,7 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0_M, m0_NM, m0_IEW,
     end
 
     for j in eachindex(grad_list), i in eachindex(rfphase_increment)
-        m = antiperiodic_boundary_Monditions_linear(ω1, B1, ω0, TRF, TR, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad_list[j], rfphase_increment[i], isInversionPulse)
+        m = antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad_list[j], rfphase_increment[i], isInversionPulse)
 
         # this implements the α[1]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
         if preppulse
@@ -73,7 +73,7 @@ function evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0_M, m0_NM, m0_IEW, m0_
     return A
 end
 
-function antiperiodic_boundary_Monditions_linear(ω1, B1, ω0, TRF, TR, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad, rfphase_increment, isInversionPulse)
+function antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad, rfphase_increment, isInversionPulse)
     A = evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad, rfphase_increment, isInversionPulse)
 
     Q = A - A0(A)

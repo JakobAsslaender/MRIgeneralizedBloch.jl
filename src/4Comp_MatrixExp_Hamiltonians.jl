@@ -87,7 +87,9 @@ function propagator_linear_inversion_pulse(ω1, T, B1, R2_M, R2_NM, _, _, _, _, 
     return U
 end
 
-function z_rotation_propagator(rfphase_increment, _::SMatrix{21, 21})
+function z_rotation_propagator(rfphase_increment, x::Matrix)
+    @assert size(x) == (21, 21)
+
     sϕ, cϕ = sincos(rfphase_increment)
     u_rot = @SMatrix [cϕ -sϕ 0 0 0  0   0 0 0 0  0   0 0 0 0  0   0 0 0 0 0;
                       sϕ  cϕ 0 0 0  0   0 0 0 0  0   0 0 0 0  0   0 0 0 0 0;
@@ -115,6 +117,14 @@ end
 
 
 
-function xs_destructor(_::SMatrix{21, 21})
-    Diagonal(SVector{21}(1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1))
+function xs_destructor(x::Matrix)
+    if size(x) == (6, 6)
+        return Diagonal([1,1,1,0,1,1])
+    elseif size(x) == (11, 11)
+        return Diagonal([1,1,1,0,1,1,1,1,0,1,1])
+    elseif size(x) == (21, 21)
+        return Diagonal([1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1])
+    else
+        error("`xs_destructor` is only implemented for sizes `(6, 6)`, `(11, 11)`, `(21, 21)`, ")
+    end
 end

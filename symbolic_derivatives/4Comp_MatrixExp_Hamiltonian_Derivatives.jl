@@ -37,7 +37,7 @@ for p ∈ [m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_N
 
     f_expr = build_function(dHdp,
     ω1, B1, ω0, T, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad_type;
-        force_SA=true,
+        force_SA=false,
     )
 
     f_str = string(f_expr[1])
@@ -46,9 +46,12 @@ for p ∈ [m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_N
     idcs = findfirst("grad_type", f_str)
     f_str = f_str[1:idcs[end]] * "::grad_$p" * f_str[idcs[end]+1:end]
 
-    idcs = findfirst("(SymbolicUtils.Code.create_array)(StaticArraysCore.SArray, nothing, Val{2}(), Val{($(size(dHdp, 1)), $(size(dHdp, 2)))}(), ", f_str)
+    idcs = findfirst("(SymbolicUtils.Code.create_array)(Array, nothing, Val{2}(), Val{($(size(dHdp, 1)), $(size(dHdp, 2)))}(), ", f_str)
+    f_str = f_str[1:idcs[1]-1] * "reshape([" * f_str[idcs[end]+1:end]
 
-    f_str = f_str[1:idcs[1]-1] * "SMatrix{$(size(dHdp, 1)), $(size(dHdp, 2))}(" * f_str[idcs[end]+1:end]
+    idcs = findfirst(", 0)\n", f_str)
+    f_str = f_str[1:idcs[1]-1] * ", 0], $(size(dHdp, 1)), $(size(dHdp, 2)))\n" * f_str[idcs[end]+1:end]
+
     global fs_str *= f_str
     global fs_str *= "\n \n"
 end

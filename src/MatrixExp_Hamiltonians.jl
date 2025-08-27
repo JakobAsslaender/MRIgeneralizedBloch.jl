@@ -212,6 +212,18 @@ function A0(_::SMatrix{N, N}) where N
     Diagonal(SVector{N}(ntuple(_ -> 1, N-1)..., 0))
 end
 
+function A0(x::Matrix)
+    N, M = size(x)
+    @assert N == M
+    Diagonal([i == N ? 0 : 1 for i = 1:N])
+end
+
 function C(_::SMatrix{N, N}) where N
     SVector(ntuple(_ -> 0, N-1)..., 1)
+end
+
+function C(x::Matrix)
+    N, M = size(x)
+    @assert N == M
+    [i == N ? 1 : 0 for i = 1:N]
 end
