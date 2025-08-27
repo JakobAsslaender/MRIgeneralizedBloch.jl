@@ -205,7 +205,7 @@ function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
     for i ∈ eachindex(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rex, R₁, T₂ˢ, G)
         prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob).u[end]
+        m = solve(prob, MethodOfSteps(Tsit5())).u[end]
 
         for j ∈ eachindex(TI)
             M[j, i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2))*[m0f_inv * m[3], m[4], 1])[1]

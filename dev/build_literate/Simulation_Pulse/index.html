@@ -35,14 +35,14 @@ z_gBloch_Lorentzian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Lorentzian[i] = solve(prob).u[end][1]
+    z_gBloch_Lorentzian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 end</code></pre><p>Now we have solved all five models and can plot the solutions for comparison:</p><pre><code class="language-julia hljs">p = plot(xaxis=:log, legend=:bottomright, xlabel=&quot;Tʳᶠ [s]&quot;, ylabel=&quot;zˢ(Tʳᶠ)&quot;)
 plot!(p, Tʳᶠ, z_gBloch_Lorentzian, label=&quot;generalized Bloch model&quot;)
 plot!(p, Tʳᶠ, Tʳᶠ .* 0 .+ cos(α), label=&quot;cos(α)&quot;)
 plot!(p, Tʳᶠ, z_Sled_Lorentzian, label=&quot;Sled&#39;s model&quot;)
 plot!(p, Tʳᶠ, z_Graham_spec_Lorentzian, label=&quot;Graham&#39;s spectral model&quot;)
 plot!(p, Tʳᶠ, z_Graham_SF_approx_Lorentzian, label=&quot;Graham&#39;s single frequency approximation&quot;)
-plot!(p, Tʳᶠ, z_Bloch, label=&quot;Bloch model&quot;)</code></pre><object type="text/html" data="../../plots/365432801.html" style="width:100%;height:425px;"></object><h2 id="Gaussian-Lineshape"><a class="docs-heading-anchor" href="#Gaussian-Lineshape">Gaussian Lineshape</a><a id="Gaussian-Lineshape-1"></a><a class="docs-heading-anchor-permalink" href="#Gaussian-Lineshape" title="Permalink"></a></h2><p>We can repeat these simulations (with the exception of the Bloch model) for the Gaussian lineshape:</p><pre><code class="language-julia hljs">Rʳᶠ = @. ω₁^2 * T₂ˢ * (2 * T₂ˢ * (exp(-(Tʳᶠ/T₂ˢ)^2/2)-1) + sqrt(2π) * Tʳᶠ * erf(Tʳᶠ/T₂ˢ/sqrt(2))) / (2 * Tʳᶠ)
+plot!(p, Tʳᶠ, z_Bloch, label=&quot;Bloch model&quot;)</code></pre><object type="text/html" data="../../plots/359521907.html" style="width:100%;height:425px;"></object><h2 id="Gaussian-Lineshape"><a class="docs-heading-anchor" href="#Gaussian-Lineshape">Gaussian Lineshape</a><a id="Gaussian-Lineshape-1"></a><a class="docs-heading-anchor-permalink" href="#Gaussian-Lineshape" title="Permalink"></a></h2><p>We can repeat these simulations (with the exception of the Bloch model) for the Gaussian lineshape:</p><pre><code class="language-julia hljs">Rʳᶠ = @. ω₁^2 * T₂ˢ * (2 * T₂ˢ * (exp(-(Tʳᶠ/T₂ˢ)^2/2)-1) + sqrt(2π) * Tʳᶠ * erf(Tʳᶠ/T₂ˢ/sqrt(2))) / (2 * Tʳᶠ)
 z_Graham_spec_Gaussian = @. (Rʳᶠ * exp(-Tʳᶠ * (R₁ + Rʳᶠ)) + R₁) / (R₁ + Rʳᶠ)
 
 g_Gaussian(ω₀) = T₂ˢ / sqrt(2π) * exp(-(T₂ˢ * ω₀)^2 / 2) # lineshape
@@ -60,7 +60,7 @@ z_gBloch_Gaussian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_gaussian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Gaussian[i] = solve(prob).u[end][1]
+    z_gBloch_Gaussian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 end
 
 p = plot(xaxis=:log, legend=:bottomright, xlabel=&quot;Tʳᶠ [s]&quot;, ylabel=&quot;zˢ(Tʳᶠ)&quot;)
@@ -68,7 +68,7 @@ plot!(p, Tʳᶠ, z_gBloch_Gaussian, label=&quot;generalized Bloch model&quot;)
 plot!(p, Tʳᶠ, Tʳᶠ .* 0 .+ cos(α), label=&quot;cos(α)&quot;)
 plot!(p, Tʳᶠ, z_Sled_Gaussian, label=&quot;Sled&#39;s model&quot;)
 plot!(p, Tʳᶠ, z_Graham_spec_Gaussian, label=&quot;Graham&#39;s spectral model&quot;)
-plot!(p, Tʳᶠ, z_Graham_SF_approx_Gaussian, label=&quot;Graham&#39;s single frequency approximation&quot;)</code></pre><object type="text/html" data="../../plots/378311545.html" style="width:100%;height:425px;"></object><h2 id="Super-Lorentzian-Lineshape"><a class="docs-heading-anchor" href="#Super-Lorentzian-Lineshape">Super-Lorentzian Lineshape</a><a id="Super-Lorentzian-Lineshape-1"></a><a class="docs-heading-anchor-permalink" href="#Super-Lorentzian-Lineshape" title="Permalink"></a></h2><p>Further, we can repeat these simulations for the <a href="http://dx.doi.org/10.1002/mrm.1910330404">super-Lorentzian lineshape</a> with the exception of Graham&#39;s single frequency approximation, as the super-Lorentzian lineshape diverges at <span>$ω_0 → 0$</span>.</p><pre><code class="language-julia hljs">G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ)/T₂ˢ)
+plot!(p, Tʳᶠ, z_Graham_SF_approx_Gaussian, label=&quot;Graham&#39;s single frequency approximation&quot;)</code></pre><object type="text/html" data="../../plots/851434153.html" style="width:100%;height:425px;"></object><h2 id="Super-Lorentzian-Lineshape"><a class="docs-heading-anchor" href="#Super-Lorentzian-Lineshape">Super-Lorentzian Lineshape</a><a id="Super-Lorentzian-Lineshape-1"></a><a class="docs-heading-anchor-permalink" href="#Super-Lorentzian-Lineshape" title="Permalink"></a></h2><p>Further, we can repeat these simulations for the <a href="http://dx.doi.org/10.1002/mrm.1910330404">super-Lorentzian lineshape</a> with the exception of Graham&#39;s single frequency approximation, as the super-Lorentzian lineshape diverges at <span>$ω_0 → 0$</span>.</p><pre><code class="language-julia hljs">G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ)/T₂ˢ)
 
 f_PSD(τ) = quadgk(ct -&gt; (4 / τ / abs(1 - 3 * ct^2) * (exp(- τ^2 / 8 * (1 - 3 * ct^2)^2) - 1) + sqrt(2π) * erf(τ / 2 / sqrt(2) * abs(1 - 3 * ct^2))) / abs(1 - 3 * ct^2), 0.0, 1.0)[1]
 Rʳᶠ = @. f_PSD(Tʳᶠ / T₂ˢ) * ω₁^2 * T₂ˢ
@@ -85,14 +85,14 @@ z_gBloch_superLorentzian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_superLorentzian[i] = solve(prob).u[end][1]
+    z_gBloch_superLorentzian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 end
 
 p = plot(xaxis=:log, legend=:bottomright, xlabel=&quot;Tʳᶠ [s]&quot;, ylabel=&quot;zˢ(Tʳᶠ)&quot;)
 plot!(p, Tʳᶠ, z_gBloch_superLorentzian, label=&quot;generalized Bloch model&quot;)
 plot!(p, Tʳᶠ, Tʳᶠ .* 0 .+ cos(α), label=&quot;cos(α)&quot;)
 plot!(p, Tʳᶠ, z_Sled_superLorentzian, label=&quot;Sled&#39;s model&quot;)
-plot!(p, Tʳᶠ, z_Graham_spec_superLorentzian, label=&quot;Graham&#39;s spectral model&quot;)</code></pre><object type="text/html" data="../../plots/202397627.html" style="width:100%;height:425px;"></object><p>This simulation reveals the most pronounced deviations of the generalized Bloch model from established models due to the slower decay of the super-Lorentzian Green&#39;s function.</p><h3 id="Error-Analysis"><a class="docs-heading-anchor" href="#Error-Analysis">Error Analysis</a><a id="Error-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Error-Analysis" title="Permalink"></a></h3><p>Assuming a super-Lorentzian lineshape, we quantify the deviations of Sled&#39;s model from the generalized Bloch model:</p><pre><code class="language-julia hljs">Tʳᶠᵢ = 1e-3 # s
+plot!(p, Tʳᶠ, z_Graham_spec_superLorentzian, label=&quot;Graham&#39;s spectral model&quot;)</code></pre><object type="text/html" data="../../plots/956313564.html" style="width:100%;height:425px;"></object><p>This simulation reveals the most pronounced deviations of the generalized Bloch model from established models due to the slower decay of the super-Lorentzian Green&#39;s function.</p><h3 id="Error-Analysis"><a class="docs-heading-anchor" href="#Error-Analysis">Error Analysis</a><a id="Error-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Error-Analysis" title="Permalink"></a></h3><p>Assuming a super-Lorentzian lineshape, we quantify the deviations of Sled&#39;s model from the generalized Bloch model:</p><pre><code class="language-julia hljs">Tʳᶠᵢ = 1e-3 # s
 ω₁ᵢ = α / Tʳᶠᵢ # rad/s
 param = (ω₁ᵢ, 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
 
@@ -100,7 +100,7 @@ prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠᵢ), param)
 z_Sled_superLorentzian_i = solve(prob).u[end][1]
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠᵢ), param)
-z_gBloch_superLorentzian_i = solve(prob).u[end][1]
+z_gBloch_superLorentzian_i = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 
 z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.02906527002394743</code></pre><p>For <span>$T_{\text{RF}} = 1$</span>ms, the deviations are small compared to the thermal equilibrium magnetization <span>$z^s_0 = 1$</span>, but with <span>$T_{\text{RF}} = 0.1$</span>ms, this deviation becomes sizable:</p><pre><code class="language-julia hljs">Tʳᶠᵢ = 1e-4 # s
 ω₁ᵢ = α / Tʳᶠᵢ # rad/s
@@ -110,6 +110,6 @@ prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠᵢ), param)
 z_Sled_superLorentzian_i = solve(prob).u[end][1]
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠᵢ), param)
-z_gBloch_superLorentzian_i = solve(prob).u[end][1]
+z_gBloch_superLorentzian_i = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 
-z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.3547986578577244</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Simulation_ContinuousWave/">« Continuous Wave Simulation</a><a class="docs-footer-nextpage" href="../Analyze_NMR_IR_Data/">Inversion Recovery Experiments »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 31 July 2025 21:26">Thursday 31 July 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.3547986578577244</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../Simulation_ContinuousWave/">« Continuous Wave Simulation</a><a class="docs-footer-nextpage" href="../Analyze_NMR_IR_Data/">Inversion Recovery Experiments »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Wednesday 27 August 2025 17:03">Wednesday 27 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

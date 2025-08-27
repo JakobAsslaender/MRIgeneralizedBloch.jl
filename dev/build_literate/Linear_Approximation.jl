@@ -31,7 +31,7 @@ mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0 : m0_5D; # initialize hist
 
 param = (π/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
-sol_pi_full = solve(prob);
+sol_pi_full = solve(prob, MethodOfSteps(Tsit5()));
 
 t = (0:.01:1) * Tʳᶠ # s
 Mpi_full = zeros(length(t),4)
@@ -62,7 +62,7 @@ M_appx = similar(M_full)
 for i in eachindex(α)
     param = (α[i]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
     prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
-    M_full[i,:] = solve(prob).u[end][1:4]
+    M_full[i,:] = solve(prob, MethodOfSteps(Tsit5())).u[end][1:4]
 
     u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
     M_appx[i,:] = u[[1:3;5]]
@@ -84,7 +84,7 @@ norm(M_appx[:,4] .- M_full[:,4]) / norm(M_full[:,4])
 
 param = (α[end]/Tʳᶠ, 1, 0, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, T₂ˢ, G)
 prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
-@benchmark solve($prob)
+@benchmark solve($prob, $(MethodOfSteps(Tsit5())))
 
 @benchmark exp(hamiltonian_linear($(α[end]/Tʳᶠ), 1, 0, $Tʳᶠ, $m₀ˢ, $R₁, $R₂ᶠ, $Rₓ, $R₁, R₂ˢˡ($Tʳᶠ, $α[end], 1, $T₂ˢ))) * $m0_6D
 
