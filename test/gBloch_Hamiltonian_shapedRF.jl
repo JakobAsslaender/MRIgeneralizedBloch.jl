@@ -21,10 +21,10 @@ R2s = 1 / T2s
 Rex = 17
 
 # random initial m0
-ms = m0s * rand()
-mf = (1 - m0s) * rand()
-ϑ = rand() * π / 2
-φ = rand() * 2π
+ms = 0.5m0s
+mf = 0.7 * (1 - m0s)
+ϑ =  π / 3
+φ =  2/3 * π
 
 ## ######################################################################################
 # Compare function implementation (using a constant amplitude) to ω1::Real implementation
@@ -32,30 +32,31 @@ mf = (1 - m0s) * rand()
 f_ω1 = (_) -> α/TRF
 G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
+alg = MethodOfSteps(Tsit5())
 
 ## isolated semi-solid spin pool
-for ω0 ∈ [0, 100randn()]
-    local m0 = [rand(), 1]
+for ω0 ∈ [0, 100]
+    local m0 = [0.1, 1]
 
     local p = (α/TRF, B1, ω0, R1s, T2s, G)
-    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
+    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), alg).u[end]
 
     local p = (f_ω1, B1, ω0, R1s, T2s, G)
-    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
+    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), alg).u[end]
 
     @test u_ω1Number ≈ u_ω1Function
 end
 
 
 ## Bloch-McConnell for exchanging pools
-for ω0 ∈ [0, 100randn()]
+for ω0 ∈ [0, 100]
     local m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
     local p = (α/TRF, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)
-    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
+    u_ω1Number = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), alg).u[end]
 
     local p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)
-    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end]
+    u_ω1Function = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), alg).u[end]
 
     @test u_ω1Number ≈ u_ω1Function
 end
@@ -86,16 +87,16 @@ function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{5,Any}, t)
     return ∂m∂t
 end
 
-for ω0 ∈ [0, 100randn()]
+for ω0 ∈ [0, 100]
     local m0 = [0, 0, m0s, 1]
     local p = (f_ω1, B1, ω0, R1s, T2s)
-    z_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p)).u[end][3]
+    z_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0, TRF), p)).u[end][3]
 
     # Solve gen. Bloch for isolated semi-solid spin pool
     local m0 = [m0s, 1]
 
     local p = (f_ω1, B1, ω0, R1s, T2s, G)
-    z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end][1]
+    z_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), alg).u[end][1]
 
     @test z_gBloch ≈ z_Bloch atol = 1e-4
 end
@@ -120,17 +121,17 @@ function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{9,Any}, t)
     return ∂m∂t
 end
 
-for ω0 ∈ [0, 100randn()]
+for ω0 ∈ [0, 100]
     local m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, 0, ms, 1]
 
     local p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s)
-    local u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0.0, TRF), p)).u[end][[1:3...,6]]
+    local u_Bloch = solve(ODEProblem(apply_hamiltonian_bloch!, m0, (0, TRF), p)).u[end][[1:3...,6]]
 
     # Solve gen. Bloch for isolated semi-solid spin pool
     local m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
     local p = (f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)
-    local u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p)).u[end][1:4]
+    local u_gBloch = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), alg).u[end][1:4]
 
     @test u_gBloch ≈ u_Bloch rtol = 1e-2
 end

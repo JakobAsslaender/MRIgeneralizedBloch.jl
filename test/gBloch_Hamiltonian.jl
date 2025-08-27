@@ -28,13 +28,9 @@ mf = (1 - m0s) * rand()
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, greens_lorentzian)
-alg = MethodOfSteps(DP8())
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
-sol = solve(
-    DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
-    alg,
-)
+sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(DP8()))
 
 u_gBloch = sol.u[end]
 

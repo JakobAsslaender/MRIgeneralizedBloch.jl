@@ -36,7 +36,7 @@ u_Sled = sol.u[end]
 ## Solve generalized Bloch-McConnell with super-Lorentzian lineshape
 mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, g)
-sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p))
+sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), p), MethodOfSteps(Tsit5()))
 u_gBloch = sol.u[end]
 
 ## Test!

@@ -27,13 +27,9 @@ mf = (1 - m0s) * rand()
 
 ## Solve Graham's solution
 p = (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s)
-alg = Tsit5()
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
-sol = solve(
-    ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF), p),
-    alg,
-)
+sol = solve(ODEProblem(MRIgeneralizedBloch.apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF), p), Tsit5())
 
 u_Graham = sol.u[end]
 
@@ -42,11 +38,7 @@ mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 
 g = interpolate_greens_function(greens_superlorentzian, 0, TRF/T2s)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, g)
-alg = MethodOfSteps(DP8())
-sol = solve(
-    DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p),
-    alg,
-)
+sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(DP8()))
 
 u_gBloch = sol.u[end]
 

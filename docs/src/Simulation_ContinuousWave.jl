@@ -95,7 +95,7 @@ zfun(p, t) = [1.0, 1.0] # initialize history function (will be populated with an
 
 param = (ω₁, 1, ω₀, R₁, T₂ˢ, greens_lorentzian) # defined by apply_hamiltonian_gbloch!
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, zfun, tspan, param)
-z_gBloch_Lorentzian = solve(prob);
+z_gBloch_Lorentzian = solve(prob, MethodOfSteps(Tsit5()));
 
 # Now that we have solved all five models, we can plot the solutions for comparison:
 
@@ -123,7 +123,7 @@ prob = ODEProblem(apply_hamiltonian_sled!, z₀, tspan, param)
 z_Sled_Gaussian = solve(prob)
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, zfun, tspan, param)
-z_gBloch_Gaussian = solve(prob)
+z_gBloch_Gaussian = solve(prob, MethodOfSteps(Tsit5()))
 
 p = plot(xlabel="t [ms]", ylabel="zˢ(t)")
 plot!(p, 1e3t, zero(similar(t)) .+ z_steady_state_Gaussian, label="Henkelman's steady-state")
@@ -148,7 +148,7 @@ prob = ODEProblem(apply_hamiltonian_sled!, z₀, tspan, param)
 z_Sled_superLorentzian = solve(prob)
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, zfun, tspan, param)
-z_gBloch_superLorentzian = solve(prob)
+z_gBloch_superLorentzian = solve(prob, MethodOfSteps(Tsit5()))
 
 
 p = plot(xlabel="t [ms]", ylabel="zˢ(t)")

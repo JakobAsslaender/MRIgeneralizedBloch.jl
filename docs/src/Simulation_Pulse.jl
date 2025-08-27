@@ -93,7 +93,7 @@ z_gBloch_Lorentzian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Lorentzian[i] = solve(prob).u[end][1]
+    z_gBloch_Lorentzian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 end
 
 # Now we have solved all five models and can plot the solutions for comparison:
@@ -128,7 +128,7 @@ z_gBloch_Gaussian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_gaussian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Gaussian[i] = solve(prob).u[end][1]
+    z_gBloch_Gaussian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 end
 
 p = plot(xaxis=:log, legend=:bottomright, xlabel="Tʳᶠ [s]", ylabel="zˢ(Tʳᶠ)")
@@ -159,7 +159,7 @@ z_gBloch_superLorentzian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, G_superLorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_superLorentzian[i] = solve(prob).u[end][1]
+    z_gBloch_superLorentzian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 end
 
 p = plot(xaxis=:log, legend=:bottomright, xlabel="Tʳᶠ [s]", ylabel="zˢ(Tʳᶠ)")
@@ -182,7 +182,7 @@ prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠᵢ), param)
 z_Sled_superLorentzian_i = solve(prob).u[end][1]
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠᵢ), param)
-z_gBloch_superLorentzian_i = solve(prob).u[end][1]
+z_gBloch_superLorentzian_i = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 
 z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 
@@ -196,7 +196,7 @@ prob = ODEProblem(apply_hamiltonian_sled!, z₀, (0, Tʳᶠᵢ), param)
 z_Sled_superLorentzian_i = solve(prob).u[end][1]
 
 prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠᵢ), param)
-z_gBloch_superLorentzian_i = solve(prob).u[end][1]
+z_gBloch_superLorentzian_i = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
 
 z_Sled_superLorentzian_i - z_gBloch_superLorentzian_i
 
