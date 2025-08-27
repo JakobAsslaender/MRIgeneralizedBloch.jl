@@ -1,88 +1,94 @@
 ##
-function hamiltonian_linear(ω1, B1, ω0, T, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM)
-    k_MW_M = Rx_M_MW * (1 + m0_M/m0_MW)
-    k_M_MW = Rx_M_MW * (1 + m0_MW/m0_M)
+function hamiltonian_linear(ω1, B1, ω0, T, m0_C, m0_PG, m0_BW, m0_CFW, Rx_C_CFW, Rx_CFW_BW, Rx_BW_PG, Rx_C_BW, Rx_PG_C, R1_C, R1_PG, R1_BW, R1_CFW, R2_CFW, R2_BW, R2_C, R2_PG)
+    k_CFW_C = Rx_C_CFW * (1 + m0_C/m0_CFW)
+    k_C_CFW = Rx_C_CFW * (1 + m0_CFW/m0_C)
 
-    k_IEW_NM = Rx_IEW_NM * (1 + m0_NM/m0_IEW)
-    k_NM_IEW = Rx_IEW_NM * (1 + m0_IEW/m0_NM)
+    k_BW_PG = Rx_BW_PG * (1 + m0_PG/m0_BW)
+    k_PG_BW = Rx_BW_PG * (1 + m0_BW/m0_PG)
 
-    k_MW_IEW = Rx_MW_IEW * (1 + m0_IEW/m0_MW)
-    k_IEW_MW = Rx_MW_IEW * (1 + m0_MW/m0_IEW)
+    k_CFW_BW = Rx_CFW_BW * (1 + m0_BW/m0_CFW)
+    k_BW_CFW = Rx_CFW_BW * (1 + m0_CFW/m0_BW)
 
-    H = @SMatrix [
-           -R2_MW     -ω0                    B1 * ω1         0              0        0        0                             0         0                 0               0;
-               ω0  -R2_MW                          0         0              0        0        0                             0         0                 0               0;
-         -B1 * ω1       0 -R1_MW - k_MW_M - k_MW_IEW         0         k_M_MW        0        0                      k_IEW_MW         0                 0   R1_MW * m0_MW;
-                0       0                          0     -R2_M        B1 * ω1        0        0                             0         0                 0               0;
-                0       0                     k_MW_M  -B1 * ω1 -R1_M - k_M_MW        0        0                             0         0                 0     R1_M * m0_M;
-                0       0                          0         0              0  -R2_IEW      -ω0                       B1 * ω1         0                 0               0;
-                0       0                          0         0              0       ω0  -R2_IEW                             0         0                 0               0;
-                0       0                   k_MW_IEW         0              0 -B1 * ω1        0 -R1_IEW - k_IEW_NM - k_IEW_MW         0          k_NM_IEW R1_IEW * m0_IEW;
-                0       0                          0         0              0        0        0                             0    -R2_NM           B1 * ω1               0;
-                0       0                          0         0              0        0        0                      k_IEW_NM  -B1 * ω1 -R1_NM - k_NM_IEW   R1_NM * m0_NM;
-                0       0                          0         0              0        0        0                             0         0                 0               0]
+    k_BW_C = Rx_C_BW * (1 + m0_C/m0_BW)
+    k_C_BW = Rx_C_BW * (1 + m0_BW/m0_C)
+
+    k_C_PG = Rx_PG_C * (1 + m0_PG/m0_C)
+    k_PG_C = Rx_PG_C * (1 + m0_C/m0_PG)
+
+    H = @SMatrix [#----CFW----------------------------|---------------C----------------------------|-------------------------BW-----------------------------|----------------------------PG-----------------------|
+           -R2_CFW     -ω0                      B1 * ω1         0                                  0        0        0                                      0         0                         0                 0;
+                ω0 -R2_CFW                            0         0                                  0        0        0                                      0         0                         0                 0;
+          -B1 * ω1       0 -R1_CFW - k_CFW_C - k_CFW_BW         0                            k_C_CFW        0        0                               k_BW_CFW         0                         0   R1_CFW * m0_CFW;
+                 0       0                            0     -R2_C                            B1 * ω1        0        0                                      0         0                         0                 0;
+                 0       0                      k_CFW_C  -B1 * ω1  -R1_C - k_C_CFW - k_C_BW - k_C_PG        0        0                                 k_BW_C         0                    k_PG_C       R1_C * m0_C;
+                 0       0                            0         0                                  0   -R2_BW      -ω0                                B1 * ω1         0                         0                 0;
+                 0       0                            0         0                                  0       ω0   -R2_BW                                      0         0                         0                 0;
+                 0       0                     k_CFW_BW         0                             k_C_BW -B1 * ω1        0   -R1_BW - k_BW_PG - k_BW_CFW - k_BW_C         0                   k_PG_BW     R1_BW * m0_BW;
+                 0       0                            0         0                                  0        0        0                                      0    -R2_PG                   B1 * ω1                 0;
+                 0       0                            0         0                             k_C_PG        0        0                                k_BW_PG  -B1 * ω1 -R1_PG - k_PG_BW - k_PG_C     R1_PG * m0_PG;
+                 0       0                            0         0                                  0        0        0                                      0         0                         0                 0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, _)
-    return hamiltonian_linear(ω1, B1, ω0, T, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM)
+function hamiltonian_linear(ω1, B1, ω0, T, m0_C, m0_PG, m0_BW, m0_CFW, Rx_C_CFW, Rx_CFW_BW, Rx_BW_PG, Rx_C_BW, Rx_PG_C, R1_C, R1_PG, R1_BW, R1_CFW, R2_CFW, R2_BW, R2_C, R2_PG, dR2dT2_C, dR2dB1_C, dR2dT2_PG, dR2dB1_PG, _)
+    return hamiltonian_linear(ω1, B1, ω0, T, m0_C, m0_PG, m0_BW, m0_CFW, Rx_C_CFW, Rx_CFW_BW, Rx_BW_PG, Rx_C_BW, Rx_PG_C, R1_C, R1_PG, R1_BW, R1_CFW, R2_CFW, R2_BW, R2_C, R2_PG)
 end
 
-function propagator_linear_inversion_pulse(ω1, T, B1, R2_M, R2_NM, _, _, _, _, _)
-    H_M = @SMatrix [   -R2_M         B1 * ω1;
+function propagator_linear_inversion_pulse(ω1, T, B1, R2_C, R2_PG, _, _, _, _, _)
+    H_C = @SMatrix [   -R2_C         B1 * ω1;
                     -B1 * ω1               0]
-    U_M = exp(H_M * T)
+    U_C = exp(H_C * T)
 
-    H_NM = @SMatrix [   -R2_NM         B1 * ω1;
+    H_PG = @SMatrix [   -R2_PG         B1 * ω1;
                       -B1 * ω1               0]
-    U_NM = exp(H_NM * T)
+    U_PG = exp(H_PG * T)
 
     U = @SMatrix [
         sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0 0;
         0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0 0;
         0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0 0;
-        0 0 0 U_M[1,1]   U_M[1,2]       0 0 0 0 0 0;
-        0 0 0 U_M[2,1]   U_M[2,2]       0 0 0 0 0 0;
+        0 0 0 U_C[1,1]   U_C[1,2]       0 0 0 0 0 0;
+        0 0 0 U_C[2,1]   U_C[2,2]       0 0 0 0 0 0;
         0 0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
         0 0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
         0 0 0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0;
-        0 0 0 0 0 0 0 0 U_NM[1,1]  U_NM[1,2]      0;
-        0 0 0 0 0 0 0 0 U_NM[2,1]  U_NM[2,2]      0;
+        0 0 0 0 0 0 0 0 U_PG[1,1]  U_PG[1,2]      0;
+        0 0 0 0 0 0 0 0 U_PG[2,1]  U_PG[2,2]      0;
         0 0 0 0 0 0 0 0 0          0              1]
     return U
 end
 
 
-function propagator_linear_inversion_pulse(ω1, T, B1, R2_M, R2_NM, _, _, _, _, grad_type::grad_param)
-    H_M = @SMatrix [   -R2_M         B1 * ω1;
+function propagator_linear_inversion_pulse(ω1, T, B1, R2_C, R2_PG, _, _, _, _, grad_type::grad_param)
+    H_C = @SMatrix [   -R2_C         B1 * ω1;
                     -B1 * ω1               0]
-    U_M = exp(H_M * T)
+    U_C = exp(H_C * T)
 
-    H_NM = @SMatrix [   -R2_NM         B1 * ω1;
+    H_PG = @SMatrix [   -R2_PG         B1 * ω1;
                       -B1 * ω1               0]
-    U_NM = exp(H_NM * T)
+    U_PG = exp(H_PG * T)
 
     U = @SMatrix [
         sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
         0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
         0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
-        0 0 0 U_M[1,1]   U_M[1,2]       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
-        0 0 0 U_M[2,1]   U_M[2,2]       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 U_C[1,1]   U_C[1,2]       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 U_C[2,1]   U_C[2,2]       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
         0 0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
         0 0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0 0 0 0 0 0 0;
         0 0 0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0 0 0 0 0 0 0;
-        0 0 0 0 0 0 0 0 U_NM[1,1]  U_NM[1,2]      0 0 0 0 0 0 0 0 0 0 0;
-        0 0 0 0 0 0 0 0 U_NM[2,1]  U_NM[2,2]      0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 U_PG[1,1]  U_PG[1,2]      0 0 0 0 0 0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 U_PG[2,1]  U_PG[2,2]      0 0 0 0 0 0 0 0 0 0 0;
         0 0 0 0 0 0 0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0 0;
         0 0 0 0 0 0 0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0 0;
         0 0 0 0 0 0 0 0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0 0;
-        0 0 0 0 0 0 0 0 0 0 0 0 0 U_M[1,1]   U_M[1,2]       0 0 0 0 0 0;
-        0 0 0 0 0 0 0 0 0 0 0 0 0 U_M[2,1]   U_M[2,2]       0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0 0 0 U_C[1,1]   U_C[1,2]       0 0 0 0 0 0;
+        0 0 0 0 0 0 0 0 0 0 0 0 0 U_C[2,1]   U_C[2,2]       0 0 0 0 0 0;
         0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
         0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
         0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0;
-        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 U_NM[1,1]  U_NM[1,2]      0;
-        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 U_NM[2,1]  U_NM[2,2]      0;
+        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 U_PG[1,1]  U_PG[1,2]      0;
+        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 U_PG[2,1]  U_PG[2,2]      0;
         0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0          0              1]
     return U
 end
