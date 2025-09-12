@@ -5,18 +5,18 @@ using Symbolics
 using MRIgeneralizedBloch
 
 ##
-@variables ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R1a, T2s, R2s, dR2sdT2s, dR2sdB1, grad_type
+@variables ω1, B1, ω0, T, m0s, R1f, R2f, k, K, nTR, R1s, R1a, T2s, R2s, dR2sdT2s, dR2sdB1, grad_type
 
 f_R2s(T2s, B1) = R2s
 @register_symbolic f_R2s(T2s, B1)
 Symbolics.derivative(::typeof(f_R2s), args::NTuple{2,Any}, ::Val{1}) = dR2sdT2s
 Symbolics.derivative(::typeof(f_R2s), args::NTuple{2,Any}, ::Val{2}) = dR2sdB1
 
-H = hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, f_R2s(T2s, B1))
+H = hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, k, K, nTR, R1s, f_R2s(T2s, B1))
 
 ##
 fs_str = ""
-for p ∈ [m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
+for p ∈ [m0s, R1f, R2f, k, K, nTR, R1s, T2s, B1, ω0, R1a]
     if isequal(p, R1a)
         Ḣ = expand_derivatives.(Differential(R1f).(H) .+ Differential(R1s).(H))
     else
@@ -32,7 +32,7 @@ for p ∈ [m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
     dHdp = substitute(dHdp, Dict([f_R2s(T2s, B1) => R2s]))
     dHdp = simplify.(dHdp)
 
-    f_expr = build_function(dHdp, ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type;
+    f_expr = build_function(dHdp, ω1, B1, ω0, T, m0s, R1f, R2f, k, K, nTR, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type;
         force_SA=true,
     )
 

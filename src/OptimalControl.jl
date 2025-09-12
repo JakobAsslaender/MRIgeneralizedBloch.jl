@@ -1,5 +1,5 @@
 """
-    CRB, grad_ω1, grad_TRF = CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
+    CRB, grad_ω1, grad_TRF = CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
 
 Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wrt. `ω1` and `TRF`.
 
@@ -12,11 +12,11 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 - `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
-- `Rex::Real`: Exchange rate between the two spin pools in 1/seconds
+- `k, K, nTR::Real`: Exchange rate between the two spin pools in 1/seconds
 - `R1f::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
 - `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
-- `grad_list::Tuple{<:grad_param}`: Tuple that specifies the gradients that are calculated; the vector elements can either be any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `grad_list::Tuple{<:grad_param}`: Tuple that specifies the gradients that are calculated; the vector elements can either be any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_k(), grad_K(), grad_nTR(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
 
 # Optional Keyword Arguments:
@@ -30,7 +30,7 @@ julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(range(pi/2
 ```
 c.f. [Optimal Control](@ref)
 """
-function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
     nSeq = size(ω1, 2)
 
     E = Vector{Matrix{SMatrix{11,11,Float64}}}(undef, nSeq)
@@ -43,7 +43,7 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R
     grad_TRF = similar(ω1)
 
     Threads.@threads for iSeq ∈ eachindex(E)
-        E[iSeq], dEdω1[iSeq], dEdTRF[iSeq] = @views calculate_propagators_ω1(ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; grad_moment=grad_moment[:, iSeq])
+        E[iSeq], dEdω1[iSeq], dEdTRF[iSeq] = @views calculate_propagators_ω1(ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad_list; grad_moment=grad_moment[:, iSeq])
         Q[iSeq] = calcualte_cycle_propgator(E[iSeq])
         Y[iSeq] = propagate_magnetization(Q[iSeq], E[iSeq])
     end
@@ -59,7 +59,7 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R
 end
 
 
-function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; grad_moment)
+function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad_list; grad_moment)
     E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(grad_list))
     dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(grad_list))
     dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(grad_list))
@@ -73,21 +73,21 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
 
         for t ∈ 1:length(ω1)
             if grad_moment[t] == :crusher
-                calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+                calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad, u_rot, dH, cache)
             else
-                calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment[t])
+                calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment[t])
             end
         end
     end
     return E, dEdω1, dEdTRF
 end
 
-function calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment)
-    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, Rex, R1s, 0.0, 0.0, 0.0, grad)
+function calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment)
+    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, k, K, nTR, R1s, 0.0, 0.0, 0.0, grad)
     ux = grad_moment == :spoiler_dual ? xy_destructor(H_fp) : xs_destructor(H_fp)
     u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
 
-    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rex, R1s,
+    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, k, K, nTR, R1s,
         R2slT[1](TRF, ω1 * TRF, B1, T2s),
         R2slT[2](TRF, ω1 * TRF, B1, T2s),
         R2slT[3](TRF, ω1 * TRF, B1, T2s),
@@ -130,8 +130,8 @@ function calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0
     return nothing
 end
 
-function calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, _, _)
-    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+function calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad, u_rot, _, _)
+    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, k, K, nTR, R1s, 0, 0, 0, grad))
     u_fp = xs_destructor(u_fp) * u_fp
     u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1,
         R2slT[1](TRF, ω1 * TRF, B1, T2s),

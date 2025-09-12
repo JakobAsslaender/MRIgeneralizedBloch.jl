@@ -49,6 +49,9 @@ export grad_R1f
 export grad_R1s
 export grad_R2f
 export grad_Rex
+export grad_k
+export grad_K
+export grad_nTR
 export grad_T2s
 export grad_ω0
 export grad_B1
@@ -60,6 +63,9 @@ struct grad_R1f <: grad_param end
 struct grad_R1s <: grad_param end
 struct grad_R2f <: grad_param end
 struct grad_Rex <: grad_param end
+struct grad_k   <: grad_param end
+struct grad_K   <: grad_param end
+struct grad_nTR <: grad_param end
 struct grad_T2s <: grad_param end
 struct grad_ω0  <: grad_param end
 struct grad_B1  <: grad_param end

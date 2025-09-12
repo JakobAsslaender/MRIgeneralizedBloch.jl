@@ -6,7 +6,9 @@
         m0s  = (   0, 0.2,    1),
         R1f  = (   0, 0.3,  Inf),
         R2f  = (   0,  15,  Inf),
-        Rex  = (   0,  20,  Inf),
+        k    = (   0,  20,  Inf),
+        K    = (   0,  20,  Inf),
+        nTR  = (   0,0.05,    1),
         R1s  = (   0,   3,  Inf),
         T2s  = (8e-6,1e-5,12e-6),
         ω0   = (-Inf,   0,  Inf),
@@ -34,7 +36,7 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 - `m0s::Union{Real, Tuple{Real, Real, Real}}`: Fractional size of the semi-solid pool (should be in range of 0 to 1); either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
 - `R1f::Union{Real, Tuple{Real, Real, Real}}`: Longitudinal relaxation rate of the free pool in 1/s; only used in combination with `fit_apparentR1=false`; either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
 - `R2f::Union{Real, Tuple{Real, Real, Real}}`: Transversal relaxation rate of the free pool in 1/s; either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
-- `Rex::Union{Real, Tuple{Real, Real, Real}}`: Exchange rate between the two spin pools in 1/s; either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
+- `k, K, nTR::Union{Real, Tuple{Real, Real, Real}}`: Exchange rate between the two spin pools in 1/s; either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
 - `R1s::Union{Real, Tuple{Real, Real, Real}}`: Longitudinal relaxation rate of the semi-solid pool in 1/s; only used in combination with `fit_apparentR1=false`; either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
 - `T2s::Union{Real, Tuple{Real, Real, Real}}`: Transversal relaxation time of the semi-solid pool in s; either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
 - `ω0::Union{Real, Tuple{Real, Real, Real}}`: Off-resonance frequency in rad/s; either fixed value as a `Real` or fit limits thereof as a `Tuple` with the elements `(min, start, max)`
@@ -55,7 +57,9 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i ==
     m0s  = (   0, 0.2,    1),
     R1f  = (   0, 0.3,  Inf),
     R2f  = (   0,  15,  Inf),
-    Rex  = (   0,  20,  Inf),
+    k    = (   0,  20,  Inf),
+    K    = (   0,  20,  Inf),
+    nTR  = (   0,0.05,    1),
     R1s  = (   0,   3,  Inf),
     T2s  = (8e-6,1e-5,12e-6),
     ω0   = (-Inf,   0,  Inf),
@@ -68,7 +72,7 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i ==
     R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
     ) where T <: Real
 
-    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, R1a, u, fit_apparentR1, show_trace, maxIter, R2slT)
+    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0s, R1f, R2f, k, K, nTR, R1s, T2s, ω0, B1, R1a, u, fit_apparentR1, show_trace, maxIter, R2slT)
 end
 
 function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill([i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α[1])], length(α)),
@@ -77,7 +81,9 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     m0s  = (   0, 0.2,    1),
     R1f  = (   0, 0.3,  Inf),
     R2f  = (   0,  15,  Inf),
-    Rex  = (   0,  20,  Inf),
+    k    = (   0,  20,  Inf),
+    K    = (   0,  20,  Inf),
+    nTR  = (   0,0.05,    1),
     R1s  = (   0,   3,  Inf),
     T2s  = (8e-6,1e-5,12e-6),
     ω0   = (-Inf,   0,  Inf),
@@ -95,13 +101,13 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     p0   = Float64[reM0[2], imM0[2]]
     pmax = Float64[reM0[3], imM0[3]]
 
-    idx = Vector{Int}(undef, 8)
+    idx = Vector{Int}(undef, 10)
     if fit_apparentR1
-        param    = [m0s, R1a, R2f, Rex, R1a, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1a(), grad_R2f(), grad_Rex(), nothing, grad_T2s(), grad_ω0(), grad_B1()]
+        param    = [m0s, R1a, R2f, k, K, nTR, R1a, T2s, ω0, B1]
+        grad_all = [grad_m0s(), grad_R1a(), grad_R2f(), grad_k(), grad_K(), grad_nTR(), nothing, grad_T2s(), grad_ω0(), grad_B1()]
     else
-        param    = [m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+        param    = [m0s, R1f, R2f, k, K, nTR, R1s, T2s, ω0, B1]
+        grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_k(), grad_K(), grad_nTR(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
     end
     for i ∈ eachindex(param)
         idx[i] = if isa(param[i], Number)
@@ -120,11 +126,11 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     getparameters(p) = ((p[1]+1im*p[2]), ntuple(i-> idx[i] == 0 ? param[i] : p[idx[i]], length(idx))...)
 
     function model!(F, _, p)
-        M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(p)
+        M0, m0s, R1f, R2f, k, K, nTR, R1s, T2s, ω0, B1 = getparameters(p)
 
         m = zeros(ComplexF64,size(α[1],1),length(α))
         Threads.@threads for i ∈ eachindex(α)
-            m[:,i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i]))
+            m[:,i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT; grad_moment=grad_moment[i]))
         end
 
         m = vec(m)
@@ -136,11 +142,11 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     end
 
     function jacobian!(J, _, p)
-        M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(p)
+        M0, m0s, R1f, R2f, k, K, nTR, R1s, T2s, ω0, B1 = getparameters(p)
 
         M = zeros(ComplexF64,size(α[1],1),length(α),length(grad_list)+1)
         Threads.@threads for i ∈ eachindex(α)
-            M[:,i,:] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=grad_list; grad_moment=grad_moment[i]), dims=2)
+            M[:,i,:] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT, grad_list=grad_list; grad_moment=grad_moment[i]), dims=2)
         end
         M = reshape(M,:,length(grad_list)+1)
 
@@ -155,9 +161,9 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
     result = curve_fit(model!, jacobian!, 1:(2*size(u,2)), [real(data); imag(data)], p0, lower=pmin, upper=pmax, show_trace=show_trace, maxIter=maxIter, inplace=true)
 
-    M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(result.param)
+    M0, m0s, R1f, R2f, k, K, nTR, R1s, T2s, ω0, B1 = getparameters(result.param)
 
-    return qMTparam(M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, norm(result.resid), result)
+    return qMTparam(M0, m0s, R1f, R2f, k, K, nTR, R1s, T2s, ω0, B1, norm(result.resid), result)
 end
 
 #########################################################################
@@ -168,7 +174,9 @@ struct qMTparam
     m0s
     R1f
     R2f
-    Rex
+    k
+    K
+    nTR
     R1s
     T2s
     ω0
@@ -189,6 +197,8 @@ function qMTmap(N...)
         zeros(Float64, N...),
         zeros(Float64, N...),
         zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
         Array{LsqFit.LsqFitResult}(undef, N...)
         )
 end
@@ -199,7 +209,9 @@ function Base.getindex(A::qMTparam, i...)
         A.m0s[i...]          ,
         A.R1f[i...]          ,
         A.R2f[i...]          ,
-        A.Rex[i...]          ,
+        A.k[i...]            ,
+        A.K[i...]            ,
+        A.nTR[i...]          ,
         A.R1s[i...]          ,
         A.T2s[i...]          ,
         A.ω0[i...]           ,
@@ -213,7 +225,9 @@ function Base.setindex!(A::qMTparam, v::qMTparam, i...)
     A.m0s[i...]           = v.m0s
     A.R1f[i...]           = v.R1f
     A.R2f[i...]           = v.R2f
-    A.Rex[i...]           = v.Rex
+    A.k[i...]             = v.k
+    A.K[i...]             = v.K
+    A.nTR[i...]           = v.nTR
     A.R1s[i...]           = v.R1s
     A.T2s[i...]           = v.T2s
     A.ω0[i...]            = v.ω0
