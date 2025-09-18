@@ -21,7 +21,6 @@ TR = 3.5e-3
 m0s = 0.15
 R1f = 0.5 # 1/s
 R2f = 17 # 1/s
-k = 30 # 1/s
 K = 15 # 1/s
 nTR = 0.07 # 1/s
 R1s = 3 # 1/s
@@ -29,14 +28,13 @@ T2s = 12e-6 # s
 ω0 = 100 # rad/s
 B1 = 0.9 # in units of B1_nominal
 
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, k, K, nTR, R1s, T2s, R2slT; grad_moment)
-qM = fit_gBloch(vec(s), α, TRF, TR; R2slT, grad_moment, nTR=(nTR, nTR, nTR), K=(K, K, K), k=(k,k,k))
+s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, K, nTR, R1s, T2s, R2slT; grad_moment)
+qM = fit_gBloch(vec(s), α, TRF, TR; R2slT, grad_moment, nTR=(nTR, nTR, nTR), K=(K, K, K))
 
 @test qM.M0  ≈ 1   rtol = 1e-3
 @test qM.m0s ≈ m0s rtol = 1e-3
 @test qM.R1f ≈ R1f rtol = 1e-3
 @test qM.R2f ≈ R2f rtol = 1e-3
-@test qM.k   ≈   k rtol = 1e-3
 @test qM.K   ≈   K rtol = 1e-3
 @test qM.nTR ≈ nTR rtol = 1e-3
 @test qM.R1s ≈ R1s rtol = 1e-3
@@ -49,13 +47,12 @@ u = randn(ComplexF64, length(s), 100)
 u,_,_ = svd(u)
 sc = u' * vec(s)
 
-qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment, nTR=(nTR, nTR, nTR), K=(K, K, K), k=(k,k,k))
+qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment, nTR=(nTR, nTR, nTR), K=(K, K, K))
 
 @test qM.M0  ≈ 1   rtol = 1e-3
 @test qM.m0s ≈ m0s rtol = 1e-3
 @test qM.R1f ≈ R1f rtol = 1e-3
 @test qM.R2f ≈ R2f rtol = 1e-3
-@test qM.k   ≈   k rtol = 1e-3
 @test qM.K   ≈   K rtol = 1e-3
 @test qM.nTR ≈ nTR rtol = 1e-3
 @test qM.R1s ≈ R1s rtol = 1e-3
@@ -65,7 +62,7 @@ qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment, nTR=(nTR, nTR, nTR), K=(
 
 ## test fit with apparent R1a
 # R1a = 1.0 # 1/s
-# s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, k, K, nTR, R1a, T2s, R2slT; grad_moment)
+# s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, K, nTR, R1a, T2s, R2slT; grad_moment)
 # qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R2slT, grad_moment)
 
 # @test qM.R1f ≈ qM.R1s
@@ -74,7 +71,6 @@ qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment, nTR=(nTR, nTR, nTR), K=(
 # @test qM.m0s ≈ m0s rtol = 1e-3
 # @test qM.R1f ≈ R1a rtol = 1e-3
 # @test qM.R2f ≈ R2f rtol = 1e-3
-# @test qM.k   ≈   k rtol = 1e-3
 # @test qM.K   ≈   K rtol = 1e-3
 # @test qM.nTR ≈ nTR rtol = 1e-3
 # @test qM.T2s ≈ T2s rtol = 1e-3
