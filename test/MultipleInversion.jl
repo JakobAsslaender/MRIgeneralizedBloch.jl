@@ -24,7 +24,7 @@ T2s = 10e-6
 K = 20
 nTR = 0.07
 
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_k(), grad_K(), grad_nTR(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
+grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_K(), grad_nTR(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 
 

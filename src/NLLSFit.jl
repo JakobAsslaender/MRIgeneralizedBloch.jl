@@ -101,10 +101,10 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     idx = Vector{Int}(undef, 10)
     if fit_apparentR1
         param    = [m0s, R1a, R2f, K, nTR, R1a, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1a(), grad_R2f(), grad_k(), grad_K(), grad_nTR(), nothing, grad_T2s(), grad_ω0(), grad_B1()]
+        grad_all = [grad_m0s(), grad_R1a(), grad_R2f(), grad_K(), grad_nTR(), nothing, grad_T2s(), grad_ω0(), grad_B1()]
     else
         param    = [m0s, R1f, R2f, K, nTR, R1s, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_k(), grad_K(), grad_nTR(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+        grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_K(), grad_nTR(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
     end
     for i ∈ eachindex(param)
         idx[i] = if isa(param[i], Number)
