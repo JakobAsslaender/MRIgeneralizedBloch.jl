@@ -67,9 +67,9 @@ function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, K, nTR, R1s, R2s)
     H = @SMatrix [
              -R2f   -ω0                    B1 * ω1         0         0                                           0;
                ω0  -R2f                          0         0         0                                           0;
-         -B1 * ω1     0                       -R1f         0         K                         R1f * m0f - K * m0s;
+         -B1 * ω1     0             -R1f - nTR * K         0         K             (R1f + nTR * K) * m0f - K * m0s;
                 0     0                          0      -R2s   B1 * ω1                                           0;
-                0     0                    nTR * K  -B1 * ω1      -R1s                   R1s * m0s - nTR * K * m0f;
+                0     0                    nTR * K  -B1 * ω1  -R1s - K             (R1s + K) * m0s - nTR * K * m0f;
                 0     0                          0         0         0                                           0]
     return H * T
 end
