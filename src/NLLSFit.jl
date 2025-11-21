@@ -55,7 +55,7 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i ==
     m0_M    = (   0, 0.2,    1),
     m0_MW   = (   0, 0.2,    1),
     m0_NM   = (   0, 0.2,    1),
-    Rx_IEW_MW = (   0,  20,  Inf),
+    Rx_MW_IEW = (   0,  20,  Inf),
     Rx_M_MW   = (   0,  20,  Inf),
     Rx_IEW_NM = (   0,  20,  Inf),
     R1_M   = (   0, 0.3,  Inf),
@@ -74,7 +74,7 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i ==
     R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
     ) where T <: Real
 
-    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_IEW, R2_IEW, T2_M, ω0, B1, u, show_trace, maxIter, R2slT)
+    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0_M, m0_MW, m0_NM, Rx_MW_IEW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_IEW, R2_IEW, T2_M, ω0, B1, u, show_trace, maxIter, R2slT)
 end
 
 function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill([i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α[1])], length(α)),
@@ -83,7 +83,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     m0_M    = (   0, 0.2,    1),
     m0_MW   = (   0, 0.2,    1),
     m0_NM   = (   0, 0.2,    1),
-    Rx_IEW_MW = (   0,  20,  Inf),
+    Rx_MW_IEW = (   0,  20,  Inf),
     Rx_M_MW   = (   0,  20,  Inf),
     Rx_IEW_NM = (   0,  20,  Inf),
     R1_M   = (   0, 0.3,  Inf),
@@ -108,7 +108,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     pmax = Float64[reM0[3], imM0[3]]
 
     idx = Vector{Int}(undef, 16)
-    param    = [m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1]
+    param    = [m0_M, m0_MW, m0_NM, Rx_MW_IEW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1]
     grad_all = [grad_m0_M(), grad_m0_MW(),grad_m0_NM(), grad_Rx_MW_IEW(), grad_Rx_M_MW(), grad_Rx_IEW_NM(), grad_R1_M(), grad_R1_NM(), grad_R1_IEW(), grad_R1_MW(), grad_R2_IEW(), grad_R2_MW(), grad_T2_M(), grad_T2_NM(), grad_ω0(), grad_B1()]
 
 
@@ -129,11 +129,11 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     getparameters(p) = ((p[1]+1im*p[2]), ntuple(i-> idx[i] == 0 ? param[i] : p[idx[i]], length(idx))...)
 
     function model!(F, _, p)
-        M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM,ω0, B1 = getparameters(p)
+        M0, m0_M, m0_MW, m0_NM, Rx_MW_IEW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM,ω0, B1 = getparameters(p)
 
         m = Vector{Array{ComplexF64}}(undef,length(α))
         Threads.@threads for i ∈ eachindex(α)
-            m[i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_IEW_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT))
+            m[i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT))
         end
         m = reduce(vcat,m)
 
@@ -145,11 +145,11 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     end
 
     function jacobian!(J, _, p)
-        M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1 = getparameters(p)
+        M0, m0_M, m0_MW, m0_NM, Rx_MW_IEW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1 = getparameters(p)
 
         M = Vector{Array{ComplexF64}}(undef,length(α))
         Threads.@threads for i ∈ eachindex(α)
-            M[i] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_IEW_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT; grad_list),dims=2)
+            M[i] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT; grad_list),dims=2)
         end
         M = reduce(vcat,M)
 
@@ -164,9 +164,9 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
     result = curve_fit(model!, jacobian!, 1:(2*size(u,2)), [real(data); imag(data)], p0, lower=pmin, upper=pmax, show_trace=show_trace, maxIter=maxIter, inplace=true)
 
-    M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1 = getparameters(result.param)
+    M0, m0_M, m0_MW, m0_NM, Rx_MW_IEW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1 = getparameters(result.param)
 
-    return qMTparam(M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1, norm(result.resid), result)
+    return qMTparam(M0, m0_M, m0_MW, m0_NM, Rx_MW_IEW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1, norm(result.resid), result)
 end
 
 #########################################################################
@@ -177,7 +177,7 @@ struct qMTparam
     m0_M
     m0_MW
     m0_NM
-    Rx_IEW_MW
+    Rx_MW_IEW
     Rx_M_MW
     Rx_IEW_NM
     R1_M
@@ -224,7 +224,7 @@ function Base.getindex(A::qMTparam, i...)
         A.m0_M[i...],
         A.m0_MW[i...],
         A.m0_NM[i...],
-        A.Rx_IEW_MW[i...],
+        A.Rx_MW_IEW[i...],
         A.Rx_M_MW[i...],
         A.Rx_IEW_NM[i...],
         A.R1_M[i...],
@@ -246,7 +246,7 @@ function Base.setindex!(A::qMTparam, v::qMTparam, i...)
     A.m0_M[i...]          = v.m0_M
     A.m0_MW[i...]         = v.m0_MW
     A.m0_NM[i...]         = v.m0_NM
-    A.Rx_IEW_MW[i...]    = v.Rx_IEW_MW
+    A.Rx_MW_IEW[i...]    = v.Rx_MW_IEW
     A.Rx_M_MW[i...]      = v.Rx_M_MW
     A.Rx_IEW_NM[i...]    = v.Rx_IEW_NM
     A.R1_M[i...]          = v.R1_M
