@@ -131,17 +131,12 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     function model!(F, _, p)
         M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM,ω0, B1 = getparameters(p)
 
-
-        # m = zeros(ComplexF64,size(α[1],1),length(α))
         m = Vector{Array{ComplexF64}}(undef,length(α))
-
         Threads.@threads for i ∈ eachindex(α)
             m[i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_IEW_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT))
-
         end
         m = reduce(vcat,m)
 
-        m = vec(m)
         m .*= M0
         m = u' * m
         F[1:end÷2]     .= real.(m)
@@ -157,7 +152,6 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
             M[i] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_IEW_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT; grad_list),dims=2)
         end
         M = reduce(vcat,M)
-        M = reshape(M,:,length(grad_list)+1)
 
         M[:,2:end] .*= M0
         M = u' * M
