@@ -20,6 +20,7 @@ jobs:
         with:
           version: '1'
           arch: x64
+      - run: echo -n > src/MatrixExp_Hamiltonian_Gradients.jl
       - run: |
           julia --project=symbolic_derivatives -e '
             using Pkg
