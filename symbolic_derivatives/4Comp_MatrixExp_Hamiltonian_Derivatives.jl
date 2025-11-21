@@ -6,7 +6,7 @@ using Symbolics
 using MRIgeneralizedBloch
 
 ##
-@variables ω1, B1, ω0, T, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, T2_M, T2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad_type
+@variables ω1, B1, ω0, T, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, T2_M, T2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad_type
 
 f_R2_M(T2_M, B1) = R2_M
 @register_symbolic f_R2_M(T2_M, B1)
@@ -18,11 +18,11 @@ f_R2_NM(T2_NM, B1) = R2_NM
 Symbolics.derivative(::typeof(f_R2_NM), args::NTuple{2,Any}, ::Val{1}) = dR2dT2_NM
 Symbolics.derivative(::typeof(f_R2_NM), args::NTuple{2,Any}, ::Val{2}) = dR2dB1_NM
 
-H = hamiltonian_linear(ω1, B1, ω0, T, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, f_R2_M(T2_M, B1), f_R2_NM(T2_NM, B1))
+H = hamiltonian_linear(ω1, B1, ω0, T, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, f_R2_M(T2_M, B1), f_R2_NM(T2_NM, B1))
 
 ##
 fs_str = ""
-for p ∈ [m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, B1, ω0]
+for p ∈ [m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, B1, ω0]
     D = Differential(p)
     Ḣ = expand_derivatives.(D.(H))
 
@@ -36,7 +36,7 @@ for p ∈ [m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_N
     dHdp = simplify.(dHdp)
 
     f_expr = build_function(dHdp,
-    ω1, B1, ω0, T, m0_M, m0_NM, m0_IEW, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad_type;
+    ω1, B1, ω0, T, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, R2_M, R2_NM, dR2dT2_M, dR2dB1_M, dR2dT2_NM, dR2dB1_NM, grad_type;
         force_SA=false,
     )
 

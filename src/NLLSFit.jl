@@ -50,41 +50,53 @@ Fit the generalized Bloch model for a train of RF pulses and balanced gradient m
 c.f. [Non-Linear Least Square Fitting](@ref)
 """
 function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)],
-    reM0 = (-Inf,   1,  Inf),
-    imM0 = (-Inf,   0,  Inf),
-    m0s  = (   0, 0.2,    1),
-    R1f  = (   0, 0.3,  Inf),
-    R2f  = (   0,  15,  Inf),
-    Rex  = (   0,  20,  Inf),
-    R1s  = (   0,   3,  Inf),
-    T2s  = (8e-6,1e-5,12e-6),
+    reM0    = (-Inf,   1,  Inf),
+    imM0    = (-Inf,   0,  Inf),
+    m0_M    = (   0, 0.2,    1),
+    m0_MW   = (   0, 0.2,    1),
+    m0_NM   = (   0, 0.2,    1),
+    Rx_IEW_MW = (   0,  20,  Inf),
+    Rx_M_MW   = (   0,  20,  Inf),
+    Rx_IEW_NM = (   0,  20,  Inf),
+    R1_M   = (   0, 0.3,  Inf),
+    R1_NM  = (   0, 0.3,  Inf),
+    R1_IEW = (   0, 0.3,  Inf),
+    R1_MW  = (   0, 0.3,  Inf),
+    R2_IEW = (   0,  15,  Inf),
+    R2_MW  = (   0,  15,  Inf),
+    T2_M  = (8e-6,1e-5,12e-6),
+    T2_NM = (8e-6,1e-5,12e-6),
     ω0   = (-Inf,   0,  Inf),
     B1   = (   0,   1,  1.5),
-    R1a  = (   0, 0.7,  Inf),
     u=1,
-    fit_apparentR1=false,
     show_trace=false,
     maxIter=100,
     R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
     ) where T <: Real
 
-    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, R1a, u, fit_apparentR1, show_trace, maxIter, R2slT)
+    fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_IEW, R2_IEW, T2_M, ω0, B1, u, show_trace, maxIter, R2slT)
 end
 
 function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill([i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α[1])], length(α)),
-    reM0 = (-Inf,   1,  Inf),
-    imM0 = (-Inf,   0,  Inf),
-    m0s  = (   0, 0.2,    1),
-    R1f  = (   0, 0.3,  Inf),
-    R2f  = (   0,  15,  Inf),
-    Rex  = (   0,  20,  Inf),
-    R1s  = (   0,   3,  Inf),
-    T2s  = (8e-6,1e-5,12e-6),
+    reM0    = (-Inf,   1,  Inf),
+    imM0    = (-Inf,   0,  Inf),
+    m0_M    = (   0, 0.2,    1),
+    m0_MW   = (   0, 0.2,    1),
+    m0_NM   = (   0, 0.2,    1),
+    Rx_IEW_MW = (   0,  20,  Inf),
+    Rx_M_MW   = (   0,  20,  Inf),
+    Rx_IEW_NM = (   0,  20,  Inf),
+    R1_M   = (   0, 0.3,  Inf),
+    R1_NM  = (   0, 0.3,  Inf),
+    R1_IEW = (   0, 0.3,  Inf),
+    R1_MW  = (   0, 0.3,  Inf),
+    R2_IEW = (   0,  15,  Inf),
+    R2_MW  = (   0,  15,  Inf),
+    T2_M  = (8e-6,1e-5,12e-6),
+    T2_NM = (8e-6,1e-5,12e-6),
     ω0   = (-Inf,   0,  Inf),
     B1   = (   0,   1,  1.5),
-    R1a  = (   0, 0.7,  Inf),
     u=1,
-    fit_apparentR1=false,
     show_trace=false,
     maxIter=100,
     R2slT = precompute_R2sl(TRF_min=minimum(minimum.(TRF)), TRF_max=maximum(maximum.(TRF)), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(maximum.(α ./ TRF)), B1_max=maximum(B1)),
@@ -95,14 +107,11 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     p0   = Float64[reM0[2], imM0[2]]
     pmax = Float64[reM0[3], imM0[3]]
 
-    idx = Vector{Int}(undef, 8)
-    if fit_apparentR1
-        param    = [m0s, R1a, R2f, Rex, R1a, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1a(), grad_R2f(), grad_Rex(), nothing, grad_T2s(), grad_ω0(), grad_B1()]
-    else
-        param    = [m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
-    end
+    idx = Vector{Int}(undef, 16)
+    param    = [m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1]
+    grad_all = [grad_m0_M(), grad_m0_MW(),grad_m0_NM(), grad_Rx_MW_IEW(), grad_Rx_M_MW(), grad_Rx_IEW_NM(), grad_R1_M(), grad_R1_NM(), grad_R1_IEW(), grad_R1_MW(), grad_R2_IEW(), grad_R2_MW(), grad_T2_M(), grad_T2_NM(), grad_ω0(), grad_B1()]
+
+
     for i ∈ eachindex(param)
         idx[i] = if isa(param[i], Number)
             0
@@ -120,12 +129,17 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     getparameters(p) = ((p[1]+1im*p[2]), ntuple(i-> idx[i] == 0 ? param[i] : p[idx[i]], length(idx))...)
 
     function model!(F, _, p)
-        M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(p)
+        M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM,ω0, B1 = getparameters(p)
 
-        m = zeros(ComplexF64,size(α[1],1),length(α))
+
+        # m = zeros(ComplexF64,size(α[1],1),length(α))
+        m = Vector{Array{ComplexF64}}(undef,length(α))
+
         Threads.@threads for i ∈ eachindex(α)
-            m[:,i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i]))
+            m[i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_IEW_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT))
+
         end
+        m = reduce(vcat,m)
 
         m = vec(m)
         m .*= M0
@@ -136,12 +150,13 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     end
 
     function jacobian!(J, _, p)
-        M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(p)
+        M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1 = getparameters(p)
 
-        M = zeros(ComplexF64,size(α[1],1),length(α),length(grad_list)+1)
+        M = Vector{Array{ComplexF64}}(undef,length(α))
         Threads.@threads for i ∈ eachindex(α)
-            M[:,i,:] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=grad_list; grad_moment=grad_moment[i]), dims=2)
+            M[i] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR[i], ω0, B1, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_IEW_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, T2_M, T2_NM, R2slT, R2slT; grad_list),dims=2)
         end
+        M = reduce(vcat,M)
         M = reshape(M,:,length(grad_list)+1)
 
         M[:,2:end] .*= M0
@@ -155,9 +170,9 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
     result = curve_fit(model!, jacobian!, 1:(2*size(u,2)), [real(data); imag(data)], p0, lower=pmin, upper=pmax, show_trace=show_trace, maxIter=maxIter, inplace=true)
 
-    M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(result.param)
+    M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1 = getparameters(result.param)
 
-    return qMTparam(M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, norm(result.resid), result)
+    return qMTparam(M0, m0_M, m0_MW, m0_NM, Rx_IEW_MW, Rx_M_MW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_IEW, R2_MW, T2_M, T2_NM, ω0, B1, norm(result.resid), result)
 end
 
 #########################################################################
@@ -165,12 +180,20 @@ end
 #########################################################################
 struct qMTparam
     M0
-    m0s
-    R1f
-    R2f
-    Rex
-    R1s
-    T2s
+    m0_M
+    m0_MW
+    m0_NM
+    Rx_IEW_MW
+    Rx_M_MW
+    Rx_IEW_NM
+    R1_M
+    R1_NM
+    R1_IEW
+    R1_MW
+    R2_IEW
+    R2_MW
+    T2_M
+    T2_NM
     ω0
     B1
     resid
@@ -189,33 +212,57 @@ function qMTmap(N...)
         zeros(Float64, N...),
         zeros(Float64, N...),
         zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
         Array{LsqFit.LsqFitResult}(undef, N...)
         )
 end
 
 function Base.getindex(A::qMTparam, i...)
     return qMTparam(
-        A.M0[i...]           ,
-        A.m0s[i...]          ,
-        A.R1f[i...]          ,
-        A.R2f[i...]          ,
-        A.Rex[i...]          ,
-        A.R1s[i...]          ,
-        A.T2s[i...]          ,
-        A.ω0[i...]           ,
-        A.B1[i...]           ,
+        A.M0[i...],
+        A.m0_M[i...],
+        A.m0_MW[i...],
+        A.m0_NM[i...],
+        A.Rx_IEW_MW[i...],
+        A.Rx_M_MW[i...],
+        A.Rx_IEW_NM[i...],
+        A.R1_M[i...],
+        A.R1_NM[i...],
+        A.R1_IEW[i...],
+        A.R1_MW[i...],
+        A.R2_IEW[i...],
+        A.R2_MW[i...],
+        A.T2_M[i...],
+        A.T2_NM[i...],
+        A.ω0[i...],
+        A.B1[i...],
         A.resid[i...]        ,
         A.lsqfit_result[i...])
 end
 
 function Base.setindex!(A::qMTparam, v::qMTparam, i...)
     A.M0[i...]            = v.M0
-    A.m0s[i...]           = v.m0s
-    A.R1f[i...]           = v.R1f
-    A.R2f[i...]           = v.R2f
-    A.Rex[i...]           = v.Rex
-    A.R1s[i...]           = v.R1s
-    A.T2s[i...]           = v.T2s
+    A.m0_M[i...]          = v.m0_M
+    A.m0_MW[i...]         = v.m0_MW
+    A.m0_NM[i...]         = v.m0_NM
+    A.Rx_IEW_MW[i...]    = v.Rx_IEW_MW
+    A.Rx_M_MW[i...]      = v.Rx_M_MW
+    A.Rx_IEW_NM[i...]    = v.Rx_IEW_NM
+    A.R1_M[i...]          = v.R1_M
+    A.R1_NM[i...]         = v.R1_NM
+    A.R1_IEW[i...]        = v.R1_IEW
+    A.R1_MW[i...]         = v.R1_MW
+    A.R2_IEW[i...]        = v.R2_IEW
+    A.R2_MW[i...]         = v.R2_MW
+    A.T2_M[i...]          = v.T2_M
+    A.T2_NM[i...]         = v.T2_NM
     A.ω0[i...]            = v.ω0
     A.B1[i...]            = v.B1
     A.resid[i...]         = v.resid

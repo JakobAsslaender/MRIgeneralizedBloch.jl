@@ -55,7 +55,6 @@ export grad_B1
 
 export grad_m0_M
 export grad_m0_NM
-export grad_m0_IEW
 export grad_m0_MW
 export grad_Rx_M_MW
 export grad_Rx_MW_IEW
@@ -82,7 +81,6 @@ struct grad_B1  <: grad_param end
 
 struct grad_m0_M <: grad_param end
 struct grad_m0_NM <: grad_param end
-struct grad_m0_IEW <: grad_param end
 struct grad_m0_MW <: grad_param end
 struct grad_Rx_M_MW <: grad_param end
 struct grad_Rx_MW_IEW <: grad_param end
