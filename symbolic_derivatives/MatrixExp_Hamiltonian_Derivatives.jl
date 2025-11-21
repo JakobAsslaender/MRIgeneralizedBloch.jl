@@ -2,6 +2,7 @@ using Pkg
 Pkg.develop(PackageSpec(path=pwd()))
 Pkg.instantiate()
 using Symbolics
+using Symbolics: SConst
 using MRIgeneralizedBloch
 
 ##
@@ -9,8 +10,8 @@ using MRIgeneralizedBloch
 
 f_R2s(T2s, B1) = R2s
 @register_symbolic f_R2s(T2s, B1)
-Symbolics.derivative(::typeof(f_R2s), args::NTuple{2,Any}, ::Val{1}) = dR2sdT2s
-Symbolics.derivative(::typeof(f_R2s), args::NTuple{2,Any}, ::Val{2}) = dR2sdB1
+@register_derivative f_R2s(T2s, B1) 1 SConst(dR2sdT2s)
+@register_derivative f_R2s(T2s, B1) 2 SConst(dR2sdB1)
 
 H = hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, f_R2s(T2s, B1))
 
