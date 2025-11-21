@@ -3,6 +3,7 @@ Pkg.activate("symbolic_derivatives")
 Pkg.develop(PackageSpec(path=pwd()))
 Pkg.instantiate()
 using Symbolics
+using Symbolics: SConst
 using MRIgeneralizedBloch
 
 ##
@@ -10,13 +11,13 @@ using MRIgeneralizedBloch
 
 f_R2_M(T2_M, B1) = R2_M
 @register_symbolic f_R2_M(T2_M, B1)
-Symbolics.derivative(::typeof(f_R2_M), args::NTuple{2,Any}, ::Val{1}) = dR2dT2_M
-Symbolics.derivative(::typeof(f_R2_M), args::NTuple{2,Any}, ::Val{2}) = dR2dB1_M
+@register_derivative f_R2_M(T2_M, B1) 1 SConst(dR2dT2_M)
+@register_derivative f_R2_M(T2_M, B1) 2 SConst(dR2dB1_M)
 
 f_R2_NM(T2_NM, B1) = R2_NM
 @register_symbolic f_R2_NM(T2_NM, B1)
-Symbolics.derivative(::typeof(f_R2_NM), args::NTuple{2,Any}, ::Val{1}) = dR2dT2_NM
-Symbolics.derivative(::typeof(f_R2_NM), args::NTuple{2,Any}, ::Val{2}) = dR2dB1_NM
+@register_derivative f_R2_NM(T2_NM, B1) 1 SConst(dR2dT2_NM)
+@register_derivative f_R2_NM(T2_NM, B1) 2 SConst(dR2dB1_NM)
 
 H = hamiltonian_linear(ω1, B1, ω0, T, m0_M, m0_NM, m0_MW, Rx_M_MW, Rx_MW_IEW, Rx_IEW_NM, R1_M, R1_NM, R1_IEW, R1_MW, R2_MW, R2_IEW, f_R2_M(T2_M, B1), f_R2_NM(T2_NM, B1))
 
