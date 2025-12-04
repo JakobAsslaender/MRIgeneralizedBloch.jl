@@ -79,3 +79,75 @@ function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s, dR2sd
             end
         end
 end
+function d_hamiltonian_linear_dω1(B1, T, dR2sdω1, dR2sdT2sdω1=nothing, dR2sdB1dω1=nothing, grad_type=nothing)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{6, 6}(0, 0, (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdω1), (*)((*)(-1, B1), T), 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
+function d_hamiltonian_linear_dω1(B1, T, dR2sdω1, dR2sdT2sdω1, dR2sdB1dω1, grad_type::grad_param)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{11, 11}(0, 0, (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdω1), (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdω1), (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
+function d_hamiltonian_linear_dω1(B1, T, dR2sdω1, dR2sdT2sdω1, dR2sdB1dω1, grad_type::grad_B1)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{11, 11}(0, 0, (*)((*)(-1, B1), T), 0, 0, 0, 0, (*)(-1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, T, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdω1), (*)((*)(-1, B1), T), 0, 0, 0, (*)((*)(-1, T), dR2sdB1dω1), (*)(-1, T), 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, T, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdω1), (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
+function d_hamiltonian_linear_dω1(B1, T, dR2sdω1, dR2sdT2sdω1, dR2sdB1dω1, grad_type::grad_T2s)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{11, 11}(0, 0, (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdω1), (*)((*)(-1, B1), T), 0, 0, 0, (*)((*)(-1, T), dR2sdT2sdω1), 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdω1), (*)((*)(-1, B1), T), 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)(B1, T), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
+function d_hamiltonian_linear_dTRF_add(T, dR2sdTRF, dR2sdT2sdTRF=nothing, dR2sdB1dTRF=nothing, grad_type=nothing)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{6, 6}(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdTRF), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
+function d_hamiltonian_linear_dTRF_add(T, dR2sdTRF, dR2sdT2sdTRF, dR2sdB1dTRF, grad_type::grad_param)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{11, 11}(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdTRF), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdTRF), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
+function d_hamiltonian_linear_dTRF_add(T, dR2sdTRF, dR2sdT2sdTRF, dR2sdB1dTRF, grad_type::grad_B1)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{11, 11}(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdTRF), 0, 0, 0, 0, (*)((*)(-1, T), dR2sdB1dTRF), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdTRF), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
+function d_hamiltonian_linear_dTRF_add(T, dR2sdTRF, dR2sdT2sdTRF, dR2sdB1dTRF, grad_type::grad_T2s)
+     @inbounds begin
+            begin
+                begin
+                    SMatrix{11, 11}(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdTRF), 0, 0, 0, 0, (*)((*)(-1, T), dR2sdT2sdTRF), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (*)((*)(-1, T), dR2sdTRF), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                end
+            end
+        end
+end
