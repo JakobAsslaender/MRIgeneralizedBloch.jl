@@ -1,11 +1,10 @@
 using Pkg
-Pkg.develop(PackageSpec(path=pwd()))
 Pkg.instantiate()
 using Symbolics
 using Symbolics: SConst
 using StaticArrays
-include("../src/MatrixExp_Hamiltonians.jl")
 include("../src/grad_param.jl")
+include("../src/MatrixExp_Hamiltonians.jl")
 
 
 ##
@@ -49,7 +48,7 @@ for p ∈ [m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_
     f_str = f_str[1:idcs[1]-1] * "reshape([" * f_str[idcs[end]+1:end]
     idcs = findfirst(", 0)\n", f_str)
     f_str = f_str[1:idcs[1]-1] * ", 0], $(size(dHdp, 1)), $(size(dHdp, 2)))\n" * f_str[idcs[end]+1:end]
-    
+
     global fs_str *= f_str
     global fs_str *= "\n"
 end
