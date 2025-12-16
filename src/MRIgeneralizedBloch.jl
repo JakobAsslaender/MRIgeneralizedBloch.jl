@@ -36,36 +36,29 @@ export interpolate_greens_function
 export calculatesignal_gbloch_ide
 export calculatesignal_graham_ode
 
-export precompute_R2sl
-export evaluate_R2sl_vector
+export precompute_R2_mm_l
+export evaluate_R2_mm_l_vector
 export calculatesignal_linearapprox
 
 export fit_gBloch
 export qMTmap
 
-export grad_m0s
-export grad_R1a
-export grad_R1f
-export grad_R1s
-export grad_R2f
-export grad_Rex
-export grad_T2s
+export grad_m0_mm
+export grad_m0_rw
+export grad_R1_fw
+export grad_R1_rw
+export grad_R1_mm
+export grad_R2_fw
+export grad_R2_rw
+export grad_T2_mm
+export grad_Rx_fw_mm
+export grad_Rx_rw_fw
+export grad_Rx_mm_rw
 export grad_ω0
 export grad_B1
 
-abstract type grad_param end
-struct grad_m0s <: grad_param end
-struct grad_R1a <: grad_param end
-struct grad_R1f <: grad_param end
-struct grad_R1s <: grad_param end
-struct grad_R2f <: grad_param end
-struct grad_Rex <: grad_param end
-struct grad_T2s <: grad_param end
-struct grad_ω0  <: grad_param end
-struct grad_B1  <: grad_param end
-
-include("DiffEq_Hamiltonians.jl")
-include("Linearized_R2s.jl")
+# include("DiffEq_Hamiltonians.jl") # ToDo
+include("Linearized_R2_mm.jl")
 include("MatrixExp_Solvers.jl")
 include("DiffEq_Sovlers.jl")
 include("Greens_functions.jl")
@@ -74,5 +67,6 @@ include("MatrixExp_Hamiltonian_Gradients.jl")
 include("NLLSFit.jl")
 include("OptimalControl.jl")
 include("OptimalControlHelpers.jl")
+include("grad_param.jl")
 
 end

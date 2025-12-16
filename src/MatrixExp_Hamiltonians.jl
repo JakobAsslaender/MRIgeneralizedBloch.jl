@@ -60,158 +60,210 @@ julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1
   1.0
 ```
 """
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)
-    m0f = 1 - m0s
-    H = @SMatrix [
-             -R2f   -ω0          B1 * ω1         0                0         0;
-               ω0  -R2f                0         0                0         0;
-         -B1 * ω1     0 -R1f - Rex * m0s         0        Rex * m0f R1f * m0f;
-                0     0                0      -R2s          B1 * ω1         0;
-                0     0        Rex * m0s  -B1 * ω1 -R1s - Rex * m0f R1s * m0s;
-                0     0                0         0                0         0]
+
+function hamiltonian_linear(ω1, B1, ω0, T, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw)
+    m0_fw = 1 - m0_rw - m0_mm
+    
+    k_fw_mm = Rx_fw_mm * m0_mm * (m0_fw + m0_mm)
+    k_mm_fw = Rx_fw_mm * m0_fw * (m0_mm + m0_fw)
+
+    k_rw_fw = Rx_rw_fw * m0_fw * (m0_rw + m0_fw)
+    k_fw_rw = Rx_rw_fw * m0_rw * (m0_fw + m0_rw)
+
+    k_mm_rw = Rx_mm_rw * m0_rw * (m0_mm + m0_rw)
+    k_rw_mm = Rx_mm_rw * m0_mm * (m0_rw + m0_mm)
+
+
+H = @SMatrix [
+-R2_fw - k_fw_rw                 -ω0                     B1 * ω1            k_rw_fw                 0                           0                  0                            0                  0;  
+               ω0   -R2_fw - k_fw_rw                           0                  0           k_rw_fw                           0                  0                            0                  0;  
+         -B1 * ω1                  0  -R1_fw - k_fw_mm - k_fw_rw                  0                 0                     k_rw_fw                  0                      k_mm_fw      R1_fw * m0_fw;  
+          k_fw_rw                  0                           0   -R2_rw - k_rw_fw               -ω0                     B1 * ω1                  0                            0                  0;  
+                0            k_fw_rw                           0                 ω0  -R2_rw - k_rw_fw                           0                  0                            0                  0;  
+                0                  0                     k_fw_rw           -B1 * ω1                 0  -R1_rw - k_rw_fw - k_rw_mm                  0                      k_mm_rw      R1_rw * m0_rw;  
+                0                  0                           0                  0                 0                           0             -R2_mm                      B1 * ω1                  0;  
+                0                  0                     k_fw_mm                  0                 0                     k_rw_mm           -B1 * ω1   -R1_mm - k_mm_fw - k_mm_rw      R1_mm * m0_mm;  
+                0                  0                           0                  0                 0                           0                  0                            0                  0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s, _, _, _)
-    return hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)
+function hamiltonian_linear(ω1, B1, ω0, T, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, _, _, _)
+    return hamiltonian_linear(ω1, B1, ω0, T, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw)
 end
 
-function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, _, _)
-    Hs = @SMatrix [    -R2s         B1 * ω1;
-                   -B1 * ω1               0]
-    Us = exp(Hs * T)
+# function propagator_linear_crushed_pulse(ω1, T, B1, R2_mm, _, _, _)
+#     H_mm = @SMatrix [ -R2_mm         B1 * ω1;
+#                        -B1 * ω1            0]
+#     U_mm = exp(H_mm * T)
 
-    U = @SMatrix [
-        sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
-        0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
-        0 0 cos(B1 * ω1 * T)        0 0 0;
-        0 0 0 Us[1,1]    Us[1,2]        0;
-        0 0 0 Us[2,1]    Us[2,2]        0;
-        0 0 0 0          0              1]
-    return U
-end
+# U = @SMatrix [
+#         sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0;
+#         0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0;
+#         0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0;
+#         0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
+#         0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
+#         0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0;
+#         0 0 0 0 0 0 U_mm[1,1]  U_mm[1,2]      0;
+#         0 0 0 0 0 0 U_mm[2,1]  U_mm[2,2]      0;
+#         0 0 0 0 0 0 0          0              1]
+#     return U
+# end
 
-function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, _, grad_type::grad_param)
-    Hs = @SMatrix [    -R2s         B1 * ω1;
-                   -B1 * ω1               0]
-    Us = exp(Hs * T)
+# function propagator_linear_crushed_pulse(ω1, T, B1, R2_mm, _, _, grad_type::grad_param)
+#     H_mm = @SMatrix [-R2_mm         B1 * ω1;
+#                      -B1 * ω1             0]
+#     U_mm = exp(H_mm * T)
 
-    U = @SMatrix [
-        sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0 0;
-        0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0 0;
-        0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0 0;
-        0 0 0 Us[1,1]    Us[1,2]        0 0 0 0 0 0;
-        0 0 0 Us[2,1]    Us[2,2]        0 0 0 0 0 0;
-        0 0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
-        0 0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
-        0 0 0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0;
-        0 0 0 0 0 0 0 0 Us[1,1]    Us[1,2]        0;
-        0 0 0 0 0 0 0 0 Us[2,1]    Us[2,2]        0;
-        0 0 0 0 0 0 0 0 0          0              1]
-    return U
-end
+#     U = @SMatrix [
+#         sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0                       0 0 0 0 0 0 0 0;
+#         0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0                       0 0 0 0 0 0 0 0;
+#         0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0                       0 0 0 0 0 0 0 0;
+#         0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0                       0 0 0 0 0 0 0 0;
+#         0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0                       0 0 0 0 0 0 0 0;
+#         0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0 0                       0 0 0 0 0 0 0 0;
+#         0 0 0 0 0 0 U_mm[1,1]  U_mm[1,2]      0 0                       0 0 0 0 0 0 0 0;
+#         0 0 0 0 0 0 U_mm[2,1]  U_mm[2,2]      0 0                       0 0 0 0 0 0 0 0;
+#         0 0 0 0 0 0 0          0              0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0;
+#         0 0 0 0 0 0 0          0              0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0;
+#         0 0 0 0 0 0 0          0              0 0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0;
+#         0 0 0 0 0 0 0          0              0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
+#         0 0 0 0 0 0 0          0              0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
+#         0 0 0 0 0 0 0          0              0 0 0 0 0 0 cos(B1 * ω1 * T)        0 0 0;
+#         0 0 0 0 0 0 0          0              0 0 0 0 0 0 0 U_mm[1,1]  U_mm[1,2]      0;
+#         0 0 0 0 0 0 0          0              0 0 0 0 0 0 0 U_mm[2,1]  U_mm[2,2]      0;
+#         0 0 0 0 0 0 0          0              0 0 0 0 0 0 0 0 0 0          0          1]
+#     return U
+# end
 
-function propagator_linear_crushed_pulse(ω1, T, B1, R2s, dR2sdT2s, _, grad_type::grad_T2s)
-    Hs = @SMatrix [    -R2s  B1 * ω1;
-                   -B1 * ω1        0]
-    Us = exp(Hs * T)
+# function propagator_linear_crushed_pulse(ω1, T, B1, R2s, dR2sdT2s, _, grad_type::grad_T2s)
+#     Hs = @SMatrix [    -R2s  B1 * ω1;
+#                    -B1 * ω1        0]
+#     Us = exp(Hs * T)
 
-    dHsdT2s = @SMatrix [-dR2sdT2s   0;
-                                0   0]
+#     dHsdT2s = @SMatrix [-dR2sdT2s   0;
+#                                 0   0]
 
-    # Higham's Complex Step Approximation:
-    h = 1im * eps()
-    dU = real.(exp((Hs + h * dHsdT2s) * T) ./ h)
+#     # Higham's Complex Step Approximation:
+#     h = 1im * eps()
+#     dU = real.(exp((Hs + h * dHsdT2s) * T) ./ h)
 
-    U = @SMatrix [
-        sin(B1 * ω1 * T / 2)^2    0 0 0 0 0 0 0 0 0 0;
-        0 -sin(B1 * ω1 * T / 2)^2   0 0 0 0 0 0 0 0 0;
-        0 0 cos(B1 * ω1 * T)          0 0 0 0 0 0 0 0;
-        0 0 0 Us[1,1]    Us[1,2]          0 0 0 0 0 0;
-        0 0 0 Us[2,1]    Us[2,2]          0 0 0 0 0 0;
-        0 0 0 0 0 sin(B1 * ω1 * T / 2)^2    0 0 0 0 0;
-        0 0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2   0 0 0 0;
-        0 0 0 0 0 0 0 cos(B1 * ω1 * T)          0 0 0;
-        0 0 0 dU[1,1] dU[1,2] 0 0 0 Us[1,1] Us[1,2] 0;
-        0 0 0 dU[2,1] dU[2,2] 0 0 0 Us[2,1] Us[2,2] 0;
-        0 0 0 0       0       0 0 0 0       0       1]
-    return U
-end
+#     U = @SMatrix [
+#         sin(B1 * ω1 * T / 2)^2    0 0 0 0 0 0 0 0 0 0;
+#         0 -sin(B1 * ω1 * T / 2)^2   0 0 0 0 0 0 0 0 0;
+#         0 0 cos(B1 * ω1 * T)          0 0 0 0 0 0 0 0;
+#         0 0 0 Us[1,1]    Us[1,2]          0 0 0 0 0 0;
+#         0 0 0 Us[2,1]    Us[2,2]          0 0 0 0 0 0;
+#         0 0 0 0 0 sin(B1 * ω1 * T / 2)^2    0 0 0 0 0;
+#         0 0 0 0 0 0 -sin(B1 * ω1 * T / 2)^2   0 0 0 0;
+#         0 0 0 0 0 0 0 cos(B1 * ω1 * T)          0 0 0;
+#         0 0 0 dU[1,1] dU[1,2] 0 0 0 Us[1,1] Us[1,2] 0;
+#         0 0 0 dU[2,1] dU[2,2] 0 0 0 Us[2,1] Us[2,2] 0;
+#         0 0 0 0       0       0 0 0 0       0       1]
+#     return U
+# end
 
-function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_type::grad_B1)
-    Hs = @SMatrix [    -R2s  B1 * ω1;
-                   -B1 * ω1        0]
-    Us = exp(Hs * T)
+# function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, dR2sdB1, grad_type::grad_B1)
+#     Hs = @SMatrix [    -R2s  B1 * ω1;
+#                    -B1 * ω1        0]
+#     Us = exp(Hs * T)
 
-    dHsdB1 = @SMatrix [-dR2sdB1  ω1;
-                            -ω1   0]
+#     dHsdB1 = @SMatrix [-dR2sdB1  ω1;
+#                             -ω1   0]
 
-    # Higham's Complex Step Approximation:
-    h = 1im * eps()
-    dU = real.(exp((Hs + h * dHsdB1) * T) ./ h)
+#     # Higham's Complex Step Approximation:
+#     h = 1im * eps()
+#     dU = real.(exp((Hs + h * dHsdB1) * T) ./ h)
 
-    U = @SMatrix [
-        sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0 0;
-        0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0 0;
-        0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0 0;
-        0 0 0 Us[1,1]    Us[1,2]        0 0 0 0 0 0;
-        0 0 0 Us[2,1]    Us[2,2]        0 0 0 0 0 0;
-        sin(B1 * ω1 * T / 2) * cos(B1 * ω1 * T / 2) * ω1 * T  0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
-        0 -sin(B1 * ω1 * T / 2) * cos(B1 * ω1 * T / 2) * ω1 * T 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
-        0 0 -sin(B1 * ω1 * T) * ω1 * T                            0 0 0 0 cos(B1 * ω1 * T)        0 0 0;
-        0 0 0 dU[1,1] dU[1,2] 0 0 0 Us[1,1] Us[1,2] 0;
-        0 0 0 dU[2,1] dU[2,2] 0 0 0 Us[2,1] Us[2,2] 0;
-        0 0 0 0       0       0 0 0 0       0       1]
-    return U
-end
+#     U = @SMatrix [
+#         sin(B1 * ω1 * T / 2)^2  0 0 0 0 0 0 0 0 0 0;
+#         0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0 0 0 0 0 0;
+#         0 0 cos(B1 * ω1 * T)        0 0 0 0 0 0 0 0;
+#         0 0 0 Us[1,1]    Us[1,2]        0 0 0 0 0 0;
+#         0 0 0 Us[2,1]    Us[2,2]        0 0 0 0 0 0;
+#         sin(B1 * ω1 * T / 2) * cos(B1 * ω1 * T / 2) * ω1 * T  0 0 0 0 sin(B1 * ω1 * T / 2)^2  0 0 0 0 0;
+#         0 -sin(B1 * ω1 * T / 2) * cos(B1 * ω1 * T / 2) * ω1 * T 0 0 0 0 -sin(B1 * ω1 * T / 2)^2 0 0 0 0;
+#         0 0 -sin(B1 * ω1 * T) * ω1 * T                            0 0 0 0 cos(B1 * ω1 * T)        0 0 0;
+#         0 0 0 dU[1,1] dU[1,2] 0 0 0 Us[1,1] Us[1,2] 0;
+#         0 0 0 dU[2,1] dU[2,2] 0 0 0 Us[2,1] Us[2,2] 0;
+#         0 0 0 0       0       0 0 0 0       0       1]
+#     return U
+# end
 
 function z_rotation_propagator(rfphase_increment, _)
     sϕ, cϕ = sincos(rfphase_increment)
-    u_rot = @SMatrix [cϕ -sϕ 0 0 0 0;
-                      sϕ  cϕ 0 0 0 0;
-                       0   0 1 0 0 0;
-                       0   0 0 1 0 0;
-                       0   0 0 0 1 0;
-                       0   0 0 0 0 1]
+    u_rot = @SMatrix [cϕ -sϕ 0  0   0 0 0 0 0;
+                      sϕ  cϕ 0  0   0 0 0 0 0;
+                       0   0 1  0   0 0 0 0 0;
+                       0   0 0 cϕ -sϕ 0 0 0 0;
+                       0   0 0 sϕ  cϕ 0 0 0 0;
+                       0   0 0  0   0 1 0 0 0;
+                       0   0 0  0   0 0 1 0 0;
+                       0   0 0  0   0 0 0 1 0
+                       0   0 0  0   0 0 0 0 1]
     return u_rot
 end
 
 function z_rotation_propagator(rfphase_increment, ::grad_param)
     sϕ, cϕ = sincos(rfphase_increment)
-    u_rot = @SMatrix [cϕ -sϕ 0 0 0  0   0 0 0 0 0;
-                      sϕ  cϕ 0 0 0  0   0 0 0 0 0;
-                      0    0 1 0 0  0   0 0 0 0 0;
-                      0    0 0 1 0  0   0 0 0 0 0;
-                      0    0 0 0 1  0   0 0 0 0 0;
-                      0    0 0 0 0 cϕ -sϕ 0 0 0 0;
-                      0    0 0 0 0 sϕ  cϕ 0 0 0 0;
-                      0    0 0 0 0  0   0 1 0 0 0;
-                      0    0 0 0 0  0   0 0 1 0 0;
-                      0    0 0 0 0  0   0 0 0 1 0;
-                      0    0 0 0 0  0   0 0 0 0 1]
+    u_rot = @SMatrix [cϕ -sϕ 0  0   0 0 0 0  0   0 0  0   0 0 0 0 0;
+                      sϕ  cϕ 0  0   0 0 0 0  0   0 0  0   0 0 0 0 0;
+                       0   0 1  0   0 0 0 0  0   0 0  0   0 0 0 0 0;
+                       0   0 0 cϕ -sϕ 0 0 0  0   0 0  0   0 0 0 0 0;
+                       0   0 0 sϕ  cϕ 0 0 0  0   0 0  0   0 0 0 0 0;
+                       0   0 0  0   0 1 0 0  0   0 0  0   0 0 0 0 0;
+                       0   0 0  0   0 0 1 0  0   0 0  0   0 0 0 0 0;
+                       0   0 0  0   0 0 0 1  0   0 0  0   0 0 0 0 0;
+                       0   0 0  0   0 0 0 0 cϕ -sϕ 0  0   0 0 0 0 0;
+                       0   0 0  0   0 0 0 0 sϕ  cϕ 0  0   0 0 0 0 0;
+                       0   0 0  0   0 0 0 0  0   0 1  0   0 0 0 0 0;
+                       0   0 0  0   0 0 0 0  0   0 0 cϕ -sϕ 0 0 0 0;
+                       0   0 0  0   0 0 0 0  0   0 0 sϕ  cϕ 0 0 0 0;
+                       0   0 0  0   0 0 0 0  0   0 0  0   0 1 0 0 0;
+                       0   0 0  0   0 0 0 0  0   0 0  0   0 0 1 0 0;
+                       0   0 0  0   0 0 0 0  0   0 0  0   0 0 0 1 0
+                       0   0 0  0   0 0 0 0  0   0 0  0   0 0 0 0 1]
     return u_rot
 end
 
-function xs_destructor(_::SMatrix{6, 6})
-    Diagonal(SVector{6}(1,1,1,0,1,1))
+
+function x_mm_destructor(x)
+    if size(x) == (9, 9)
+        Diagonal([1,1,1,1,1,1,0,1,1])
+    elseif size(x) == (17, 17)
+        Diagonal([1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1])
+    else
+        error("`x_mm_destructor` is only implemented for sizes `(9, 9)`, `(17, 17)`")
+    end
 end
 
-function xs_destructor(_::SMatrix{11, 11})
-    Diagonal(SVector{11}(1,1,1,0,1,1,1,1,0,1,1))
+
+function xy_destructor(x)
+    if size(x) == (9, 9)
+        Diagonal([0,0,1,0,0,1,0,1,1])
+    elseif size(x) == (17, 17)
+        Diagonal([0,0,1,0,0,1,0,1,0,0,1,0,0,1,0,1,1])
+    else
+        error("`xy_destructor` is only implemented for sizes `(9, 9)`, `(17, 17)`")
+    end
 end
 
-function xy_destructor(_::SMatrix{6, 6})
-    Diagonal(SVector{6}(0,0,1,0,1,1))
+
+# function A0(_::SMatrix{N, N}) where N
+#     Diagonal(SVector{N}(ntuple(_ -> 1, N-1)..., 0))
+# end
+
+function A0(x::Matrix)
+    N, M = size(x)
+    @assert N == M
+    Diagonal([i == N ? 0 : 1 for i = 1:N])
 end
 
-function xy_destructor(_::SMatrix{11, 11})
-    Diagonal(SVector{11}(0,0,1,0,1,0,0,1,0,1,1))
-end
+# function C(_::SMatrix{N, N}) where N
+#     SVector(ntuple(_ -> 0, N-1)..., 1)
+# end
 
-function A0(_::SMatrix{N, N}) where N
-    Diagonal(SVector{N}(ntuple(_ -> 1, N-1)..., 0))
-end
-
-function C(_::SMatrix{N, N}) where N
-    SVector(ntuple(_ -> 0, N-1)..., 1)
+function C(x::Matrix)
+    N, M = size(x)
+    @assert N == M
+    [i == N ? 1 : 0 for i = 1:N]
 end
