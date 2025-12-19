@@ -13,6 +13,18 @@ using ExponentialUtilities
 using LsqFit
 using LinearAlgebra
 
+# include("DiffEq_Hamiltonians.jl") # ToDo
+include("Linearized_R2_mm.jl")
+include("MatrixExp_Solvers.jl")
+include("DiffEq_Sovlers.jl")
+include("Greens_functions.jl")
+include("MatrixExp_Hamiltonians.jl")
+include("MatrixExp_Hamiltonian_Gradients.jl")
+include("NLLSFit.jl")
+include("OptimalControl.jl")
+include("OptimalControlHelpers.jl")
+include("grad_param.jl")
+
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_linear!
 export apply_hamiltonian_graham_superlorentzian!
@@ -56,17 +68,5 @@ export grad_Rx_rw_fw
 export grad_Rx_mm_rw
 export grad_ω0
 export grad_B1
-
-# include("DiffEq_Hamiltonians.jl") # ToDo
-include("Linearized_R2_mm.jl")
-include("MatrixExp_Solvers.jl")
-include("DiffEq_Sovlers.jl")
-include("Greens_functions.jl")
-include("MatrixExp_Hamiltonians.jl")
-include("MatrixExp_Hamiltonian_Gradients.jl")
-include("NLLSFit.jl")
-include("OptimalControl.jl")
-include("OptimalControlHelpers.jl")
-include("grad_param.jl")
 
 end
