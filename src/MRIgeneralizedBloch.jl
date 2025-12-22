@@ -14,6 +14,7 @@ using LsqFit
 using LinearAlgebra
 
 # include("DiffEq_Hamiltonians.jl") # ToDo
+include("grad_param.jl")
 include("Linearized_R2_mm.jl")
 include("MatrixExp_Solvers.jl")
 include("DiffEq_Sovlers.jl")
@@ -23,7 +24,6 @@ include("MatrixExp_Hamiltonian_Gradients.jl")
 include("NLLSFit.jl")
 include("OptimalControl.jl")
 include("OptimalControlHelpers.jl")
-include("grad_param.jl")
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_linear!

@@ -141,7 +141,7 @@ function evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0_rw, m0_mm, R1_fw, R1_
     u_rot = z_rotation_propagator(rfphase_increment, grad)
 
     # put prep pulse at the end (this defines m as the magnetization at the first TE after the inversion pulse)
-    u_fp, u_pl = pulse_propagators(ω1[1], B1, ω0, TRF[1], TR, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm[1], Rx_fw_mm, Rx_rw_fw, Rx_mm_rw[1], dR2_mm_dT2_mm[1], dR2_mm_dB1, grad, grad_moment[1])
+    u_fp, u_pl = pulse_propagators(ω1[1], B1, ω0, TRF[1], TR, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm[1], Rx_fw_mm, Rx_rw_fw, Rx_mm_rw[1], dR2_mm_dT2_mm[1], dR2_mm_dB1[1], grad, grad_moment[1])
     A = u_fp * u_pl * u_rot * u_fp
 
     for i = length(ω1):-1:2
