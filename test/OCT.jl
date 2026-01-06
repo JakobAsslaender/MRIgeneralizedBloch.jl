@@ -3,16 +3,16 @@ using Test
 using LinearAlgebra
 using StaticArrays
 using FiniteDifferences
-R2slT = precompute_R2sl()
+R2_mm_lT = precompute_R2_mm_l()
 
 function calc_CRB(ω1, TRF, w, grad_moment)
-    s = calculatesignal_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
+    s = calculatesignal_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT; grad_list, grad_moment)
     s = reshape(s, size(s, 1) * size(s, 2), size(s, 3))
     return real(w * diag(inv(s' * s)))
 end
 
 ##
-Npulse = 100
+Npulse = 50
 α = [π; abs.(π / 2 * sin.(π * ((0:Npulse-2) / (Npulse - 2))))]
 TRF = 300e-6 .+ 200e-6 * cos.(π * (1:Npulse) / Npulse)
 TRF[1] = 500e-6
@@ -23,16 +23,21 @@ grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(ω1)]
 
 B1 = 1
 ω0 = 0
-m0s = 0.25
-R1f = 0.3
-R1s = 2
-R2f = 1 / 65e-3
-T2s = 10e-6
-Rex = 20
+m0_rw = 0.10
+m0_mm = 0.20
+R1_fw = 0.5
+R1_rw = 1
+R1_mm = 3
+R2_fw = 12
+R2_rw = 100
+T2_mm = 10e-6
+Rx_fw_mm = 10
+Rx_rw_fw = 10
+Rx_mm_rw = 10
 
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
-w = transpose([1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0, 0] .^ 2)
-
+grad_list = (grad_m0_rw(), grad_m0_mm(), grad_R1_fw(), grad_R1_rw(), grad_R1_mm(), grad_R2_fw(), grad_R2_rw(), grad_T2_mm(), grad_Rx_fw_mm(), grad_Rx_rw_fw(), grad_Rx_mm_rw(),grad_ω0(), grad_B1())
+w = zeros(length(grad_list)+1)'
+w[2:7] = 1
 ## ########################################################################
 # Test dCRBdm
 ###########################################################################
@@ -53,8 +58,8 @@ w = transpose([1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0, 0] .^ 2)
 ###########################################################################
 # CRB_gradient_OCT: analytical
 
-_, _, _ = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w) # test default grad_moment
-F0, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+_, _, _ = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad_list, w) # test default grad_moment
+F0, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad_list, w; grad_moment)
 
 f_ω1 = _ω1 -> calc_CRB(_ω1, TRF, w, grad_moment)
 f_TRF = _TRF -> calc_CRB(ω1, _TRF, w, grad_moment)
@@ -75,7 +80,7 @@ TRF = hcat(TRF, TRF)
 grad_moment = hcat(grad_moment, grad_moment)
 
 ##
-F0, grad_ω1_2, grad_TRF_2 = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+F0, grad_ω1_2, grad_TRF_2 = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad_list, w; grad_moment)
 grad_ω1_2 .*= 4
 grad_TRF_2 .*= 4
 
@@ -131,7 +136,7 @@ x = MRIgeneralizedBloch.bound_ω1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TR
 function fg!(F, G, x)
     ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
 
-    F, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+    F, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad_list, w; grad_moment)
     F = abs(F)
 
     F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; grad_moment, λ=1e4)
@@ -142,8 +147,9 @@ function fg!(F, G, x)
     return F
 end
 
+x = MRIgeneralizedBloch.bound_ω1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TRF_max)
 G = similar(x)
-G_fd = grad(central_fdm(5, 1; factor=1e6), x -> fg!(nothing, G, x), x)[1] # Finite Difference gradient: TRF
+G_fd = grad(central_fdm(5, 1; factor=1e6), x -> fg!(nothing, G, x), x)[1] 
 
 F = fg!(nothing, G, x)
 

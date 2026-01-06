@@ -156,7 +156,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
     result = curve_fit(model!, jacobian!, 1:(2*size(u,2)), [real(data); imag(data)], p0, lower=pmin, upper=pmax, show_trace=show_trace, maxIter=maxIter, inplace=true)
 
-        M0, m0_rw, m0_mm, R1_fw ,R1_rw ,R1_mm ,R2_fw ,R2_rw ,T2_mm ,Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, ω0, B1 = getparameters(p)
+        M0, m0_rw, m0_mm, R1_fw ,R1_rw ,R1_mm ,R2_fw ,R2_rw ,T2_mm ,Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, ω0, B1 = getparameters(result.param)
 
     return qMTparam(M0, m0_rw, m0_mm, R1_fw ,R1_rw ,R1_mm ,R2_fw ,R2_rw ,T2_mm ,Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, ω0, B1, norm(result.resid), result)
 end

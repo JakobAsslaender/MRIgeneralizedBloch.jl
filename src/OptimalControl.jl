@@ -30,20 +30,20 @@ julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(range(pi/2
 ```
 c.f. [Optimal Control](@ref)
 """
-function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
+function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
     nSeq = size(ω1, 2)
 
-    E = Vector{Matrix{SMatrix{11,11,Float64}}}(undef, nSeq)
+    E = Vector{Matrix{Matrix{Float64}}}(undef, nSeq)
     dEdω1 = similar(E)
     dEdTRF = similar(E)
-    Q = Vector{Vector{SMatrix{11,11,Float64}}}(undef, nSeq)
-    Y = Vector{Matrix{SVector{11,Float64}}}(undef, nSeq)
+    Q = Vector{Vector{Matrix{Float64}}}(undef, nSeq)
+    Y = Vector{Matrix{Vector{Float64}}}(undef, nSeq)
 
     grad_ω1 = similar(ω1)
     grad_TRF = similar(ω1)
 
     Threads.@threads for iSeq ∈ eachindex(E)
-        E[iSeq], dEdω1[iSeq], dEdTRF[iSeq] = @views calculate_propagators_ω1(ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; grad_moment=grad_moment[:, iSeq])
+        E[iSeq], dEdω1[iSeq], dEdTRF[iSeq] = @views calculate_propagators_ω1(ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad_list; grad_moment=grad_moment[:, iSeq])
         Q[iSeq] = calcualte_cycle_propgator(E[iSeq])
         Y[iSeq] = propagate_magnetization(Q[iSeq], E[iSeq])
     end
@@ -59,93 +59,94 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R
 end
 
 
-function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; grad_moment)
-    E      = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(grad_list))
-    dEdω1  = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(grad_list))
-    dEdTRF = Array{SMatrix{11,11,Float64,121}}(undef, length(ω1), length(grad_list))
+function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad_list; grad_moment)
+    E      = Array{Matrix{Float64}}(undef, length(ω1), length(grad_list))
+    dEdω1  = Array{Matrix{Float64}}(undef, length(ω1), length(grad_list))
+    dEdTRF = Array{Matrix{Float64}}(undef, length(ω1), length(grad_list))
 
-    cache = ExponentialUtilities.alloc_mem(zeros(22, 22), ExpMethodHigham2005Base())
-    dH = zeros(Float64, 22, 22)
+    cache = ExponentialUtilities.alloc_mem(zeros(34, 34), ExpMethodHigham2005Base())
+    dH = zeros(Float64, 34, 34)
 
-    u_rot = z_rotation_propagator(π, grad_m0s())
+    u_rot = z_rotation_propagator(π, grad_m0_rw())
     for g ∈ eachindex(grad_list)
         grad = grad_list[g]
 
         for t ∈ 1:length(ω1)
             if grad_moment[t] == :crusher
-                calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache)
+                calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, T2_mm_lT, grad, u_rot, dH, cache)
             else
-                calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment[t])
+                calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad, u_rot, dH, cache, grad_moment[t])
             end
         end
     end
     return E, dEdω1, dEdTRF
 end
 
-function calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment)
-    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, Rex, R1s, 0.0, 0.0, 0.0, grad)
-    ux = grad_moment == :spoiler_dual ? xy_destructor(H_fp) : xs_destructor(H_fp)
+function calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad, u_rot, dH, cache, grad_moment)
+    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0.0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0.0, 0.0, grad)
+    ux = grad_moment == :spoiler_dual ? xy_destructor(H_fp) : x_mm_destructor(H_fp)
     u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
 
-    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rex, R1s,
-        R2slT[1](TRF, ω1 * TRF, B1, T2s),
-        R2slT[2](TRF, ω1 * TRF, B1, T2s),
-        R2slT[3](TRF, ω1 * TRF, B1, T2s),
+    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm_lT[1](TRF, ω1 * TRF, B1, T2_mm), Rx_fw_mm, Rx_rw_fw, Rx_mm_rw,
+        R2_mm_lT[2](TRF, ω1 * TRF, B1, T2_mm),
+        R2_mm_lT[3](TRF, ω1 * TRF, B1, T2_mm),
         grad)
 
     dHdω1 = d_hamiltonian_linear_dω1(B1, 1,
-        R2slT[4](TRF, ω1 * TRF, B1, T2s),
-        R2slT[6](TRF, ω1 * TRF, B1, T2s),
-        R2slT[7](TRF, ω1 * TRF, B1, T2s),
+        R2_mm_lT[4](TRF, ω1 * TRF, B1, T2_mm),
+        R2_mm_lT[6](TRF, ω1 * TRF, B1, T2_mm),
+        R2_mm_lT[7](TRF, ω1 * TRF, B1, T2_mm),
         grad)
 
-    @views dH[1:11, 1:11] .= H_pl
-    @views dH[12:22, 12:22] .= H_pl
-    @views dH[1:11, 12:22] .= 0
-    @views dH[12:22, 1:11] .= dHdω1
+    @views dH[1:17, 1:17] .= H_pl
+    @views dH[18:34, 18:34] .= H_pl
+    @views dH[1:17, 18:34] .= 0
+    @views dH[18:34, 1:17] .= dHdω1
     dH .*= TRF
     E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
 
-    E_pl1 = SMatrix{11,11}(@view E_pl[1:11, 1:11])
-    E_pl2 = SMatrix{11,11}(@view E_pl[12:end, 1:11])
+    E_pl1 = @view E_pl[1:17, 1:17]
+    E_pl2 = @view E_pl[18:end, 1:17]
     E[t, g] = u_fp * E_pl1 * u_rot * u_fp
     dEdω1[t, g] = u_fp * E_pl2 * u_rot * u_fp
 
     # TRF
     dHdTRF = H_pl + d_hamiltonian_linear_dTRF_add(TRF,
-        R2slT[5](TRF, ω1 * TRF, B1, T2s),
-        R2slT[8](TRF, ω1 * TRF, B1, T2s),
-        R2slT[9](TRF, ω1 * TRF, B1, T2s),
+        R2_mm_lT[5](TRF, ω1 * TRF, B1, T2_mm),
+        R2_mm_lT[8](TRF, ω1 * TRF, B1, T2_mm),
+        R2_mm_lT[9](TRF, ω1 * TRF, B1, T2_mm),
         grad)
     H_pl *= TRF
-    @views dH[1:11, 1:11] .= H_pl
-    @views dH[12:22, 12:22] .= H_pl
-    @views dH[1:11, 12:22] .= 0
-    @views dH[12:22, 1:11] .= dHdTRF
+    @views dH[1:17, 1:17] .= H_pl
+    @views dH[18:34, 18:34] .= H_pl
+    @views dH[1:17, 18:34] .= 0
+    @views dH[18:34, 1:17] .= dHdTRF
     E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
 
-    E_pl1 = SMatrix{11,11}(@view E_pl[1:11, 1:11])
-    E_pl2 = SMatrix{11,11}(@view E_pl[12:end, 1:11])
+    E_pl1 = @view E_pl[1:17, 1:17]
+    E_pl2 = @view E_pl[18:end, 1:17]
     dEdTRF[t, g] = u_fp * ((E_pl2 - (1 / 2 * H_fp * E_pl1)) * u_rot - (1 / 2 * E_pl1 * u_rot * H_fp)) * u_fp
     return nothing
 end
 
-function calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, _, _)
-    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
-    u_fp = xs_destructor(u_fp) * u_fp
-    u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1,
-        R2slT[1](TRF, ω1 * TRF, B1, T2s),
-        R2slT[2](TRF, ω1 * TRF, B1, T2s),
-        R2slT[3](TRF, ω1 * TRF, B1, T2s),
-        grad)
-    E[t, g] = u_fp * u_pl * u_rot * u_fp
-    dEdω1[t, g] = @SMatrix zeros(11, 11)
-    dEdTRF[t, g] = @SMatrix zeros(11, 11)
+function calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2_mm_lT, grad, u_rot, _, _)
+    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0.0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0.0, 0.0, grad))
+    ## TODO
+    @info "ToDo!!"
+    # u_fp = xs_destructor(u_fp) * u_fp
+    # u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1,
+    #     R2slT[1](TRF, ω1 * TRF, B1, T2s),
+    #     R2slT[2](TRF, ω1 * TRF, B1, T2s),
+    #     R2slT[3](TRF, ω1 * TRF, B1, T2s),
+    #     grad)
+    # E[t, g] = u_fp * u_pl * u_rot * u_fp
+    # dEdω1[t, g] = zeros(17, 17)
+    # dEdTRF[t, g] = zeros(17, 17)
     return nothing
 end
 
 function calcualte_cycle_propgator(E)
-    Q = Vector{SMatrix{11,11,Float64}}(undef, size(E, 2))
+    Q = Vector{Matrix{Float64}}(undef, size(E, 2))
 
     for g ∈ axes(E, 2)
         A = E[1, g]
@@ -158,7 +159,7 @@ function calcualte_cycle_propgator(E)
 end
 
 function propagate_magnetization(Q, E)
-    Y = similar(E, SVector{11,Float64})
+    Y = similar(E, Vector{Float64})
 
     for g ∈ axes(E, 2)
         m = Q[g] \ C(Q[g])
@@ -173,9 +174,17 @@ end
 
 # the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them.
 function calculate_adjoint_state(d, Q, E)
-    P = similar(E, Array{Float64})
+    # P = similar(E, Array{Matrix{Float64}})
+    P = Array{Vector{Float64}}(undef, size(E,1), size(E,2))
+    λ = Array{Vector{Float64}}(undef, size(E,2))
+
+    for i = 1:size(P,2)
+        P[end,i] = zeros(17,)
+    end
+
     λ = @view P[end, :]
 
+    
     for g ∈ 1:size(E, 2)
         λ[g] = d(size(E, 1), g)
     end
@@ -184,8 +193,8 @@ function calculate_adjoint_state(d, Q, E)
         λ[1] = transpose(E[t+1, 1]) * λ[1]
         λ[1] += d(t, 1)
         for g = 2:size(E, 2)
-            λ[g] = transpose(E[t+1, g][6:10, :]) * λ[g][6:10]
-            λ[1][1:5] .+= λ[g][1:5]
+            λ[g] = transpose(E[t+1, g][9:16, :]) * λ[g][9:16]
+            λ[1][1:8] .+= λ[g][1:8]
             # λ[1][end]  += λ[g][end]
             λ[g] .+= d(t, g)
         end
@@ -198,8 +207,8 @@ function calculate_adjoint_state(d, Q, E)
 
     P[end, 1] = inv(transpose(Q[1])) * λ[1]
     for g = 2:size(E, 2)
-        λ[g] = inv(transpose(Q[g]))[:, 6:10] * λ[g][6:10]
-        λ[1][1:5] .+= λ[g][1:5]
+        λ[g] = inv(transpose(Q[g]))[:, 9:16] * λ[g][9:16]
+        λ[1][1:8] .+= λ[g][1:8]
         # P[end,1][end]  += P[end,g][end]
     end
 
@@ -210,8 +219,8 @@ function calculate_adjoint_state(d, Q, E)
             if g == 1
                 P[t-1, g] = transpose(_E) * P[t, g]
             else
-                P[t-1, g] = transpose(_E[6:10, :]) * P[t, g][6:10]
-                P[t-1, 1][1:5] .+= P[t-1, g][1:5]
+                P[t-1, g] = transpose(_E[9:16, :]) * P[t, g][9:16]
+                P[t-1, 1][1:8] .+= P[t-1, g][1:8]
                 P[t-1, 1][end] += P[t-1, g][end]
             end
             P[t-1, g] .+= d(t, g)
@@ -230,44 +239,70 @@ function dCRBdm(Y, w)
 
     F = zeros(ComplexF64, N_grad + 1, N_grad + 1)
     for iSeq ∈ eachindex(Y), g2 ∈ 0:N_grad, g1 ∈ 0:N_grad, t ∈ axes(Y[iSeq], 1)
-        s1 = g1 == 0 ? Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2] : Y[iSeq][t, g1][6] - 1im * Y[iSeq][t, g1][7]
-        s2 = g2 == 0 ? Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2] : Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
+        s1 = g1 == 0 ? Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] - 1im * Y[iSeq][t, 1][5] : Y[iSeq][t, g1][9] - 1im * Y[iSeq][t, g1][10] + Y[iSeq][t, g1][12] - 1im * Y[iSeq][t, g1][13]
+        s2 = g2 == 0 ? Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] + 1im * Y[iSeq][t, 1][5] : Y[iSeq][t, g2][9] + 1im * Y[iSeq][t, g2][10] + Y[iSeq][t, g2][12] + 1im * Y[iSeq][t, g2][13]
         F[g1+1, g2+1] += s1 * s2
     end
     Fi = inv(F)
     CRB = w * real.(diag(Fi))
 
-    _dCRBdx = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
-    _dCRBdy = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdx_fw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdy_fw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdx_rw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdy_rw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
     dFdy = similar(F)
     tmp = similar(F)
     for iSeq ∈ eachindex(Y), g1 ∈ 0:N_grad, t ∈ axes(Y[iSeq], 1)
-        # derivative wrt. x
+        # derivative wrt. x fw
         dFdy .= 0
-        dFdy[g1+1, 1] = Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2]
-        dFdy[1, g1+1] = Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2]
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] + 1im * Y[iSeq][t, 1][5]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] - 1im * Y[iSeq][t, 1][5] 
         for g2 ∈ axes(Y[iSeq], 2)
-            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
-            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][6] - 1im * Y[iSeq][t, g2][7]
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][9] + 1im * Y[iSeq][t, g2][10] + Y[iSeq][t, g2][12] + 1im * Y[iSeq][t, g2][13]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][9] - 1im * Y[iSeq][t, g2][10] + Y[iSeq][t, g2][12] - 1im * Y[iSeq][t, g2][13]
         end
         dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdx[iSeq][t, g1+1] = real.(w * diag(dFdy))
+        _dCRBdx_fw[iSeq][t, g1+1] = real.(w * diag(dFdy))
 
-        # derivative wrt. y
+        # derivative wrt. x rw
         dFdy .= 0
-        dFdy[g1+1, 1] = Y[iSeq][t, 1][2] - 1im * Y[iSeq][t, 1][1]
-        dFdy[1, g1+1] = Y[iSeq][t, 1][2] + 1im * Y[iSeq][t, 1][1]
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][4] + 1im * Y[iSeq][t, 1][5] + Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][4] - 1im * Y[iSeq][t, 1][5] + Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2]
         for g2 ∈ axes(Y[iSeq], 2)
-            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][7] - 1im * Y[iSeq][t, g2][6]
-            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][7] + 1im * Y[iSeq][t, g2][6]
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][12] + 1im * Y[iSeq][t, g2][13] + Y[iSeq][t, g2][9] + 1im * Y[iSeq][t, g2][10]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][12] - 1im * Y[iSeq][t, g2][13] + Y[iSeq][t, g2][9] - 1im * Y[iSeq][t, g2][10]
         end
         dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdy[iSeq][t, g1+1] = real.(w * diag(dFdy))
+        _dCRBdx_rw[iSeq][t, g1+1] = real.(w * diag(dFdy))
+
+        # derivative wrt. y fw
+        dFdy .= 0
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][2] - 1im * Y[iSeq][t, 1][1] + Y[iSeq][t, 1][5] - 1im * Y[iSeq][t, 1][4]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][2] + 1im * Y[iSeq][t, 1][1] + Y[iSeq][t, 1][5] + 1im * Y[iSeq][t, 1][4]
+        for g2 ∈ axes(Y[iSeq], 2)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][10] - 1im * Y[iSeq][t, g2][9] + Y[iSeq][t, g2][13] - 1im * Y[iSeq][t, g2][12]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][10] + 1im * Y[iSeq][t, g2][9] + Y[iSeq][t, g2][13] + 1im * Y[iSeq][t, g2][12]
+        end
+        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
+        _dCRBdy_fw[iSeq][t, g1+1] = real.(w * diag(dFdy))
+
+        # derivative wrt. y rw
+        dFdy .= 0
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][5] - 1im * Y[iSeq][t, 1][4] + Y[iSeq][t, 1][2] - 1im * Y[iSeq][t, 1][1]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][5] + 1im * Y[iSeq][t, 1][4] + Y[iSeq][t, 1][2] + 1im * Y[iSeq][t, 1][1]
+        for g2 ∈ axes(Y[iSeq], 2)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][13] - 1im * Y[iSeq][t, g2][12] + Y[iSeq][t, g2][10] - 1im * Y[iSeq][t, g2][9]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][13] + 1im * Y[iSeq][t, g2][12] + Y[iSeq][t, g2][10] + 1im * Y[iSeq][t, g2][9]
+        end
+        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
+        _dCRBdy_rw[iSeq][t, g1+1] = real.(w * diag(dFdy))
     end
 
-    d = [(t, g) -> @SVector [_dCRBdx[iSeq][t, 1], _dCRBdy[iSeq][t, 1], 0, 0, 0, _dCRBdx[iSeq][t, g+1], _dCRBdy[iSeq][t, g+1], 0, 0, 0, 0] for iSeq ∈ eachindex(_dCRBdx)]
+    d = [(t, g) -> [_dCRBdx_fw[iSeq][t, 1], _dCRBdy_fw[iSeq][t, 1],0, _dCRBdx_rw[iSeq][t, 1], _dCRBdy_rw[iSeq][t, 1], 0, 0, 0, _dCRBdx_fw[iSeq][t, g+1], _dCRBdy_fw[iSeq][t, g+1], 0, _dCRBdx_rw[iSeq][t, g+1],_dCRBdy_rw[iSeq][t, g+1], 0, 0, 0, 0] for iSeq ∈ eachindex(_dCRBdx_fw)]
 
     return CRB, d
 end
@@ -284,7 +319,7 @@ function calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
         else
             a = dEdω1[t, g] * Y[tm1, g]
             b = dEdTRF[t, g] * Y[tm1, g]
-            @inbounds for i = 6:10
+            @inbounds for i = 9:16
                 grad_ω1[t] -= P[tm1, g][i] * a[i]
                 grad_TRF[t] -= P[tm1, g][i] * b[i]
             end
