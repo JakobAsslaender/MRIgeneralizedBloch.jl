@@ -78,14 +78,14 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw,
         if output == :complexsignal
             S = Array{ComplexF64}(undef, length(ω1), length(rfphase_increment), 1)
         elseif output == :realmagnetization
-            S = Array{SVector{6,Float64}}(undef, length(ω1), length(rfphase_increment), 1)
+            S = Array{Vector{Float64}}(undef, length(ω1), length(rfphase_increment), 1)
         end
     else
         if output == :complexsignal
             S = Array{ComplexF64}(undef, length(ω1), length(rfphase_increment), 1 + length(grad_list))
             jj = [[1,j + 1] for j = 1:length(grad_list)]
         elseif output == :realmagnetization
-            S = Array{SVector{11,Float64}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
+            S = Array{Array{Float64}}(undef, length(ω1), length(rfphase_increment), length(grad_list))
             jj = 1:length(grad_list)
         end
     end
