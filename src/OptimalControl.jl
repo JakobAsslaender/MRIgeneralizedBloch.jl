@@ -44,7 +44,7 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R
 
     Threads.@threads for iSeq ∈ eachindex(E)
         E[iSeq], dEdω1[iSeq], dEdTRF[iSeq] = @views calculate_propagators_ω1(ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list; grad_moment=grad_moment[:, iSeq])
-        Q[iSeq] = calcualte_cycle_propgator(E[iSeq])
+        Q[iSeq] = calculate_cycle_propagator(E[iSeq])
         Y[iSeq] = propagate_magnetization(Q[iSeq], E[iSeq])
     end
 
@@ -144,7 +144,7 @@ function calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, 
     return nothing
 end
 
-function calcualte_cycle_propgator(E)
+function calculate_cycle_propagator(E)
     Q = Vector{SMatrix{11,11,Float64}}(undef, size(E, 2))
 
     for g ∈ axes(E, 2)

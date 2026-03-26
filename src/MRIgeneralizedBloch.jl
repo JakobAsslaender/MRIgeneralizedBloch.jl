@@ -11,7 +11,6 @@ using LinearAlgebra
 using NLsolve
 using ExponentialUtilities
 using LsqFit
-using LinearAlgebra
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_linear!
@@ -67,7 +66,7 @@ struct grad_B1  <: grad_param end
 include("DiffEq_Hamiltonians.jl")
 include("Linearized_R2s.jl")
 include("MatrixExp_Solvers.jl")
-include("DiffEq_Sovlers.jl")
+include("DiffEq_Solvers.jl")
 include("Greens_functions.jl")
 include("MatrixExp_Hamiltonians.jl")
 include("MatrixExp_Hamiltonian_Gradients.jl")
