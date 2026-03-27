@@ -2,7 +2,7 @@
 # main call function
 ############################################################################
 """
-    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=nothing, rfphase_increment=[π], m0=:periodic, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
 
 Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Lorentzian lineshape.
 
@@ -23,7 +23,7 @@ The simulation assumes a sequence of rectangular RF-pulses with varying flip ang
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
 
 # Optional Arguments:
-- `grad_list=(undef,)`: Tuple that specifies the gradients that are calculated; the vector elements can either be `undef` for no gradient, or any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `grad_list=nothing`: Tuple that specifies the gradients that are calculated; the default `nothing` means no gradient, or pass any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
 - `rfphase_increment=[π]::Vector{Real}`: Increment of the RF phase between consecutive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition. When more than one value is supplied, their resulting signal is stored along the second dimension of the output array.
 - `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calculated assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initialization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
 - `preppulse=false`: if `true`, a `α/2 - TR/2` preparation is applied. In the case of `m0=:IR`, it is applied after the inversion pulse based on `α[2]`, otherwise it is based on `α[1]`
@@ -59,21 +59,21 @@ julia> calculatesignal_linearapprox(range(0, π/2, 100), fill(5e-4, 100), 4e-3, 
    0.12471167167688699 + 0.0im
 ```
 """
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list=nothing, rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
 
     R2s, dR2sdT2s, dR2sdB1 = evaluate_R2sl_vector(abs.(α), TRF, B1, T2s, R2slT, grad_list)
 
     return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list, rfphase_increment, m0, preppulse, output, grad_moment)
 end
 
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=(undef,), rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
-    if isempty(grad_list)
-        grad_list = (undef,)
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=nothing, rfphase_increment=[π], m0=:periodic, preppulse=false, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+    if isnothing(grad_list) || isempty(grad_list)
+        grad_list = (nothing,)
     end
 
     ω1 = α ./ TRF
 
-    if grad_list == (undef,)
+    if grad_list == (nothing,)
         jj = 1
         if output == :complexsignal
             S = Array{ComplexF64}(undef, length(ω1), length(rfphase_increment), 1)
@@ -91,13 +91,13 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, 
     end
 
     if m0 == :thermal || m0 == :IR
-        if grad_list == (undef,)
+        if grad_list == (nothing,)
             _m0 = @SVector [0, 0, 1 - m0s, 0, m0s, 1]
         else
             _m0 = @SVector [0, 0, 1 - m0s, 0, m0s, 0, 0, 0, 0, 0, 1]
         end
     elseif isa(m0, AbstractVector)
-        if grad_list == (undef,)
+        if grad_list == (nothing,)
             _m0 = length(m0) == 6 ? SVector{6}(m0) : SVector{6}([m0; zeros(5 - length(m0)); 1])
         else
             _m0 = length(m0) == 11 ? SVector{11}(m0) : SVector{11}([m0; zeros(10 - length(m0)); 1])

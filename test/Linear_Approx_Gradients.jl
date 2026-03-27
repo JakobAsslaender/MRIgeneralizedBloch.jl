@@ -126,7 +126,7 @@ mg = propagator_linear_crushed_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1,
 
 
 ## test derivative wrt. T2s
-f_inv_T2s = _T2s -> propagator_linear_crushed_pulse(ω1, TRF, B1, R2sl(TRF,α,B1,_T2s), undef, undef, undef) * m0
+f_inv_T2s = _T2s -> propagator_linear_crushed_pulse(ω1, TRF, B1, R2sl(TRF,α,B1,_T2s), nothing, nothing, nothing) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6,max_range=1e-8), f_inv_T2s, T2s)[1]
 
 mg = propagator_linear_crushed_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_T2s()) * m0g
@@ -135,7 +135,7 @@ mg = propagator_linear_crushed_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1,
 
 
 ## test derivative wrt. B1
-f_inv_B1 = _B1 -> propagator_linear_crushed_pulse(ω1, TRF, _B1, R2sl(TRF, α, (_B1), T2s), undef, undef, undef) * m0
+f_inv_B1 = _B1 -> propagator_linear_crushed_pulse(ω1, TRF, _B1, R2sl(TRF, α, (_B1), T2s), nothing, nothing, nothing) * m0
 mfd = jacobian(central_fdm(5,1; factor=1e6, max_range=1e-2), f_inv_B1, B1)[1]
 
 mg = propagator_linear_crushed_pulse(ω1, TRF, B1, _R2sl, _dR2sldT2s, _dR2sldB1, grad_B1()) * m0g

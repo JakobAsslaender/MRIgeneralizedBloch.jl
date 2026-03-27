@@ -113,12 +113,12 @@ function evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
     for i = 1:length(α)
         _R2s[i] = R2slT[1](TRF[i], α[i], B1, T2s)
     end
-    if any(isa.(grad_list, grad_T2s))
+    if !isnothing(grad_list) && any(isa.(grad_list, grad_T2s))
         for i = 1:length(α)
             _dR2sdT2s[i] = R2slT[2](TRF[i], α[i], B1, T2s)
         end
     end
-    if any(isa.(grad_list, grad_B1))
+    if !isnothing(grad_list) && any(isa.(grad_list, grad_B1))
         for i = 1:length(α)
             _dR2sdB1[i] = R2slT[3](TRF[i], α[i], B1, T2s)
         end
