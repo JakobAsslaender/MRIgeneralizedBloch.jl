@@ -1,6 +1,17 @@
 ###################################################
 # generalized Bloch Hamiltonians that can take any
 # Green's function as an argument.
+#
+# Dispatch variants for apply_hamiltonian_gbloch!:
+#   p::NTuple{6,Any}   — isolated semi-solid pool: (ω1, B1, ω0, R1s, T2s, g)
+#   p::NTuple{10,Any}  — coupled two-pool, scalar ω1: (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, g)
+#   p::NTuple{11,Any}  — internal: adds zs_idx for multi-gradient indexing
+#   p::NTuple{12,Any}  — coupled two-pool with gradients: adds (dG_o_dT2s_x_T2s, grad_list)
+#
+# For positions 1 (ω1) and 3 (ω0/φ), dispatch distinguishes:
+#   Real, Real     — rectangular pulse, constant off-resonance (ω0)
+#   Function, Real — shaped RF pulse ω1(t), constant off-resonance (ω0)
+#   Function, Function — shaped RF pulse ω1(t), phase-swept φ(t)
 ###################################################
 """
     apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p, t)
@@ -226,6 +237,10 @@ end
 
 ###################################################
 # Bloch-McConnell model to simulate free precession
+#
+# Dispatch variants for apply_hamiltonian_freeprecession!:
+#   p::NTuple{6,Any}  — no gradients: (ω0, m0s, R1f, R2f, Rex, R1s)
+#   p::NTuple{7,Any}  — with gradients: adds (grad_list,)
 ###################################################
 function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{6,Any}, t)
     ω0, m0s, R1f, R2f, Rex, R1s = p
@@ -256,7 +271,16 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{7,Any}, t)
 end
 
 #########################################################################
-# implementation of the partial derivatives for calculating the gradients
+# Implementation of the partial derivatives for calculating the gradients.
+#
+# Dispatch on grad_type (last argument) selects the parameter.
+# Dispatch on p distinguishes the model variant:
+#   p::NTuple{11,Any}                  — gBloch or Graham (generic, for m0s/R1f/R1s/R2f/Rex/ω0)
+#   p::Tuple{Real,Real,Real,...}       — gBloch, scalar ω1, constant ω0
+#   p::Tuple{Function,Real,Real,...}   — gBloch, shaped ω1(t), constant ω0
+#   p::Tuple{Function,Real,Function,...} — gBloch, shaped ω1(t), phase-swept φ(t)
+#   p::Tuple{...,UndefInitializer,...}  — free precession (no-op for T2s/B1)
+#   p::Tuple{Real,...,Real,Real}       — Graham's model (scalar ω1, T2s-specific saturation)
 #########################################################################
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_m0s)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
@@ -450,7 +474,11 @@ end
 
 ##############################################################################
 # Implementation for comparison: the super-Lorentzian Green's function
-# is hard coded, which allows to use special solvers for the double integral
+# is hard coded, which allows to use special solvers for the double integral.
+#
+# Dispatch variants for apply_hamiltonian_gbloch_superlorentzian!:
+#   p::NTuple{10,Any} — coupled two-pool: (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, N)
+#   p::NTuple{11,Any} — internal: adds zs_idx for multi-gradient indexing
 ##############################################################################
 function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, zs_idx, N = p
@@ -490,6 +518,13 @@ end
 
 ###################################################
 # Graham's spectral model
+#
+# Dispatch variants for apply_hamiltonian_graham_superlorentzian!:
+#   p::NTuple{10,Any} — no gradients: (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s)
+#   p::NTuple{11,Any} — with gradients: adds (grad_list,)
+#
+# Note: TRF is at position 4 (before the tissue params) because
+# the saturation rate f_PSD depends on TRF/T2s.
 ###################################################
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s = p
@@ -534,15 +569,24 @@ function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p
     return ∂m∂t
 end
 
+# Dispatch variants for apply_hamiltonian_linear!:
+#   p::NTuple{9,Any}  — scalar ω1: (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf)
+#   p::NTuple{11,Any} — scalar ω1 with gradients: adds (dRrfdT2s, grad_list)
+#   p::Tuple{Function,...} — shaped ω1(t) variants (evaluate ω1(t) and forward)
+#   p::Tuple{Function,Real,Function,...} — shaped ω1(t) with phase-swept φ(t)
+
+# shaped ω1(t), constant ω0, no gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf = p
     apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf), t)
 end
+# shaped ω1(t), constant ω0, with gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real,Real,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf, dRrfdT2s, grad_list = p
     return apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf, dRrfdT2s, grad_list), t)
 end
 
+# shaped ω1(t), phase-swept φ(t)
 function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real}, t)
     ω1, B1, φ, m0s, R1f, R2f, Rex, R1s, Rrf = p
 
@@ -556,6 +600,7 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Function,
     return ∂m∂t
 end
 
+# scalar ω1, constant ω0, no gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf = p
 
@@ -567,6 +612,7 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     return ∂m∂t
 end
 
+# scalar ω1, constant ω0, with gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{11,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf, dRrfdT2s, grad_list = p
 
@@ -678,6 +724,15 @@ end
 
 ##################################################################
 # Sled's model
+#
+# Dispatch variants for apply_hamiltonian_sled!:
+#   Isolated semi-solid pool:
+#     p::Tuple{Real,Real,Real,Real,Real,Function}       — scalar ω1
+#     p::Tuple{Function,Real,Any,Real,Real,Function}    — shaped ω1(t)
+#   Coupled two-pool system:
+#     p::Tuple{Real,Real,Real,...,Function}     — scalar ω1, constant ω0
+#     p::Tuple{Function,Real,Real,...,Function} — shaped ω1(t), constant ω0
+#     p::Tuple{Function,Real,Function,...,Function} — shaped ω1(t), phase-swept φ(t)
 ##################################################################
 """
     apply_hamiltonian_sled!(∂m∂t, m, p, t)
