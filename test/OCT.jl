@@ -143,7 +143,8 @@ function fg!(F, G, x)
 end
 
 G = similar(x)
-G_fd = grad(central_fdm(5, 1; factor=1e6), x -> fg!(nothing, G, x), x)[1] # Finite Difference gradient: TRF
+_G = similar(x)
+G_fd = grad(central_fdm(5, 1), x -> fg!(nothing, _G, x), x)[1] # Finite Difference gradient
 
 F = fg!(nothing, G, x)
 
