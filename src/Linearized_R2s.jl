@@ -73,7 +73,10 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
             A[iτ,iΩ] = calculate_R2sl(z_fun, τv[iτ], Ωv[iΩ])
         end
     end
-    A[:,1] .= A[:,2] # extrapolation hack as the fit does not work with Ω = 0
+
+    # Flat extrapolation at the left boundary: the first TRF_max grid point has no
+    # independent data, so we copy the second column to avoid undefined values.
+    A[:,1] .= A[:,2]
 
     f = linear_interpolation((τv, Ωv), A)
     dfdτ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[1]

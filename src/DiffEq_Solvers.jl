@@ -142,7 +142,7 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
             TE = TR / 2 - TRF[ip] / 2
             sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rex, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
             if sol.t[2] / TE - 1 > 1e-10
-                throw(DimensionMismatch("sol.t[2] is not equal to TE"))
+                throw(ErrorException("sol.t[2] is not equal to TE"))
             end
             s[:,ip] = sol.u[2]
             s[1:5:end,ip] .*= (-1)^(ip + ic)
@@ -290,7 +290,7 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
             TE = TR / 2 - TRF[ip] / 2
             sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rex, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
             if sol.t[2] / TE - 1 > 1e-10
-                throw(DimensionMismatch("sol.t[2] is not equal to TE"))
+                throw(ErrorException("sol.t[2] is not equal to TE"))
             end
             s[:,ip] = sol.u[2]
             s[1:5:end,ip] .*= (-1)^(ip + ic)

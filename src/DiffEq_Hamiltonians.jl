@@ -264,7 +264,7 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{7,Any}, t)
         @views apply_hamiltonian_freeprecession!(∂m∂t_m[:,i], m_m[:,i], (ω0, m0s, R1f, R2f, Rex, R1s), t)
 
         if i > 1
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (0, 1, ω0, m0s, R1f, R2f, Rex, R1s, undef, undef, undef), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (0, 1, ω0, m0s, R1f, R2f, Rex, R1s, nothing, nothing, nothing), t, grad_list[i-1])
         end
     end
     return ∂m∂t
@@ -275,12 +275,12 @@ end
 #
 # Dispatch on grad_type (last argument) selects the parameter.
 # Dispatch on p distinguishes the model variant:
-#   p::NTuple{11,Any}                  — gBloch or Graham (generic, for m0s/R1f/R1s/R2f/Rex/ω0)
-#   p::Tuple{Real,Real,Real,...}       — gBloch, scalar ω1, constant ω0
-#   p::Tuple{Function,Real,Real,...}   — gBloch, shaped ω1(t), constant ω0
+#   p::NTuple{11,Any}                    — gBloch or Graham (generic, for m0s/R1f/R1s/R2f/Rex/ω0)
+#   p::Tuple{Real,Real,Real,...}         — gBloch, scalar ω1, constant ω0
+#   p::Tuple{Function,Real,Real,...}     — gBloch, shaped ω1(t), constant ω0
 #   p::Tuple{Function,Real,Function,...} — gBloch, shaped ω1(t), phase-swept φ(t)
-#   p::Tuple{...,UndefInitializer,...}  — free precession (no-op for T2s/B1)
-#   p::Tuple{Real,...,Real,Real}       — Graham's model (scalar ω1, T2s-specific saturation)
+#   p::Tuple{...,Nothing,...}            — free precession (no-op for T2s/B1)
+#   p::Tuple{Real,...,Real,Real}         — Graham's model (scalar ω1, T2s-specific saturation)
 #########################################################################
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_m0s)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
@@ -352,7 +352,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Funct
 end
 
 # version for free precession (does nothing)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,UndefInitializer,UndefInitializer}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Nothing,Nothing}, t, grad_type::grad_T2s)
     return ∂m∂t
 end
 
@@ -456,7 +456,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Funct
 end
 
 # version for free precession (does nothing)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,UndefInitializer,UndefInitializer}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Nothing,Nothing}, t, grad_type::grad_B1)
     return ∂m∂t
 end
 
@@ -546,7 +546,7 @@ function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{11,Any
         @views apply_hamiltonian_graham_superlorentzian!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s), t)
 
         if i > 1
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, undef), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, nothing), t, grad_list[i-1])
         end
     end
     return ∂m∂t
@@ -563,7 +563,7 @@ function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p
         @views apply_hamiltonian_graham_superlorentzian!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s), t)
 
         if i > 1 && (isa(grad_list[i-1], grad_B1) || isa(grad_list[i-1], grad_T2s))
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, undef), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, nothing), t, grad_list[i-1])
         end
     end
     return ∂m∂t
@@ -624,7 +624,7 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{11,Any}, t)
         @views apply_hamiltonian_linear!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf), t)
 
         if i > 1
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, 0, Rrf, dRrfdT2s), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, 0, Rrf, dRrfdT2s), t, grad_list[i-1])
         end
     end
     return ∂m∂t
