@@ -72,21 +72,18 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, 
 
     ω1 = α ./ TRF
 
-    if grad_list == (nothing,)
-        jj = 1
+    has_gradients = grad_list != (nothing,)
+
+    if !has_gradients
         if output == :complexsignal
             S = Array{ComplexF64}(undef, length(ω1), 1)
         elseif output == :realmagnetization
             S = Array{SVector{6,Float64}}(undef, length(ω1), 1)
         end
-    else
-        if output == :complexsignal
-            S = Array{ComplexF64}(undef, length(ω1), 1 + length(grad_list))
-            jj = [[1,j + 1] for j = 1:length(grad_list)]
-        elseif output == :realmagnetization
-            S = Array{SVector{11,Float64}}(undef, length(ω1), length(grad_list))
-            jj = 1:length(grad_list)
-        end
+    elseif output == :complexsignal
+        S = Array{ComplexF64}(undef, length(ω1), 1 + length(grad_list))
+    elseif output == :realmagnetization
+        S = Array{SVector{11,Float64}}(undef, length(ω1), length(grad_list))
     end
 
     if m0 == :thermal || m0 == :IR
@@ -127,7 +124,14 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, 
             m = u_pr * m
         end
 
-        Mij = @view S[:, jj[j]]
+        cols = if !has_gradients
+            1
+        elseif output == :complexsignal
+            [1, j + 1]
+        else
+            j
+        end
+        Mij = @view S[:, cols]
         propagate_magnetization_linear!(Mij, m, ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_list[j], rfphase_increment, grad_moment)
     end
     return S
