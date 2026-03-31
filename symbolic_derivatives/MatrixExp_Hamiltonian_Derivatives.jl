@@ -6,7 +6,7 @@ using Symbolics: SConst
 using MRIgeneralizedBloch
 
 ##
-@variables ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R1a, T2s, R2s, dR2sdT2s, dR2sdB1, grad_type
+@variables ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R1a, T2s, R2s, dR2sdT2s, dR2sdB1, grad_type
 @variables TRF, dR2sdB1, dR2sdω1, dR2sdTRF, dR2sdT2sdω1, dR2sdB1dω1, dR2sdT2sdTRF, dR2sdB1dTRF
 
 f_R2s(T2s, B1, ω1, TRF) = R2s
@@ -21,16 +21,22 @@ Z = zeros(Int, size(H))
 # derivatives wrt. MT parameters (used for CRB calculations & NLLS fitting)
 ############################################################################################
 fs_str = ""
-for p ∈ [m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
-    if isequal(p, R1a)
-        Ḣ = expand_derivatives.(Differential(R1f).(H) .+ Differential(R1s).(H))
+for p ∈ [M0, m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
+    if isequal(p, M0)
+        # Scale the last column by M0; SMatrix is immutable so we rebuild
+        _H = hcat(H[:, 1:end-1], H[:, end] .* M0)
     else
-        Ḣ = expand_derivatives.(Differential(p).(H))
+        _H = H
+    end
+    if isequal(p, R1a)
+        Ḣ = expand_derivatives.(Differential(R1f).(_H) .+ Differential(R1s).(_H))
+    else
+        Ḣ = expand_derivatives.(Differential(p).(_H))
     end
 
     dHdp = vcat(
         hcat(H[1:end-1, 1:end-1], Z[1:end-1, 1:end-1], H[1:end-1, end]),
-        hcat(Ḣ[1:end-1, 1:end-1], H[1:end-1, 1:end-1], Ḣ[1:end-1, end]),
+        hcat(Ḣ[1:end-1, 1:end-1], H[1:end-1, 1:end-1], Ḣ[1:end-1, end]),
         zeros(Int, 1, 2size(H, 2) - 1)
     )
 

@@ -42,6 +42,7 @@ export calculatesignal_linearapprox
 export fit_gBloch
 export qMTmap
 
+export grad_M0
 export grad_m0s
 export grad_R1a
 export grad_R1f
@@ -53,6 +54,7 @@ export grad_ω0
 export grad_B1
 
 abstract type grad_param end
+struct grad_M0  <: grad_param end
 struct grad_m0s <: grad_param end
 struct grad_R1a <: grad_param end
 struct grad_R1f <: grad_param end

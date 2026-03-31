@@ -91,45 +91,50 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     ) where T <: Real
 
     grad_list = MRIgeneralizedBloch.grad_param[]
-    pmin = Float64[reM0[1], imM0[1]]
-    p0   = Float64[reM0[2], imM0[2]]
-    pmax = Float64[reM0[3], imM0[3]]
+    pmin = Float64[]
+    p0   = Float64[]
+    pmax = Float64[]
 
-    idx = Vector{Int}(undef, 8)
+    idx = Vector{Int}(undef, 10)
     if fit_apparentR1
-        param    = [m0s, R1a, R2f, Rex, R1a, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1a(), grad_R2f(), grad_Rex(), nothing, grad_T2s(), grad_ω0(), grad_B1()]
+        param     = [reM0, imM0, m0s, R1a, R2f, Rex, R1a, T2s, ω0, B1]
+        grad_all  = [grad_M0(), 1, grad_m0s(), grad_R1a(), grad_R2f(), grad_Rex(), 4, grad_T2s(), grad_ω0(), grad_B1()]
     else
-        param    = [m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1]
-        grad_all = [grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
+        param     = [reM0, imM0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1]
+        grad_all  = [grad_M0(), 1, grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1()]
     end
+    jac_map = Tuple{Int,Int,Bool}[] # (p_col, grad_col, negate_imag)
+    gc = 0
     for i ∈ eachindex(param)
-        idx[i] = if isa(param[i], Number)
-            0
-        elseif grad_all[i] === nothing
-            idx[2] # copy R1a
+        if isa(param[i], Number)
+            idx[i] = 0
+        elseif isa(grad_all[i], Integer) && param[i] === param[grad_all[i]]
+            idx[i] = idx[grad_all[i]] # same value & slot (R1s → R1a)
         else
-            push!(grad_list, grad_all[i])
+            if !isa(grad_all[i], Integer)
+                push!(grad_list, grad_all[i])
+                gc += 1
+            end
             push!(pmin, param[i][1])
             push!(p0  , param[i][2])
             push!(pmax, param[i][3])
-            length(p0)
+            idx[i] = length(p0)
+            push!(jac_map, (idx[i], gc, i == 2)) # i==2 is imM0
         end
     end
 
-    getparameters(p) = ((p[1]+1im*p[2]), ntuple(i-> idx[i] == 0 ? param[i] : p[idx[i]], length(idx))...)
+    grad_list = Tuple(grad_list)
+    getparameters(p) = ((p[idx[1]]+1im*p[idx[2]]), ntuple(i-> idx[i+2] == 0 ? param[i+2] : p[idx[i+2]], length(idx)-2)...)
 
     function model!(F, _, p)
         M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(p)
 
         m = zeros(ComplexF64,size(α[1],1),length(α))
         Threads.@threads for i ∈ eachindex(α)
-            m[:,i] = vec(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i]))
+            m[:,i], _ = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i])
         end
 
-        m = vec(m)
-        m .*= M0
-        m = u' * m
+        m = u' * vec(m)
         F[1:end÷2]     .= real.(m)
         F[end÷2+1:end] .= imag.(m)
         return F
@@ -138,18 +143,21 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     function jacobian!(J, _, p)
         M0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1 = getparameters(p)
 
-        M = zeros(ComplexF64,size(α[1],1),length(α),length(grad_list)+1)
+        grad_all_arr = zeros(ComplexF64, size(α[1],1), length(α), length(grad_list))
         Threads.@threads for i ∈ eachindex(α)
-            M[:,i,:] = dropdims(calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list=grad_list; grad_moment=grad_moment[i]), dims=2)
+            _, g = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=grad_moment[i])
+            grad_all_arr[:,i,:] = g
         end
-        M = reshape(M,:,length(grad_list)+1)
 
-        M[:,2:end] .*= M0
-        M = u' * M
+        G = u' * reshape(grad_all_arr, :, length(grad_list))
 
-        J[:,1]     = [real(M[:,1]); imag(M[:,1])]
-        J[:,2]     = [-imag(M[:,1]); real(M[:,1])]
-        J[:,3:end] = [real(M[:,2:end]); imag(M[:,2:end])]
+        for (pc, gc, neg) ∈ jac_map
+            if neg
+                J[:,pc] = [-imag(G[:,gc]); real(G[:,gc])]  # ∂/∂(imM0)
+            else
+                J[:,pc] = [real(G[:,gc]); imag(G[:,gc])]
+            end
+        end
         return J
     end
 

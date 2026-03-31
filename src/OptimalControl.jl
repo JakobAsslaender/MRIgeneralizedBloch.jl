@@ -16,22 +16,23 @@ Calculate the Cramer-Rao bound of a pulse sequence along with the derivatives wr
 - `R1f::Real`: Longitudinal relaxation rate of the semi-solid pool in 1/seconds
 - `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
-- `grad_list::Tuple{<:grad_param}`: Tuple that specifies the gradients that are calculated; the vector elements can either be any subset/order of `grad_list=(grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
-- `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters. The first entry always refers to the CRB of M0, followed by the values defined in `grad_list` in the order defined therein. Hence, the vector `weights` has to have one more entry than `grad_list`
+- `grad_list::Tuple{<:grad_param}`: Tuple that specifies the gradients that are calculated; any subset/order of `(grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`. Including `grad_M0()` is recommended to account for the equilibrium magnetization in the CRB.
+- `weights::transpose(Vector{Real})`: Row vector of weights applied to the Cramer-Rao bounds (CRB) of the individual parameters, matching `grad_list` in order and length.
 
 # Optional Keyword Arguments:
 - `grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)]`: Different types of gradient moments of each TR are possible (`:balanced`, `:crusher`, `:spoiler_dual`, `:spoiler_prepulse`). `:balanced` simulates a TR with all gradient moments nulled. `:crusher` assumes equivalent (non-zero) gradient moments before and simulates the refocussing path of the extended phase graph. `:spoiler_prepulse` nulls all transverse magnetization before the RF pulse, emulating an idealized FLASH. `:spoiler_dual` nulls all transverse magnetization before and after the RF pulse.
 
 # Examples
 ```jldoctest
-julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(range(pi/2, π, 100), range(100e-6, 400e-6, 100), 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 4, 10e-6, precompute_R2sl(), [grad_m0s(), grad_R2f()], transpose([0, 1, 1]))
-(7.036532949438835e17, [-3.390796354537386e15, -1.9839673463682364e16, 1.9478009146395284e16, -1.8267985259974836e16, 1.6854024503161112e16, -1.564870176592121e16, 1.3903706541983584e16, -1.2606082554973334e16, 1.1194927161388668e16, -9.539757823647384e15  …  2.5718054915661044e16, -8.337218806299867e16, 4.778792906164447e16, -8.836386285134571e16, 7.1006544616540664e16, -9.901490876727578e16, 9.339003931389179e16, -1.1880577663606485e17, 1.1196316998153437e17, -1.526589221445061e17], [-6.260353922953729e19, -3.1566204597354915e20, 2.8346374467477307e20, -2.8268175999840482e20, 2.331816059339016e20, -2.376712332529386e20, 1.816604170405834e20, -1.9023039511824227e20, 1.3663891126875767e20, -1.4586637093661966e20  …  3.0242994279981213e20, -5.942607397341693e20, 4.384537591620554e20, -6.72590448103838e20, 5.776809344770309e20, -7.977977759334612e20, 7.085448466252249e20, -9.913215504590694e20, 8.145557315154696e20, -1.2823732424849773e21])
+julia> CRB, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(range(pi/2, π, 100), range(100e-6, 400e-6, 100), 3.5e-3, 0, 1, 0.15, 0.5, 15, 30, 4, 10e-6, precompute_R2sl(), [grad_M0(), grad_m0s(), grad_R2f()], transpose([0, 1, 1]));
 
 ```
 c.f. [Optimal Control](@ref)
 """
 function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
     nSeq = size(ω1, 2)
+
+    @assert length(weights) == length(grad_list) "weights must have the same length as grad_list"
 
     E = Vector{Matrix{SMatrix{11,11,Float64}}}(undef, nSeq)
     dEdω1 = similar(E)
@@ -171,7 +172,6 @@ function propagate_magnetization(Q, E)
     return Y
 end
 
-# the commented line in this function are required for the adjoint state to be correct; but since these entries are not used for the OCT algorithm, we skip calculating them.
 function calculate_adjoint_state(d, Q, E)
     P = similar(E, Array{Float64})
     λ = @view P[end, :]
@@ -181,93 +181,65 @@ function calculate_adjoint_state(d, Q, E)
     end
 
     for t = size(E, 1)-1:-1:1
-        λ[1] = transpose(E[t+1, 1]) * λ[1]
-        λ[1] += d(t, 1)
-        for g = 2:size(E, 2)
-            λ[g] = transpose(E[t+1, g][6:10, :]) * λ[g][6:10]
-            λ[1][1:5] .+= λ[g][1:5]
-            # λ[1][end]  += λ[g][end]
-            λ[g] .+= d(t, g)
+        for g ∈ axes(E, 2)
+            λ[g] = transpose(E[t+1, g]) * λ[g]
+            λ[g] += d(t, g)
         end
     end
 
-    # for g = 2:length(grad_list)
-    #     λ[g][1:5] .= λ[1][1:5]
-    #     λ[g][end]  = λ[1][end]
-    # end
-
-    P[end, 1] = inv(transpose(Q[1])) * λ[1]
-    for g = 2:size(E, 2)
-        λ[g] = inv(transpose(Q[g]))[:, 6:10] * λ[g][6:10]
-        λ[1][1:5] .+= λ[g][1:5]
-        # P[end,1][end]  += P[end,g][end]
+    for g ∈ axes(E, 2)
+        P[end, g] = inv(transpose(Q[g])) * λ[g]
     end
 
-    # step 5: propagate adjoint state
     for t ∈ size(E, 1):-1:2
         for g ∈ axes(E, 2)
             _E = E[mod(t, size(E, 1))+1, g]
-            if g == 1
-                P[t-1, g] = transpose(_E) * P[t, g]
-            else
-                P[t-1, g] = transpose(_E[6:10, :]) * P[t, g][6:10]
-                P[t-1, 1][1:5] .+= P[t-1, g][1:5]
-                P[t-1, 1][end] += P[t-1, g][end]
-            end
+            P[t-1, g] = transpose(_E) * P[t, g]
             P[t-1, g] .+= d(t, g)
         end
-
-        # for g = 2:length(grad_list)
-        #     P[t - 1,g][1:5] .= P[t - 1,1][1:5]
-        #     P[t - 1,g][end]  = P[t - 1,1][end]
-        # end
     end
     return P
 end
 
 function dCRBdm(Y, w)
-    N_grad = size(Y[1], 2) # w/o M0
+    N_grad = size(Y[1], 2)
 
-    F = zeros(ComplexF64, N_grad + 1, N_grad + 1)
-    for iSeq ∈ eachindex(Y), g2 ∈ 0:N_grad, g1 ∈ 0:N_grad, t ∈ axes(Y[iSeq], 1)
-        s1 = g1 == 0 ? Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2] : Y[iSeq][t, g1][6] - 1im * Y[iSeq][t, g1][7]
-        s2 = g2 == 0 ? Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2] : Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
-        F[g1+1, g2+1] += s1 * s2
+    F = zeros(ComplexF64, N_grad, N_grad)
+    for iSeq ∈ eachindex(Y), g2 ∈ 1:N_grad, g1 ∈ 1:N_grad, t ∈ axes(Y[iSeq], 1)
+        s1 = Y[iSeq][t, g1][6] - 1im * Y[iSeq][t, g1][7]
+        s2 = Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
+        F[g1, g2] += s1 * s2
     end
     Fi = inv(F)
-    CRB = w * real.(diag(Fi))
+    CRB = dot(w, real.(diag(Fi)))
 
-    _dCRBdx = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
-    _dCRBdy = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdx = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2)) for Yi ∈ Y]
+    _dCRBdy = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2)) for Yi ∈ Y]
     dFdy = similar(F)
     tmp = similar(F)
-    for iSeq ∈ eachindex(Y), g1 ∈ 0:N_grad, t ∈ axes(Y[iSeq], 1)
+    for iSeq ∈ eachindex(Y), g1 ∈ 1:N_grad, t ∈ axes(Y[iSeq], 1)
         # derivative wrt. x
         dFdy .= 0
-        dFdy[g1+1, 1] = Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2]
-        dFdy[1, g1+1] = Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2]
-        for g2 ∈ axes(Y[iSeq], 2)
-            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
-            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][6] - 1im * Y[iSeq][t, g2][7]
+        for g2 ∈ 1:N_grad
+            dFdy[g1, g2] = Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
+            dFdy[g2, g1] = Y[iSeq][t, g2][6] - 1im * Y[iSeq][t, g2][7]
         end
-        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        dFdy[g1, g1] = 2 * real(dFdy[g1, g1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdx[iSeq][t, g1+1] = real.(w * diag(dFdy))
+        _dCRBdx[iSeq][t, g1] = real(dot(w, diag(dFdy)))
 
         # derivative wrt. y
         dFdy .= 0
-        dFdy[g1+1, 1] = Y[iSeq][t, 1][2] - 1im * Y[iSeq][t, 1][1]
-        dFdy[1, g1+1] = Y[iSeq][t, 1][2] + 1im * Y[iSeq][t, 1][1]
-        for g2 ∈ axes(Y[iSeq], 2)
-            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][7] - 1im * Y[iSeq][t, g2][6]
-            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][7] + 1im * Y[iSeq][t, g2][6]
+        for g2 ∈ 1:N_grad
+            dFdy[g1, g2] = Y[iSeq][t, g2][7] - 1im * Y[iSeq][t, g2][6]
+            dFdy[g2, g1] = Y[iSeq][t, g2][7] + 1im * Y[iSeq][t, g2][6]
         end
-        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        dFdy[g1, g1] = 2 * real(dFdy[g1, g1])
         mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdy[iSeq][t, g1+1] = real.(w * diag(dFdy))
+        _dCRBdy[iSeq][t, g1] = real(dot(w, diag(dFdy)))
     end
 
-    d = [(t, g) -> @SVector [_dCRBdx[iSeq][t, 1], _dCRBdy[iSeq][t, 1], 0, 0, 0, _dCRBdx[iSeq][t, g+1], _dCRBdy[iSeq][t, g+1], 0, 0, 0, 0] for iSeq ∈ eachindex(_dCRBdx)]
+    d = [(t, g) -> @SVector [0, 0, 0, 0, 0, _dCRBdx[iSeq][t, g], _dCRBdy[iSeq][t, g], 0, 0, 0, 0] for iSeq ∈ eachindex(_dCRBdx)]
 
     return CRB, d
 end
@@ -278,17 +250,8 @@ function calculate_gradient_inner_product(P, Y, E, dEdω1, dEdTRF)
 
     for g ∈ axes(Y, 2), t ∈ axes(Y, 1)
         tm1 = mod1(t - 1, size(Y, 1))
-        if g == 1
-            grad_ω1[t] -= transpose(P[tm1, g]) * (dEdω1[t, g] * Y[tm1, g])
-            grad_TRF[t] -= transpose(P[tm1, g]) * (dEdTRF[t, g] * Y[tm1, g])
-        else
-            a = dEdω1[t, g] * Y[tm1, g]
-            b = dEdTRF[t, g] * Y[tm1, g]
-            @inbounds for i = 6:10
-                grad_ω1[t] -= P[tm1, g][i] * a[i]
-                grad_TRF[t] -= P[tm1, g][i] * b[i]
-            end
-        end
+        grad_ω1[t]  -= transpose(P[tm1, g]) * (dEdω1[t, g]  * Y[tm1, g])
+        grad_TRF[t] -= transpose(P[tm1, g]) * (dEdTRF[t, g] * Y[tm1, g])
     end
     return grad_ω1, grad_TRF
 end

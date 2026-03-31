@@ -27,7 +27,7 @@ T2s = 12e-6 # s
 ω0 = 100 # rad/s
 B1 = 0.9 # in units of B1_nominal
 
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
+s, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
 qM = fit_gBloch(vec(s), α, TRF, TR; R2slT, grad_moment)
 
 @test qM.M0  ≈ 1   rtol = 1e-3
@@ -59,7 +59,7 @@ qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment)
 
 ## test fit with apparent R1a
 R1a = 1.0 # 1/s
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_moment)
+s, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_moment)
 qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R2slT, grad_moment)
 
 @test qM.R1f ≈ qM.R1s
