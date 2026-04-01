@@ -63,7 +63,8 @@ qM.ω0 # rad/s
 qM.B1 # 1/B1_nominal
 
 # We can also simulate the signal with the fitted parameters
-s_fitted, _ = calculatesignal_linearapprox(α, TRF, TR, qM.ω0, qM.B1, qM.M0, qM.m0s, qM.R1f, qM.R2f, qM.Rex, qM.R1s, qM.T2s, R2slT; grad_moment)
+s_fitted, _ = calculatesignal_linearapprox(α, TRF, TR, qM.ω0, qM.B1, 1, qM.m0s, qM.R1f, qM.R2f, qM.Rex, qM.R1s, qM.T2s, R2slT; grad_moment)
+s_fitted .*= qM.M0 # multiply with complex M0
 
 # and compare it to the noisy data:
 p = plot(xlabel="t (s)", ylabel="signal (normalized)", legend=:topleft)

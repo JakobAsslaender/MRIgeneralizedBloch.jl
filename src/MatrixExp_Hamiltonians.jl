@@ -1,6 +1,6 @@
 ##
 """
-    hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s[, dR2sdT2s, dR2sdB1, grad_type])
+    hamiltonian_linear(ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R2s[, dR2sdT2s, dR2sdB1, grad_type])
 
 Calculate the hamiltonian of the linear approximation of the generalized Bloch model.
 
@@ -12,6 +12,7 @@ If a gradient is supplied, it returns a 11x11 (static) matrix with the dimension
 - `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
 - `ω0::Real`: Larmor (or off-resonance) frequency in rad/s (rotation about the z-axis)
 - `T::Real`: Time in seconds; this can, e.g., be the RF-pulse duration, or the time of free precession with `ω1=0`
+- `M0::Real`: Equilibrium magnetization (proton density) scaling factor
 - `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
@@ -48,9 +49,11 @@ julia> R1s = 6.5;
 
 julia> R2s = 1e5;
 
-julia> m0 = [0, 0, 1-m0s, 0, m0s, 1];
+julia> M0 = 1;
 
-julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)) * m0
+julia> m0 = [0, 0, M0*(1-m0s), 0, M0*m0s, 1];
+
+julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R2s)) * m0
 6-element StaticArraysCore.SVector{6, Float64} with indices SOneTo(6):
   0.0010647535813058293
   0.0
@@ -60,20 +63,20 @@ julia> (xf, yf, zf, xs, zs, _) = exp(hamiltonian_linear(ω1, B1, ω0, T, m0s, R1
   1.0
 ```
 """
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)
+function hamiltonian_linear(ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R2s)
     m0f = 1 - m0s
     H = @SMatrix [
-             -R2f   -ω0          B1 * ω1         0                0         0;
-               ω0  -R2f                0         0                0         0;
-         -B1 * ω1     0 -R1f - Rex * m0s         0        Rex * m0f R1f * m0f;
-                0     0                0      -R2s          B1 * ω1         0;
-                0     0        Rex * m0s  -B1 * ω1 -R1s - Rex * m0f R1s * m0s;
-                0     0                0         0                0         0]
+             -R2f   -ω0          B1 * ω1         0                0              0;
+               ω0  -R2f                0         0                0              0;
+         -B1 * ω1     0 -R1f - Rex * m0s         0        Rex * m0f R1f * M0 * m0f;
+                0     0                0      -R2s          B1 * ω1              0;
+                0     0        Rex * m0s  -B1 * ω1 -R1s - Rex * m0f R1s * M0 * m0s;
+                0     0                0         0                0              0]
     return H * T
 end
 
-function hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s, _, _, _)
-    return hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s)
+function hamiltonian_linear(ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R2s, _, _, _)
+    return hamiltonian_linear(ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R2s)
 end
 
 function propagator_linear_crushed_pulse(ω1, T, B1, R2s, _, _, _)

@@ -8,7 +8,7 @@ Calculate the signal or magnetization evolution with the linear approximation of
 
 The simulation assumes a sequence of rectangular RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
 
-Always returns a tuple `(signal, gradients)` where `signal` is a vector scaled by `M0` and `gradients` is a matrix with one column per entry in `grad_list`, or `nothing` if no gradients are requested.
+Always returns a tuple `(signal, gradients)` where `signal` is a vector scaled by `M0` and `gradients` is a matrix with one column per entry in `grad_list`, or `nothing` if no gradients are requested. `M0` must be real-valued; for complex-valued M0 (e.g. to account for receive coil phase), simulate with `M0=1` and multiply the complex M0 afterward.
 
 # Arguments
 - `α::Vector{Real}`: Array of flip angles in radians
@@ -16,7 +16,7 @@ Always returns a tuple `(signal, gradients)` where `signal` is a vector scaled b
 - `TR::Real`: Repetition time in seconds
 - `ω0::Real`: Off-resonance frequency in rad/s
 - `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
-- `M0::Number`: Equilibrium magnetization (proton density) scaling factor applied to the signal
+- `M0::Real`: Equilibrium magnetization (proton density) scaling factor
 - `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
@@ -26,7 +26,7 @@ Always returns a tuple `(signal, gradients)` where `signal` is a vector scaled b
 - `R2slT::NTuple{3, Function}`: Tuple of three functions: R2sl(TRF, ω1, B1, T2s), dR2sldB1(TRF, ω1, B1, T2s), and R2sldT2s(TRF, ω1, B1, T2s). Can be generated with [`precompute_R2sl`](@ref)
 
 # Optional Arguments:
-- `grad_list=nothing`: Tuple that specifies the gradients that are calculated; the default `nothing` means no gradient, or pass any subset/order of `grad_list=(grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`. The gradient wrt. equilibrium magnetization `grad_M0()` returns the unscaled signal.
+- `grad_list=nothing`: Tuple that specifies the gradients that are calculated; the default `nothing` means no gradient, or pass any subset/order of `grad_list=(grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`.
 - `rfphase_increment=π::Real`: Increment of the RF phase between consecutive pulses. The default value `π`, together with ``ω0=0`` corresponds to the on-resonance condition.
 - `m0=:periodic`: With the default keyword `:periodic`, the signal and their derivatives are calculated assuming ``m(0) = -m(T)``, where `T` is the duration of the RF-train. With the keyword :thermal, the magnetization ``m(0)`` is initialized with thermal equilibrium `[xf, yf, zf, xs, zs] = [0, 0, 1-m0s, 0, m0s]`, followed by a α[1]/2 - TR/2 prep pulse; and with the keyword `:IR`, this initialization is followed an inversion pulse of duration `TRF[1]`, (set `α[1]=π`) and a α[2]/2 - TR/2 prep pulse.
 - `preppulse=false`: if `true`, a `α/2 - TR/2` preparation is applied. In the case of `m0=:IR`, it is applied after the inversion pulse based on `α[2]`, otherwise it is based on `α[1]`
@@ -56,7 +56,7 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, R
     return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list, rfphase_increment, m0, preppulse, output, grad_moment)
 end
 
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal, grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal, grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
     if isnothing(grad_list) || isempty(grad_list)
         grad_list = (nothing,)
     end
@@ -81,12 +81,12 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, R
         gradients = nothing
     end
 
-    # Set up initial magnetization
+    # Set up initial magnetization (scaled by M0)
     if m0 == :thermal || m0 == :IR
         if calculate_gradients
-            _m0 = @SVector [0, 0, 1 - m0s, 0, m0s, 0, 0, 0, 0, 0, 1]
+            _m0 = @SVector [0, 0, M0 * (1 - m0s), 0, M0 * m0s, 0, 0, 0, 0, 0, 1]
         else
-            _m0 = @SVector [0, 0, 1 - m0s, 0, m0s, 1]
+            _m0 = @SVector [0, 0, M0 * (1 - m0s), 0, M0 * m0s, 1]
         end
     elseif isa(m0, AbstractVector)
         if calculate_gradients
@@ -100,14 +100,14 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, R
 
     for j in eachindex(grad_list)
         if m0 == :periodic
-            m = antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_list[j], rfphase_increment, grad_moment)
+            m = antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_list[j], rfphase_increment, grad_moment)
         elseif m0 == :thermal || isa(m0, AbstractVector)
             m = _m0
         elseif m0 == :IR
             # this implements the π - spoiler - TR preparation
             u_ip = propagator_linear_crushed_pulse(ω1[1], TRF[1], B1, R2s[1], dR2sdT2s[1], dR2sdB1[1], grad_list[j])
             m = u_ip * _m0
-            u_fp = exp(hamiltonian_linear(0, B1, ω0, TR, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad_list[j]))
+            u_fp = exp(hamiltonian_linear(0, B1, ω0, TR, M0, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad_list[j]))
             u_fp = xs_destructor(u_fp) * u_fp
 
             m = u_fp * m
@@ -116,23 +116,12 @@ function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, R
         # this implements the α[1]/2 - TR/2 preparation (TR/2 is implemented in propagate_magnetization_linear!)
         if preppulse
             k = (m0 == :IR) ? 2 : 1
-            u_pr = exp(hamiltonian_linear(ω1[k] / 2, B1, ω0, TRF[k], m0s, R1f, R2f, Rex, R1s, R2s[k], dR2sdT2s[k], dR2sdB1[k], grad_list[j])) # R2sl is actually wrong for the prep pulse
+            u_pr = exp(hamiltonian_linear(ω1[k] / 2, B1, ω0, TRF[k], M0, m0s, R1f, R2f, Rex, R1s, R2s[k], dR2sdT2s[k], dR2sdB1[k], grad_list[j])) # R2sl is actually wrong for the prep pulse
             m = u_pr * m
         end
 
         Gj = calculate_gradients ? (@view gradients[:, j]) : nothing
-        propagate_magnetization_linear!(signal, Gj, m, ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_list[j], rfphase_increment, grad_moment)
-    end
-
-    # Apply M0 scaling
-    signal .*= M0
-    if calculate_gradients
-        for j in eachindex(grad_list)
-            if !isa(grad_list[j], grad_M0)
-                gradients[:, j] .*= M0    # ∂(M0 * s)/∂θ = M0 * ∂s/∂θ
-            end
-            # grad_M0: ∂(M0 * s)/∂M0 = s₀ (already the unscaled signal from the Hamiltonian)
-        end
+        propagate_magnetization_linear!(signal, Gj, m, ω1, B1, ω0, TRF, TR, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_list[j], rfphase_increment, grad_moment)
     end
 
     return signal, gradients
@@ -141,34 +130,34 @@ end
 ############################################################################
 # helper functions
 ############################################################################
-function evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
+function evolution_matrix_linear(ω1, B1, ω0, TRF, TR, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
     u_rot = z_rotation_propagator(rfphase_increment, grad)
 
     # put prep pulse at the end (this defines m as the magnetization at the first TE after the inversion pulse)
-    u_fp, u_pl = pulse_propagators(ω1[1], B1, ω0, TRF[1], TR, m0s, R1f, R2f, Rex, R1s, R2s[1], dR2sdT2s[1], dR2sdB1[1], grad, grad_moment[1])
+    u_fp, u_pl = pulse_propagators(ω1[1], B1, ω0, TRF[1], TR, M0, m0s, R1f, R2f, Rex, R1s, R2s[1], dR2sdT2s[1], dR2sdB1[1], grad, grad_moment[1])
     A = u_fp * u_pl * u_rot * u_fp
 
     for i = length(ω1):-1:2
-        u_fp, u_pl = pulse_propagators(ω1[i], B1, ω0, TRF[i], TR, m0s, R1f, R2f, Rex, R1s, R2s[i], dR2sdT2s[i], dR2sdB1[i], grad, grad_moment[i])
+        u_fp, u_pl = pulse_propagators(ω1[i], B1, ω0, TRF[i], TR, M0, m0s, R1f, R2f, Rex, R1s, R2s[i], dR2sdT2s[i], dR2sdB1[i], grad, grad_moment[i])
 
         A = A * u_fp * u_pl * u_rot * u_fp
     end
     return A
 end
 
-function antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
-    A = evolution_matrix_linear(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
+function antiperiodic_boundary_conditions_linear(ω1, B1, ω0, TRF, TR, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
+    A = evolution_matrix_linear(ω1, B1, ω0, TRF, TR, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
 
     Q = A - A0(A)
     m = Q \ C(A)
     return m
 end
 
-function propagate_magnetization_linear!(S, G, m, ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
+function propagate_magnetization_linear!(S, G, m, ω1, B1, ω0, TRF, TR, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, rfphase_increment, grad_moment)
     u_rot = z_rotation_propagator(rfphase_increment, grad)
     ms_setindex!(S, G, m, 1)
     for i = 2:length(ω1)
-        u_fp, u_pl = pulse_propagators(ω1[i], B1, ω0, TRF[i], TR, m0s, R1f, R2f, Rex, R1s, R2s[i], dR2sdT2s[i], dR2sdB1[i], grad, grad_moment[i])
+        u_fp, u_pl = pulse_propagators(ω1[i], B1, ω0, TRF[i], TR, M0, m0s, R1f, R2f, Rex, R1s, R2s[i], dR2sdT2s[i], dR2sdB1[i], grad, grad_moment[i])
 
         m = u_fp * (u_pl * (u_rot * (u_fp * m)))
         ms_setindex!(S, G, m, i)
@@ -176,23 +165,23 @@ function propagate_magnetization_linear!(S, G, m, ω1, B1, ω0, TRF, TR, m0s, R1
     return S
 end
 
-function pulse_propagators(ω1, B1, ω0, TRF, TR, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, grad_moment)
+function pulse_propagators(ω1, B1, ω0, TRF, TR, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad, grad_moment)
     if grad_moment == :balanced # balance all moments
-        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, M0, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
         u_fp = xs_destructor(u_fp) * u_fp
-        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
     elseif grad_moment == :spoiler_prepulse # destroy transverse magnetization before the RF pulse
-        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, M0, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
         u_fp = xs_destructor(u_fp) * u_fp
-        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
         u_pl = u_pl * xy_destructor(u_pl)
     elseif grad_moment == :spoiler_dual # destroy transverse magnetization before and after RF pulse
-        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, M0, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
         u_fp = xs_destructor(u_fp) * u_fp
-        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad))
         u_pl = xy_destructor(u_pl) * u_pl * xy_destructor(u_pl)
     elseif grad_moment == :crusher # refocus the transverse magnetization that existed before the RF pulse, but crush the FID path of this pulse
-        u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, M0, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
         u_fp = xs_destructor(u_fp) * u_fp
         u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1, R2s, dR2sdT2s, dR2sdB1, grad)
     else

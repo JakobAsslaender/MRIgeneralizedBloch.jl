@@ -131,10 +131,10 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
         m = zeros(ComplexF64,size(α[1],1),length(α))
         Threads.@threads for i ∈ eachindex(α)
-            m[:,i], _ = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i])
+            m[:,i], _ = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i])
         end
 
-        m = u' * vec(m)
+        m = M0 .* (u' * vec(m))
         F[1:end÷2]     .= real.(m)
         F[end÷2+1:end] .= imag.(m)
         return F
@@ -145,17 +145,20 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
         grad_all_arr = zeros(ComplexF64, size(α[1],1), length(α), length(grad_list))
         Threads.@threads for i ∈ eachindex(α)
-            _, g = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=grad_moment[i])
+            _, g = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=grad_moment[i])
             grad_all_arr[:,i,:] = g
         end
 
         G = u' * reshape(grad_all_arr, :, length(grad_list))
 
         for (pc, gc, neg) ∈ jac_map
+            # grad_M0 gives ∂s/∂M0 = s at M0=1, which is ∂(M0*s)/∂(reM0) = s
+            # other grads need M0 scaling: ∂(M0*s)/∂θ = M0 * ∂s/∂θ
+            g = isa(grad_list[gc], grad_M0) ? G[:,gc] : M0 .* G[:,gc]
             if neg
-                J[:,pc] = [-imag(G[:,gc]); real(G[:,gc])]  # ∂/∂(imM0)
+                J[:,pc] = [-imag(g); real(g)]  # ∂/∂(imM0)
             else
-                J[:,pc] = [real(G[:,gc]); imag(G[:,gc])]
+                J[:,pc] = [real(g); imag(g)]
             end
         end
         return J

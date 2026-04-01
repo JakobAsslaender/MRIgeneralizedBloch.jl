@@ -84,11 +84,11 @@ function calculate_propagators_ω1(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
 end
 
 function calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, dH, cache, grad_moment)
-    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, m0s, R1f, R2f, Rex, R1s, 0.0, 0.0, 0.0, grad)
+    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, 1.0, m0s, R1f, R2f, Rex, R1s, 0.0, 0.0, 0.0, grad)
     ux = grad_moment == :spoiler_dual ? xy_destructor(H_fp) : xs_destructor(H_fp)
     u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
 
-    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, m0s, R1f, R2f, Rex, R1s,
+    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, 1.0, m0s, R1f, R2f, Rex, R1s,
         R2slT[1](TRF, ω1 * TRF, B1, T2s),
         R2slT[2](TRF, ω1 * TRF, B1, T2s),
         R2slT[3](TRF, ω1 * TRF, B1, T2s),
@@ -132,7 +132,7 @@ function calculte_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0
 end
 
 function calculate_crushed_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad, u_rot, _, _)
-    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
+    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, 1.0, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
     u_fp = xs_destructor(u_fp) * u_fp
     u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1,
         R2slT[1](TRF, ω1 * TRF, B1, T2s),

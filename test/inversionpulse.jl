@@ -15,8 +15,8 @@ function simulate_inversion_pulse(M0, ωz, B1, T, m0s, R1f, R2f, Rex, R1s, R2sl)
 
     M  = zeros(6)
     for i in eachindex(Δ)
-        Rz = exp(hamiltonian_linear(0, 1, Δ[i], 1, 0, 0, 0, 0, 0, 0)) # spoiler
-        Ry = exp(hamiltonian_linear(π / T, B1, ωz, T, m0s, R1f, R2f, Rex, R1s, R2sl))
+        Rz = exp(hamiltonian_linear(0, 1, Δ[i], 1, 1, 0, 0, 0, 0, 0, 0)) # spoiler
+        Ry = exp(hamiltonian_linear(π / T, B1, ωz, T, 1, m0s, R1f, R2f, Rex, R1s, R2sl))
         M += Rz * (Ry * (Rz * M0))
     end
     M /= length(Δ)
@@ -39,7 +39,7 @@ R1s = 1e-6
 
 for i = 1:10
     local B1 = 1 + randn() / 4
-    u_fp = exp(hamiltonian_linear(0, B1, ωz, T / 2, m0s, R1f, R2f, Rex, R1s, R2sl))
+    u_fp = exp(hamiltonian_linear(0, B1, ωz, T / 2, 1, m0s, R1f, R2f, Rex, R1s, R2sl))
     UE = u_fp * propagator_linear_crushed_pulse(π / T, T, B1, R2sl, nothing, nothing, nothing) * u_rot * u_fp
 
     M0 = SVector(1 - m0s, 0, 0, 0, m0s, 1)
@@ -69,7 +69,7 @@ R1s = 2
 rtolmax = 1e-2
 for i = 1:10
     local B1 = 1 + randn() / 4
-    u_fp = exp(hamiltonian_linear(0, B1, ωz, T / 2, m0s, R1f, R2f, Rex, R1s, R2sl))
+    u_fp = exp(hamiltonian_linear(0, B1, ωz, T / 2, 1, m0s, R1f, R2f, Rex, R1s, R2sl))
     UE = u_fp * propagator_linear_crushed_pulse(π / T, T, B1, R2sl, nothing, nothing, nothing) * u_rot * u_fp
 
     M0 = SVector(1 - m0s, 0, 0, 0, m0s, 1)

@@ -14,7 +14,7 @@ f_R2s(T2s, B1, ω1, TRF) = R2s
 @register_derivative f_R2s(T2s, B1, ω1, TRF) 1 SConst(dR2sdT2s)
 @register_derivative f_R2s(T2s, B1, ω1, TRF) 2 SConst(dR2sdB1)
 
-H = hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, f_R2s(T2s, B1, ω1, TRF))
+H = hamiltonian_linear(ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, f_R2s(T2s, B1, ω1, TRF))
 Z = zeros(Int, size(H))
 
 ## #########################################################################################
@@ -22,16 +22,10 @@ Z = zeros(Int, size(H))
 ############################################################################################
 fs_str = ""
 for p ∈ [M0, m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
-    if isequal(p, M0)
-        # Scale the last column by M0; SMatrix is immutable so we rebuild
-        _H = hcat(H[:, 1:end-1], H[:, end] .* M0)
-    else
-        _H = H
-    end
     if isequal(p, R1a)
-        Ḣ = expand_derivatives.(Differential(R1f).(_H) .+ Differential(R1s).(_H))
+        Ḣ = expand_derivatives.(Differential(R1f).(H) .+ Differential(R1s).(H))
     else
-        Ḣ = expand_derivatives.(Differential(p).(_H))
+        Ḣ = expand_derivatives.(Differential(p).(H))
     end
 
     dHdp = vcat(
@@ -42,7 +36,7 @@ for p ∈ [M0, m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
 
     dHdp = substitute(dHdp, Dict([f_R2s(T2s, B1, ω1, TRF) => R2s]))
 
-    f_expr = build_function(dHdp, ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type;
+    f_expr = build_function(dHdp, ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type;
         force_SA=true,
     )
 
