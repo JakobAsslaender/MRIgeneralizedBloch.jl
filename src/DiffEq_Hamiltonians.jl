@@ -282,6 +282,14 @@ end
 #   p::Tuple{...,Nothing,...}            — free precession (no-op for T2s/B1)
 #   p::Tuple{Real,...,Real,Real}         — Graham's model (scalar ω1, T2s-specific saturation)
 #########################################################################
+function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_M0)
+    ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
+
+    ∂m∂t[3] += (1 - m0s) * R1f
+    ∂m∂t[4] += m0s * R1s
+    return ∂m∂t
+end
+
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_m0s)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
@@ -293,22 +301,22 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_R1a)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[3] += - m[3] + (1 - m0s)
-    ∂m∂t[4] += - m[4] + m0s
+    ∂m∂t[3] += - m[3] + (1 - m0s) * m[5]
+    ∂m∂t[4] += - m[4] + m0s * m[5]
     return ∂m∂t
 end
 
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_R1f)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[3] += - m[3] + (1 - m0s)
+    ∂m∂t[3] += - m[3] + (1 - m0s) * m[5]
     return ∂m∂t
 end
 
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_R1s)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[4] += - m[4] + m0s
+    ∂m∂t[4] += - m[4] + m0s * m[5]
     return ∂m∂t
 end
 

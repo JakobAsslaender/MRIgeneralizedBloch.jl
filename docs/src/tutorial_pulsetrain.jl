@@ -48,7 +48,7 @@ plot!(p, t, imag.(vec(s_linapp)), label="Im(s); lin. approx.")
 #md Main.HTMLPlot(p) #hide
 
 # For comparison, we can also solve the full integro-differential equation (IDE) for each RF pulse, which is more accurate, but much slower:
-s_ide = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s)
+s_ide, _ = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s)
 
 plot!(p, t, real.(vec(s_ide)), label="Re(s); IDE")
 plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE")
