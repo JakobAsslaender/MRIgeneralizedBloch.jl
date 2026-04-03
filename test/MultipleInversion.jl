@@ -22,17 +22,18 @@ R1s = 2
 R2f = 1 / 65e-3
 T2s = 10e-6
 Rex = 20
+M0 = 0.85
 
 grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
 w = transpose([1/m0s;1/R1f;1/R2f;0;0;0;0;0;0].^2)
 
 
-sig1, grad1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
+sig1, grad1 = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
 
 ## ########################################################################
 # simulate two loops
 ###########################################################################
-sig2, grad2 = calculatesignal_linearapprox([α; α], [TRF; TRF], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=[grad_moment; grad_moment])
+sig2, grad2 = calculatesignal_linearapprox([α; α], [TRF; TRF], TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=[grad_moment; grad_moment])
 
 @test sig1 ≈ sig2[1:end÷2]
 @test sig1 ≈ sig2[end÷2+1:end]
@@ -42,7 +43,7 @@ sig2, grad2 = calculatesignal_linearapprox([α; α], [TRF; TRF], TR, ω0, B1, 1,
 ## ########################################################################
 # simulate tree loops
 ###########################################################################
-sig3, grad3 = calculatesignal_linearapprox([α; α; α], [TRF; TRF; TRF], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=[grad_moment; grad_moment; grad_moment])
+sig3, grad3 = calculatesignal_linearapprox([α; α; α], [TRF; TRF; TRF], TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=[grad_moment; grad_moment; grad_moment])
 
 @test sig1 ≈ sig3[1:end÷3]
 @test sig1 ≈ sig3[end÷3+1:2*end÷3]

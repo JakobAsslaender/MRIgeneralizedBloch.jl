@@ -73,7 +73,7 @@ f_ω1 = (t) -> sinc(2(NSideLobes+1) * t/TRF - (NSideLobes+1)) * α / (sinint((NS
 @test quadgk(f_ω1, 0, TRF)[1] ≈ α
 
 ## Solve org. Bloch for isolated semi-solid spin pool
-function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{5,Any}, t)
+apply_hamiltonian_bloch! = function (∂m∂t, m, p, t)
     ω1, B1, ω0, R1s, T2s = p
     R2s = 1/T2s
 
@@ -103,7 +103,7 @@ end
 
 
 ## Solve org. Bloch-McConnell for coupled pool system
-function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{9,Any}, t)
+apply_hamiltonian_bloch! = function (∂m∂t, m, p, t)
     f_ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s = p
     ω1 = f_ω1(t)
     R2s = 1/T2s

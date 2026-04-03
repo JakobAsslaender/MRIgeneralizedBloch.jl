@@ -79,7 +79,7 @@ f_φ  = (t) -> -μ * log(cosh(β * t) - sinh(β*t) * tanh(β*TRF/2))
 
 
 ## Cf. org. Bloch and gBloch for isolated free spin pool
-function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{5,Any}, t)
+apply_hamiltonian_bloch! = function (∂m∂t, m, p, t)
     ω1, B1, ω0, R1s, T2s = p
     R2s = 1/T2s
 
@@ -129,7 +129,7 @@ mt_gBloch = (t) -> (x_gBloch(t) + 1im * y_gBloch(t)) * exp(1im * (f_φ(t)))
 
 
 ## Solve org. Bloch-McConnell for coupled pool system
-function apply_hamiltonian_bloch!(∂m∂t, m, p::NTuple{9,Any}, t)
+apply_hamiltonian_bloch! = function (∂m∂t, m, p, t)
     f_ω1, B1, f_ω0, m0s, R1f, R2f, Rex, R1s, T2s = p
     ω1 = f_ω1(t)
     ω0 = f_ω0(t)

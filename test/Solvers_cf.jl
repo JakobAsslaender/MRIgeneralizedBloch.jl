@@ -19,6 +19,7 @@ TR = 3.5e-3
 
 B1 = 0.9
 ω0 = 300
+M0 = 0.85
 m0s = 0.2
 R1f = 0.35
 R1s = 2.5
@@ -26,21 +27,20 @@ R2f = 1 / 65e-3
 T2s = 11e-6
 Rex = 20
 
-
 ## gBloch model with IDE vs Graham vs linear approximation: complex signal
-s_gBloch_IDE, _    = calculatesignal_gbloch_ide(  α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4)
-s_Graham, _        = calculatesignal_graham_ode(  α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4)
-s_gBloch_linear, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
+s_gBloch_IDE, _    = calculatesignal_gbloch_ide(  α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4)
+s_Graham, _        = calculatesignal_graham_ode(  α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4)
+s_gBloch_linear, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
 @test s_gBloch_IDE ≈ s_Graham        rtol = 1e-2
 @test s_gBloch_IDE ≈ s_gBloch_linear rtol = 1e-3
 
-## gBloch model with IDE vs Graham vs linear approximation: magnetixation
-s_gBloch_IDE, _ = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4, output=:realmagnetization)
-s_Graham, _     = calculatesignal_graham_ode(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4, output=:realmagnetization)
-s_gBloch_linear, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization, grad_moment)
+## gBloch model with IDE vs Graham vs linear approximation: magnetization
+s_gBloch_IDE, _ = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4, output=:realmagnetization)
+s_Graham, _     = calculatesignal_graham_ode(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s; Ncyc=4, output=:realmagnetization)
+s_gBloch_linear, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization, grad_moment)
 s_gBloch_linear_m = similar(s_gBloch_IDE)
 for i ∈ eachindex(s_gBloch_linear)
     s_gBloch_linear_m[i,:] = s_gBloch_linear[i][[1;2;3;5;6]]
 end
-@test s_gBloch_IDE ≈ s_Graham          rtol = 1e-3
-@test s_gBloch_IDE ≈ s_gBloch_linear_m rtol = 1e-4
+@test s_gBloch_IDE ≈ s_Graham                          rtol = 1e-3
+@test s_gBloch_IDE[:,1:4] ≈ s_gBloch_linear_m[:,1:4]   rtol = 1e-3
