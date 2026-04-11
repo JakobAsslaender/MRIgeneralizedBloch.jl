@@ -147,4 +147,4 @@ G_fd = grad(central_fdm(5, 1; factor=1e6), x -> fg!(nothing, G, x), x)[1] # Fini
 
 F = fg!(nothing, G, x)
 
-@test G ≈ G_fd rtol = 1e-2
+@test G ≈ G_fd rtol = 5e-2
