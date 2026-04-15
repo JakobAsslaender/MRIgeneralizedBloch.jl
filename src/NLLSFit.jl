@@ -71,6 +71,28 @@ function fit_gBloch(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i ==
     fit_gBloch(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, R1a, u, fit_apparentR1, show_trace, maxIter, R2slT)
 end
 
+function fit_gBloch(data, α::AbstractMatrix{T}, TRF::AbstractMatrix{T}, TR; grad_moment::AbstractMatrix{Symbol} = repeat([i == 1 ? :spoiler_dual : :balanced for i ∈ axes(α,1)], 1, size(α,2)),
+    reM0 = (-Inf,   1,  Inf),
+    imM0 = (-Inf,   0,  Inf),
+    m0s  = (   0, 0.2,    1),
+    R1f  = (   0, 0.3,  Inf),
+    R2f  = (   0,  15,  Inf),
+    Rex  = (   0,  20,  Inf),
+    R1s  = (   0,   3,  Inf),
+    T2s  = (8e-6,1e-5,12e-6),
+    ω0   = (-Inf,   0,  Inf),
+    B1   = (   0,   1,  1.5),
+    R1a  = (   0, 0.7,  Inf),
+    u=1,
+    fit_apparentR1=false,
+    show_trace=false,
+    maxIter=100,
+    R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
+    ) where T <: Real
+
+    fit_gBloch(data, [α[:,j] for j in axes(α,2)], [TRF[:,j] for j in axes(TRF,2)], TR; grad_moment=[grad_moment[:,j] for j in axes(grad_moment,2)], reM0, imM0, m0s, R1f, R2f, Rex, R1s, T2s, ω0, B1, R1a, u, fit_apparentR1, show_trace, maxIter, R2slT)
+end
+
 function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill([i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α[1])], length(α)),
     reM0 = (-Inf,   1,  Inf),
     imM0 = (-Inf,   0,  Inf),
@@ -87,7 +109,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
     fit_apparentR1=false,
     show_trace=false,
     maxIter=100,
-    R2slT = precompute_R2sl(TRF_min=minimum(minimum.(TRF)), TRF_max=maximum(maximum.(TRF)), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(maximum.(α ./ TRF)), B1_max=maximum(B1)),
+    R2slT = precompute_R2sl(TRF_min=minimum(minimum.(TRF)), TRF_max=maximum(maximum.(TRF)), T2s_min=minimum(T2s), T2s_max=maximum(T2s), ω1_max=maximum(i -> maximum(α[i] ./ TRF[i]), eachindex(α)), B1_max=maximum(B1)),
     ) where T <: Real
 
     grad_list = MRIgeneralizedBloch.grad_param[]
