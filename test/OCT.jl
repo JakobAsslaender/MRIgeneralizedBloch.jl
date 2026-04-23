@@ -34,13 +34,13 @@ grad_list = (grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s
 w = transpose([1, 1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0] .^ 2)
 
 ## ########################################################################
-# Test dCRBdm
+# Test crb_and_derivatives
 ###########################################################################
 # m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list)
 # CRB_fd, d_fd = dCRBdm_fd(m,w)
 
 # m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, output=:realmagnetization)
-# CRB, d = MRIgeneralizedBloch.dCRBdm(m, w)
+# CRB, d = MRIgeneralizedBloch.crb_and_derivatives(m, w)
 
 # _dCRBdm    = [d(t,r,g)[i]    for t=1:size(m,1), r=1:size(m,2), g=1:size(m,3), i ∈ 1:11]
 # _dCRBdm_fd = [d_fd(t,r,g)[i] for t=1:size(m,1), r=1:size(m,2), g=1:size(m,3), i ∈ 1:11]
@@ -51,10 +51,10 @@ w = transpose([1, 1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0] .^ 2)
 ## ########################################################################
 # Test OCT gradients: single loop
 ###########################################################################
-# CRB_gradient_OCT: analytical
+# crb_gradient: analytical
 
-_, _, _ = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w) # test default grad_moment
-F0, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+_, _, _ = crb_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w) # test default grad_moment
+F0, grad_ω1, grad_TRF = crb_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
 
 f_ω1 = _ω1 -> calc_CRB(_ω1, TRF, w, grad_moment)
 f_TRF = _TRF -> calc_CRB(ω1, _TRF, w, grad_moment)
@@ -75,7 +75,7 @@ TRF = hcat(TRF, TRF)
 grad_moment = hcat(grad_moment, grad_moment)
 
 ##
-F0, grad_ω1_2, grad_TRF_2 = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+F0, grad_ω1_2, grad_TRF_2 = crb_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
 grad_ω1_2 .*= 4
 grad_TRF_2 .*= 4
 
@@ -96,8 +96,8 @@ TRF_max=fill(400e-6, size(TRF))
 _ω1 = copy(ω1)
 _TRF = copy(TRF)
 
-x = MRIgeneralizedBloch.bound_ω1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TRF_max)
-ω1_b, TRF_b = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
+x = bound_omega1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+ω1_b, TRF_b = get_bounded_omega1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
 
 @test ω1_b ≈ _ω1
 @test TRF_b ≈ _TRF
@@ -115,8 +115,8 @@ TRF_max=fill(1, size(TRF))
 _ω1 = copy(ω1)
 _TRF = copy(TRF)
 
-x = MRIgeneralizedBloch.bound_ω1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TRF_max)
-ω1_b, TRF_b = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
+x = bound_omega1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+ω1_b, TRF_b = get_bounded_omega1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
 
 @test ω1_b ≈ ω1
 @test TRF_b ≈ TRF
@@ -129,16 +129,16 @@ x = MRIgeneralizedBloch.bound_ω1_TRF!(_ω1, _TRF; ω1_min, ω1_max, TRF_min, TR
 
 ##
 function fg!(F, G, x)
-    ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
+    ω1, TRF = get_bounded_omega1_TRF(x; NSeq=2, ω1_min, ω1_max, TRF_min, TRF_max)
 
-    F, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
+    F, grad_ω1, grad_TRF = crb_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, w; grad_moment)
     F = abs(F)
 
-    F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; grad_moment, λ=1e4)
-    F += MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e-3, Pmax=3e6, TR)
-    F += MRIgeneralizedBloch.TRF_TV!(grad_TRF, TRF; grad_moment, λ=1e3)
+    F += penalty_alpha_curvature!(grad_ω1, grad_TRF, ω1, TRF; grad_moment, λ=1e4)
+    F += penalty_RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e-3, Pmax=3e6, TR)
+    F += penalty_TRF_variation!(grad_TRF, TRF; grad_moment, λ=1e3)
 
-    MRIgeneralizedBloch.apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+    apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min, ω1_max, TRF_min, TRF_max)
     return F
 end
 

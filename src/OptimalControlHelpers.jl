@@ -2,7 +2,7 @@
 # Bounded ω1 and TRF
 ####################################################################
 """
-    ω1, TRF = get_bounded_ω1_TRF(x)
+    ω1, TRF = get_bounded_omega1_TRF(x)
 
 Transform a vector of length `2Npulses` with values in the range `[-Inf, Inf]` into two vectors of length `Npulses`, which describe the bounded controls `ω1` and `TRF`.
 
@@ -19,11 +19,11 @@ Transform a vector of length `2Npulses` with values in the range `[-Inf, Inf]` i
 ```jldoctest
 julia> x = repeat(range(-1000.0, 1000.0, 100), 2);
 
-julia> ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x)
+julia> ω1, TRF = get_bounded_omega1_TRF(x)
 ([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  …  6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586, 6283.185307179586], [0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001  …  0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005])
 ```
 """
-function get_bounded_ω1_TRF(x; NSeq=1, ω1_min=zeros(length(x) ÷ 2NSeq, NSeq), ω1_max=fill(2e3π, length(x) ÷ 2NSeq, NSeq), TRF_min=fill(100e-6, length(x) ÷ 2NSeq, NSeq), TRF_max=fill(500e-6, length(x) ÷ 2NSeq, NSeq))
+function get_bounded_omega1_TRF(x; NSeq=1, ω1_min=zeros(length(x) ÷ 2NSeq, NSeq), ω1_max=fill(2e3π, length(x) ÷ 2NSeq, NSeq), TRF_min=fill(100e-6, length(x) ÷ 2NSeq, NSeq), TRF_max=fill(500e-6, length(x) ÷ 2NSeq, NSeq))
     ω1  = @views  ω1_min .+ ( ω1_max .-  ω1_min) .* (1 .+ reshape(tanh.(x[1:end÷2]), :, NSeq)) ./ 2
     TRF = @views TRF_min .+ (TRF_max .- TRF_min) .* (1 .+ reshape(tanh.(x[end÷2+1:end]), :, NSeq)) ./ 2
 
@@ -37,7 +37,7 @@ end
 
 
 """
-    x = bound_ω1_TRF!(ω1, TRF; ω1_min=zeros(size(ω1)), ω1_max=fill(2e3π, size(ω1)), TRF_min=fill(100e-6, size(TRF)), TRF_max=fill(500e-6, size(TRF)))
+    x = bound_omega1_TRF!(ω1, TRF; ω1_min=zeros(size(ω1)), ω1_max=fill(2e3π, size(ω1)), TRF_min=fill(100e-6, size(TRF)), TRF_max=fill(500e-6, size(TRF)))
 
 Bound the controls `ω1` and `TRF` (over-written in place) and return a vector of length `2Npulses * NSeq` with values in the range `[-Inf, Inf]` that relate to the bounded `ω1` and `TRF` via the `tanh` function.
 
@@ -57,7 +57,7 @@ julia> ω1 = collect(range(0, 2000π, 100));
 
 julia> TRF = collect(range(100e-6, 500e-6, 100));
 
-julia> x = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF)
+julia> x = bound_omega1_TRF!(ω1, TRF)
 200-element Vector{Float64}:
  -Inf
   -2.2924837393352853
@@ -81,7 +81,7 @@ julia> x = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF)
   Inf
 ```
 """
-function bound_ω1_TRF!(ω1, TRF; ω1_min=zeros(size(ω1)), ω1_max=fill(2e3π, size(ω1)), TRF_min=fill(100e-6, size(TRF)), TRF_max=fill(500e-6, size(TRF)))
+function bound_omega1_TRF!(ω1, TRF; ω1_min=zeros(size(ω1)), ω1_max=fill(2e3π, size(ω1)), TRF_min=fill(100e-6, size(TRF)), TRF_max=fill(500e-6, size(TRF)))
     ω1 .= min.(ω1, ω1_max)
     ω1 .= max.(ω1, ω1_min)
 
@@ -112,7 +112,7 @@ end
 # Penalties on the flip angle α
 ####################################################################
 """
-    F = second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
+    F = penalty_alpha_curvature!(grad_ω1, grad_TRF, ω1, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
 
 Calculate second order penalty of variations of the flip angle α and adds in place to the gradients.
 
@@ -136,11 +136,11 @@ julia> grad_ω1 = similar(ω1);
 
 julia> grad_TRF = similar(ω1);
 
-julia> F = MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ = 1e-3)
+julia> F = penalty_alpha_curvature!(grad_ω1, grad_TRF, ω1, TRF; λ = 1e-3)
 0.005015194549476384
 ```
 """
-function second_order_α!(grad_ω1, grad_TRF, ω1, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
+function penalty_alpha_curvature!(grad_ω1, grad_TRF, ω1, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
     α = ω1 .* TRF
 
     F = 0
@@ -201,7 +201,7 @@ end
 # Penalty on TRF
 ####################################################################
 """
-    F = TRF_TV!(grad_TRF, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(TRF)])
+    F = penalty_TRF_variation!(grad_TRF, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(TRF)])
 
 Calculate the total variation penalty of `TRF` and add to `grad_TRF` in place.
 
@@ -219,11 +219,11 @@ julia> TRF = range(100e-6, 500e-6, 100);
 
 julia> grad_TRF = similar(TRF);
 
-julia> F = MRIgeneralizedBloch.TRF_TV!(grad_TRF, TRF; λ = 1e-3)
+julia> F = penalty_TRF_variation!(grad_TRF, TRF; λ = 1e-3)
 3.9595959595959597e-7
 ```
 """
-function TRF_TV!(grad_TRF, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(TRF)])
+function penalty_TRF_variation!(grad_TRF, TRF; λ=1, grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(TRF)])
     idx = grad_moment .== :balanced
 
     F = 0
@@ -250,7 +250,7 @@ end
 # SAR Penalty
 ####################################################################
 """
-    F = RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
+    F = penalty_RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
 
 Calculate RF power penalty and add the gradients in place.
 
@@ -275,11 +275,11 @@ julia> grad_ω1 = similar(ω1);
 
 julia> grad_TRF = similar(ω1);
 
-julia> F = MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, Pmax=3e6, TR=3.5e-3)
+julia> F = penalty_RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e3, Pmax=3e6, TR=3.5e-3)
 9.418321886730644e15
 ```
 """
-function RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
+function penalty_RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1, Pmax=3e6, TR=3.5e-3)
     Nα = size(ω1, 1)
 
     P(x) = x < 0 ? 0 : λ * x^2

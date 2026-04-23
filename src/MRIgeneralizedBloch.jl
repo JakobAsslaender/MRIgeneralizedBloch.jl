@@ -42,6 +42,10 @@ export calculatesignal_linearapprox
 export fit_gBloch
 export qMTmap
 
+export crb_gradient
+export bound_omega1_TRF!, get_bounded_omega1_TRF, apply_bounds_to_grad!
+export penalty_alpha_curvature!, penalty_RF_power!, penalty_TRF_variation!
+
 export grad_M0
 export grad_m0s
 export grad_R1a
