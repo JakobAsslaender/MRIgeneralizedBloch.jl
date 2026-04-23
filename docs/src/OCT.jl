@@ -126,7 +126,7 @@ p = plot(p1, p2, layout=(2, 1), legend=:none)
 #md Main.HTMLPlot(p) #hide
 
 # To further analyze the results, we can calculate and plot all magnetization components:
-m, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization)
+m, _ = simulate_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization)
 
 xf = [m[i][1] for i ∈ eachindex(m)]
 yf = [m[i][2] for i ∈ eachindex(m)]

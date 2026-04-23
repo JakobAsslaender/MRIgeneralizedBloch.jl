@@ -2,7 +2,7 @@
 # main call function
 ############################################################################
 """
-    calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=nothing, rfphase_increment=π, m0=:periodic, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)]])
+    simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT[; grad_list=nothing, rfphase_increment=π, m0=:periodic, output=:complexsignal, grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)]])
 
 Calculate the signal or magnetization evolution with the linear approximation of the generalized Bloch model assuming a super-Lorentzian lineshape.
 
@@ -37,7 +37,7 @@ Always returns a tuple `(signal, gradients)` where `signal` is a vector scaled b
 ```jldoctest
 julia> R2slT = precompute_R2sl();
 
-julia> s, g = calculatesignal_linearapprox(range(0, π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.1, 1, 15, 30, 6.5, 10e-6, R2slT);
+julia> s, g = simulate_linearapprox(range(0, π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.1, 1, 15, 30, 6.5, 10e-6, R2slT);
 
 julia> typeof(s)
 Vector{ComplexF64} (alias for Array{Complex{Float64}, 1})
@@ -49,14 +49,14 @@ julia> typeof(g)
 Nothing
 ```
 """
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal, grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+function simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal, grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
 
     R2s, dR2sdT2s, dR2sdB1 = evaluate_R2sl_vector(abs.(α), TRF, B1, T2s, R2slT, grad_list)
 
-    return calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list, rfphase_increment, m0, preppulse, output, grad_moment)
+    return simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list, rfphase_increment, m0, preppulse, output, grad_moment)
 end
 
-function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal, grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+function simulate_linearapprox(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1; grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal, grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
     if isnothing(grad_list) || isempty(grad_list)
         grad_list = (nothing,)
     end

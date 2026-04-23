@@ -6,7 +6,7 @@ using FiniteDifferences
 R2slT = precompute_R2sl()
 
 function calc_CRB(ω1, TRF, w, grad_moment)
-    _, gradients = calculatesignal_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
+    _, gradients = simulate_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
     F = real.(gradients' * gradients)
     return dot(w, diag(inv(F)))
 end
@@ -36,10 +36,10 @@ w = transpose([1, 1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0] .^ 2)
 ## ########################################################################
 # Test crb_and_derivatives
 ###########################################################################
-# m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list)
+# m = simulate_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list)
 # CRB_fd, d_fd = dCRBdm_fd(m,w)
 
-# m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, output=:realmagnetization)
+# m = simulate_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, output=:realmagnetization)
 # CRB, d = MRIgeneralizedBloch.crb_and_derivatives(m, w)
 
 # _dCRBdm    = [d(t,r,g)[i]    for t=1:size(m,1), r=1:size(m,2), g=1:size(m,3), i ∈ 1:11]

@@ -1,5 +1,5 @@
 """
-    calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list=nothing, Ncyc=2, output=:complexsignal])
+    simulate_gbloch_ide(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list=nothing, Ncyc=2, output=:complexsignal])
 
 Calculate the signal or magnetization evolution with the full generalized Bloch model assuming a super-Lorentzian lineshape (slow).
 
@@ -29,7 +29,7 @@ Always returns a tuple `(signal, gradients)` where `signal` is a vector (for `ou
 
 # Examples
 ```jldoctest
-julia> s, g = calculatesignal_gbloch_ide(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.2, 0.3, 15, 20, 2, 10e-6);
+julia> s, g = simulate_gbloch_ide(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.2, 0.3, 15, 20, 2, 10e-6);
 
 julia> typeof(s)
 Vector{ComplexF64} (alias for Array{Complex{Float64}, 1})
@@ -41,7 +41,7 @@ julia> typeof(g)
 Nothing
 ```
 """
-function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=nothing, Ncyc=2, output=:complexsignal, greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian))
+function simulate_gbloch_ide(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=nothing, Ncyc=2, output=:complexsignal, greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian))
     ω1 = α ./ TRF
 
     isnothing(grad_list) && (grad_list = ())
@@ -155,7 +155,7 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2
 end
 
 """
-    calculatesignal_graham_ode(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list=nothing, Ncyc=2, output=:complexsignal])
+    simulate_graham_ode(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list=nothing, Ncyc=2, output=:complexsignal])
 
 Calculate the signal or magnetization evolution with Graham's spectral model assuming a super-Lorentzian lineshape.
 
@@ -184,7 +184,7 @@ Optional:
 
 # Examples
 ```jldoctest
-julia> s, g = calculatesignal_graham_ode(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.2, 0.3, 15, 20, 2, 10e-6);
+julia> s, g = simulate_graham_ode(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.2, 0.3, 15, 20, 2, 10e-6);
 
 julia> typeof(s)
 Vector{ComplexF64} (alias for Array{Complex{Float64}, 1})
@@ -196,7 +196,7 @@ julia> typeof(g)
 Nothing
 ```
 """
-function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=nothing, Ncyc=2, output=:complexsignal)
+function simulate_graham_ode(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=nothing, Ncyc=2, output=:complexsignal)
     ω1 = α ./ TRF
 
     isnothing(grad_list) && (grad_list = ())

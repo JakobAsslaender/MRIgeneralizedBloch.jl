@@ -153,7 +153,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
         m = zeros(ComplexF64,size(α[1],1),length(α))
         Threads.@threads for i ∈ eachindex(α)
-            m[:,i], _ = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i])
+            m[:,i], _ = simulate_linearapprox(α[i], TRF[i], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment=grad_moment[i])
         end
 
         m = M0 .* (u' * vec(m))
@@ -167,7 +167,7 @@ function fit_gBloch(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; gra
 
         grad_all_arr = zeros(ComplexF64, size(α[1],1), length(α), length(grad_list))
         Threads.@threads for i ∈ eachindex(α)
-            _, g = calculatesignal_linearapprox(α[i], TRF[i], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=grad_moment[i])
+            _, g = simulate_linearapprox(α[i], TRF[i], TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment=grad_moment[i])
             grad_all_arr[:,i,:] = g
         end
 

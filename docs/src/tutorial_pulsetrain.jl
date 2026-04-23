@@ -40,7 +40,7 @@ B1 = 1;     # in units of B1_nominal
 R2slT = precompute_R2sl();
 
 # Now we have everything set up to calculate the signal:
-s_linapp, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
+s_linapp, _ = simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
 
 # By default, the output is a complex valued array where each element describes the transversal magnetization ``x^f + i y^f`` of the free spin pool in each ``T_\text{R}``. With ``ω_0 = 0``, however, the imaginary part of the signal vanishes:
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
@@ -49,7 +49,7 @@ plot!(p, t, imag.(vec(s_linapp)), label="Im(s); lin. approx.")
 #md Main.HTMLPlot(p) #hide
 
 # For comparison, we can also solve the full integro-differential equation (IDE) for each RF pulse, which is more accurate, but much slower:
-s_ide, _ = calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s)
+s_ide, _ = simulate_gbloch_ide(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s)
 
 plot!(p, t, real.(vec(s_ide)), label="Re(s); IDE")
 plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE")
@@ -61,7 +61,7 @@ plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE")
 # ## Real-valued magnetization vector
 # As an alternative to the complex-valued signal, we can also calculate the full magnetization vector ``(x^f, y^f, z^f, x^s, z^s, 1)`` by supplying the keyword argument `output=:realmagnetization`. Here, ``x``, ``y``, ``z`` denote the dimensions in space, the superscripts ``f`` and ``s`` denote the free and the semi-solid spin pool, respectively. We neglect the ``y^s`` component, assuming (without loss of generality) ωₓ = 0 and given that ``R_2^{s,l} \gg ω_0``.
 
-m_linapp, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT;
+m_linapp, _ = simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT;
     output=:realmagnetization, grad_moment)
 
 p = plot(xlabel="t (s)", ylabel="magnetization (normalized)"; legend=:topleft)
@@ -76,8 +76,8 @@ plot!(p, t, [m_linapp[i][5] for i ∈ axes(m_linapp,1)] ./      m0s , label="zˢ
 # The same interface can also be used to calculate the derivatives of the signal wrt. the biophysical parameters. One can specify any subset of derivatives in any order with a vector of identifier objects:
 grad_list = (grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
 
-# Calling the function `calculatesignal_linearapprox` with the keyword argument `grad_list` and this vector
-_, g_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment);
+# Calling the function `simulate_linearapprox` with the keyword argument `grad_list` and this vector
+_, g_linapp = simulate_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment);
 
 # returns the derivatives in the specified order:
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
@@ -99,11 +99,11 @@ plot!(p, t, real.(g_linapp[:,9] .* B1 ), label="Re(∂s/∂B₁ )*B₁ ")
 
 R1a = 1 # 1/s
 grad_list = (grad_M0(), grad_R1a())
-_, g_linapp = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_list, grad_moment)
+_, g_linapp = simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_list, grad_moment)
 
 p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
 plot!(p, t, real.(g_linapp[:,1] .* M0 ), label="Re(∂s/∂M₀)/M₀")
 plot!(p, t, real.(g_linapp[:,2] .* R1a), label="Re(∂s/∂R₁ᵃ)*R₁ᵃ")
 #md Main.HTMLPlot(p) #hide
 
-# Note that `R1a` appears here twice in the arguments of the `calculatesignal_linearapprox` in place of `R1f` and `R1s`.
+# Note that `R1a` appears here twice in the arguments of the `simulate_linearapprox` in place of `R1f` and `R1s`.

@@ -32,12 +32,12 @@ export dG_o_dT2s_x_T2s_gaussian
 export dG_o_dT2s_x_T2s_superlorentzian
 export interpolate_greens_function
 
-export calculatesignal_gbloch_ide
-export calculatesignal_graham_ode
+export simulate_gbloch_ide
+export simulate_graham_ode
 
 export precompute_R2sl
 export evaluate_R2sl_vector
-export calculatesignal_linearapprox
+export simulate_linearapprox
 
 export fit_gBloch
 export qMTmap
@@ -79,5 +79,6 @@ include("MatrixExp_Hamiltonian_Gradients.jl")
 include("NLLSFit.jl")
 include("OptimalControl.jl")
 include("OptimalControlHelpers.jl")
+include("Deprecated.jl")
 
 end
