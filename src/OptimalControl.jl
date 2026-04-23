@@ -204,39 +204,37 @@ end
 function dCRBdm(Y, w)
     N_grad = size(Y[1], 2)
 
-    F = zeros(ComplexF64, N_grad, N_grad)
+    F = zeros(Float64, N_grad, N_grad)
     for iSeq ∈ eachindex(Y), g2 ∈ 1:N_grad, g1 ∈ 1:N_grad, t ∈ axes(Y[iSeq], 1)
-        s1 = Y[iSeq][t, g1][6] - 1im * Y[iSeq][t, g1][7]
-        s2 = Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
-        F[g1, g2] += s1 * s2
-    end
+        F[g1, g2] += Y[iSeq][t, g1][6] * Y[iSeq][t, g2][6] + Y[iSeq][t, g1][7] * Y[iSeq][t, g2][7]
+            end
     Fi = inv(F)
-    CRB = dot(w, real.(diag(Fi)))
+    CRB = dot(w, diag(Fi))
 
     _dCRBdx = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2)) for Yi ∈ Y]
     _dCRBdy = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2)) for Yi ∈ Y]
-    dFdy = similar(F)
+    dFdm = similar(F)
     tmp = similar(F)
     for iSeq ∈ eachindex(Y), g1 ∈ 1:N_grad, t ∈ axes(Y[iSeq], 1)
-        # derivative wrt. x
-        dFdy .= 0
+        # derivative wrt. x (= Y[...][6])
+        dFdm .= 0
         for g2 ∈ 1:N_grad
-            dFdy[g1, g2] = Y[iSeq][t, g2][6] + 1im * Y[iSeq][t, g2][7]
-            dFdy[g2, g1] = Y[iSeq][t, g2][6] - 1im * Y[iSeq][t, g2][7]
+            dFdm[g1, g2] = Y[iSeq][t, g2][6]
+            dFdm[g2, g1] = Y[iSeq][t, g2][6]
         end
-        dFdy[g1, g1] = 2 * real(dFdy[g1, g1])
-        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdx[iSeq][t, g1] = real(dot(w, diag(dFdy)))
+        dFdm[g1, g1] = 2 * Y[iSeq][t, g1][6]
+        mul!(dFdm, Fi, mul!(tmp, dFdm, Fi))
+        _dCRBdx[iSeq][t, g1] = dot(w, diag(dFdm))
 
-        # derivative wrt. y
-        dFdy .= 0
+        # derivative wrt. y (= Y[...][7])
+        dFdm .= 0
         for g2 ∈ 1:N_grad
-            dFdy[g1, g2] = Y[iSeq][t, g2][7] - 1im * Y[iSeq][t, g2][6]
-            dFdy[g2, g1] = Y[iSeq][t, g2][7] + 1im * Y[iSeq][t, g2][6]
+            dFdm[g1, g2] = Y[iSeq][t, g2][7]
+            dFdm[g2, g1] = Y[iSeq][t, g2][7]
         end
-        dFdy[g1, g1] = 2 * real(dFdy[g1, g1])
-        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
-        _dCRBdy[iSeq][t, g1] = real(dot(w, diag(dFdy)))
+        dFdm[g1, g1] = 2 * Y[iSeq][t, g1][7]
+        mul!(dFdm, Fi, mul!(tmp, dFdm, Fi))
+        _dCRBdy[iSeq][t, g1] = dot(w, diag(dFdm))
     end
 
     d = [(t, g) -> @SVector [0, 0, 0, 0, 0, _dCRBdx[iSeq][t, g], _dCRBdy[iSeq][t, g], 0, 0, 0, 0] for iSeq ∈ eachindex(_dCRBdx)]

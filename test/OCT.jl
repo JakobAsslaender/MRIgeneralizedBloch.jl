@@ -7,7 +7,8 @@ R2slT = precompute_R2sl()
 
 function calc_CRB(ω1, TRF, w, grad_moment)
     _, gradients = calculatesignal_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
-    return real(dot(w, diag(inv(gradients' * gradients))))
+    F = real.(gradients' * gradients)
+    return dot(w, diag(inv(F)))
 end
 
 ##
