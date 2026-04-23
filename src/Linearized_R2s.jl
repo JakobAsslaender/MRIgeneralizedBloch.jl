@@ -1,4 +1,38 @@
 """
+    R2slInterpolants
+
+Struct holding interpolated R2sl and its partial derivatives. Returned by
+[`precompute_R2sl`](@ref). All fields are callable as `f(TRF, α, B1, T2s)`.
+
+# Fields
+- `R2sl`:          R2sl(TRF, α, B1, T2s)
+- `dR2sl_dT2s`:    ∂R2sl/∂T2s
+- `dR2sl_dB1`:     ∂R2sl/∂B1
+- `dR2sl_dω1`:     ∂R2sl/∂ω1
+- `dR2sl_dTRF`:    ∂R2sl/∂TRF
+- `d2R2sl_dT2s_dω1`:  ∂²R2sl/(∂T2s ∂ω1)
+- `d2R2sl_dB1_dω1`:   ∂²R2sl/(∂B1 ∂ω1)
+- `d2R2sl_dT2s_dTRF`: ∂²R2sl/(∂T2s ∂TRF)
+- `d2R2sl_dB1_dTRF`:  ∂²R2sl/(∂B1 ∂TRF)
+"""
+struct R2slInterpolants
+    R2sl::Function
+    dR2sl_dT2s::Function
+    dR2sl_dB1::Function
+    dR2sl_dω1::Function
+    dR2sl_dTRF::Function
+    d2R2sl_dT2s_dω1::Function
+    d2R2sl_dB1_dω1::Function
+    d2R2sl_dT2s_dTRF::Function
+    d2R2sl_dB1_dTRF::Function
+end
+
+# Support tuple-style indexing for backward compatibility
+Base.getindex(r::R2slInterpolants, i::Int) = getfield(r, i)
+Base.length(::R2slInterpolants) = 9
+Base.iterate(r::R2slInterpolants, state=1) = state > 9 ? nothing : (getfield(r, state), state + 1)
+
+"""
     precompute_R2sl([;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=21e-6, ω1_max=π/TRF_max, B1_max=1.4, greens=greens_superlorentzian])
 
 Pre-compute and interpolate the linearized `R2sl(TRF, α, B1, T2s)` and its derivatives `dR2sldB1(TRF, α, B1, T2s)`, `R2sldT2s(TRF, α, B1, T2s)` etc. in the range specified by the arguments.
@@ -101,27 +135,13 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
     dR2sldT2sTRF(TRF, α, B1, T2s) = -dfdτ(TRF / T2s, B1 * α * T2s / TRF) / T2s^3 - d2fdτ2(TRF / T2s, B1 * α * T2s / TRF) * TRF / T2s^4 - dfdτ(TRF / T2s, B1 * α * T2s / TRF) / T2s^3 + d2fdτdΩ(TRF / T2s, B1 * α * T2s / TRF) * B1 * α / TRF / T2s^2
     dR2sldB1dTRF(TRF, α, B1, T2s) = d2fdτdΩ(TRF / T2s, B1 * α * T2s / TRF) * α / TRF / T2s
 
-    return (R2sl, dR2sldT2s, dR2sldB1, dR2sldω1, dR2sldTRF, dR2sldT2sdω1, dR2sldB1dω1, dR2sldT2sTRF, dR2sldB1dTRF)
+    return R2slInterpolants(R2sl, dR2sldT2s, dR2sldB1, dR2sldω1, dR2sldTRF, dR2sldT2sdω1, dR2sldB1dω1, dR2sldT2sTRF, dR2sldB1dTRF)
 end
 
 
 function evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
-    _R2s = similar(α)
-    _dR2sdT2s = similar(α)
-    _dR2sdB1 = similar(α)
-
-    for i = 1:length(α)
-        _R2s[i] = R2slT[1](TRF[i], α[i], B1, T2s)
-    end
-    if !isnothing(grad_list) && any(isa.(grad_list, grad_T2s))
-        for i = 1:length(α)
-            _dR2sdT2s[i] = R2slT[2](TRF[i], α[i], B1, T2s)
-        end
-    end
-    if !isnothing(grad_list) && any(isa.(grad_list, grad_B1))
-        for i = 1:length(α)
-            _dR2sdB1[i] = R2slT[3](TRF[i], α[i], B1, T2s)
-        end
-    end
+    _R2s      = [R2slT.R2sl(TRF[i], α[i], B1, T2s) for i ∈ eachindex(α)]
+    _dR2sdT2s = !isnothing(grad_list) && any(isa.(grad_list, grad_T2s)) ? [R2slT.dR2sl_dT2s(TRF[i], α[i], B1, T2s) for i ∈ eachindex(α)] : similar(α)
+    _dR2sdB1  = !isnothing(grad_list) && any(isa.(grad_list, grad_B1 )) ? [R2slT.dR2sl_dB1(TRF[i], α[i], B1, T2s)  for i ∈ eachindex(α)] : similar(α)
     return (_R2s, _dR2sdT2s, _dR2sdB1)
 end

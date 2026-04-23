@@ -36,6 +36,7 @@ export simulate_gbloch_ide
 export simulate_graham_ode
 
 export precompute_R2sl
+export R2slInterpolants
 export evaluate_R2sl_vector
 export simulate_linearapprox
 

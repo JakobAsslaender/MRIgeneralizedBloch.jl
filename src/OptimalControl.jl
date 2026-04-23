@@ -153,16 +153,16 @@ function build_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1,
 
     # Pulse Hamiltonian (during RF)
     H_pulse = hamiltonian_linear(ω1, B1, ω0, 1, 1.0, m0s, R1f, R2f, Rex, R1s,
-        R2slT[1](TRF, ω1 * TRF, B1, T2s),
-        R2slT[2](TRF, ω1 * TRF, B1, T2s),
-        R2slT[3](TRF, ω1 * TRF, B1, T2s),
+        R2slT.R2sl(TRF, ω1 * TRF, B1, T2s),
+        R2slT.dR2sl_dT2s(TRF, ω1 * TRF, B1, T2s),
+        R2slT.dR2sl_dB1(TRF, ω1 * TRF, B1, T2s),
         grad)
 
     # --- Derivative wrt. ω₁ via augmented matrix exponential ---
     dHdω1 = d_hamiltonian_linear_dω1(B1, 1,
-        R2slT[4](TRF, ω1 * TRF, B1, T2s),
-        R2slT[6](TRF, ω1 * TRF, B1, T2s),
-        R2slT[7](TRF, ω1 * TRF, B1, T2s),
+        R2slT.dR2sl_dω1(TRF, ω1 * TRF, B1, T2s),
+        R2slT.d2R2sl_dT2s_dω1(TRF, ω1 * TRF, B1, T2s),
+        R2slT.d2R2sl_dB1_dω1(TRF, ω1 * TRF, B1, T2s),
         grad)
 
     # Augmented system: [H_pulse, 0; dH/dω₁, H_pulse] * TRF
@@ -180,9 +180,9 @@ function build_pulse_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1,
 
     # --- Derivative wrt. TRF via augmented matrix exponential ---
     dHdTRF = H_pulse + d_hamiltonian_linear_dTRF_add(TRF,
-        R2slT[5](TRF, ω1 * TRF, B1, T2s),
-        R2slT[8](TRF, ω1 * TRF, B1, T2s),
-        R2slT[9](TRF, ω1 * TRF, B1, T2s),
+        R2slT.dR2sl_dTRF(TRF, ω1 * TRF, B1, T2s),
+        R2slT.d2R2sl_dT2s_dTRF(TRF, ω1 * TRF, B1, T2s),
+        R2slT.d2R2sl_dB1_dTRF(TRF, ω1 * TRF, B1, T2s),
         grad)
     H_pulse *= TRF
     @views augmented_H[1:11, 1:11]   .= H_pulse
@@ -209,9 +209,9 @@ function build_crushed_propagator!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B
     prop_freeprec = exp(hamiltonian_linear(0, B1, ω0, TR / 2, 1.0, m0s, R1f, R2f, Rex, R1s, 0, 0, 0, grad))
     prop_freeprec = xs_destructor(prop_freeprec) * prop_freeprec
     prop_pulse = propagator_linear_crushed_pulse(ω1, TRF, B1,
-        R2slT[1](TRF, ω1 * TRF, B1, T2s),
-        R2slT[2](TRF, ω1 * TRF, B1, T2s),
-        R2slT[3](TRF, ω1 * TRF, B1, T2s),
+        R2slT.R2sl(TRF, ω1 * TRF, B1, T2s),
+        R2slT.dR2sl_dT2s(TRF, ω1 * TRF, B1, T2s),
+        R2slT.dR2sl_dB1(TRF, ω1 * TRF, B1, T2s),
         grad)
     E[t, g] = prop_freeprec * prop_pulse * prop_phasecycle * prop_freeprec
     dEdω1[t, g]  = @SMatrix zeros(11, 11)
