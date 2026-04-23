@@ -6,9 +6,8 @@ using FiniteDifferences
 R2slT = precompute_R2sl()
 
 function calc_CRB(ω1, TRF, w, grad_moment)
-    s = calculatesignal_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
-    s = reshape(s, size(s, 1) * size(s, 2), size(s, 3))
-    return real(w * diag(inv(s' * s)))
+    _, gradients = calculatesignal_linearapprox(ω1 .* TRF, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment)
+    return real(dot(w, diag(inv(gradients' * gradients))))
 end
 
 ##
@@ -30,8 +29,8 @@ R2f = 1 / 65e-3
 T2s = 10e-6
 Rex = 20
 
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
-w = transpose([1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0, 0] .^ 2)
+grad_list = (grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())
+w = transpose([1, 1 / m0s, 1 / R1f, 1 / R2f, 0, 0, 0, 0, 0] .^ 2)
 
 ## ########################################################################
 # Test dCRBdm
@@ -143,7 +142,8 @@ function fg!(F, G, x)
 end
 
 G = similar(x)
-G_fd = grad(central_fdm(5, 1; factor=1e6), x -> fg!(nothing, G, x), x)[1] # Finite Difference gradient: TRF
+_G = similar(x)
+G_fd = grad(central_fdm(5, 1), x -> fg!(nothing, _G, x), x)[1] # Finite Difference gradient
 
 F = fg!(nothing, G, x)
 

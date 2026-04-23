@@ -1,9 +1,11 @@
 """
-    calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list, Ncyc=2, output=:complexsignal])
+    calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list=nothing, Ncyc=2, output=:complexsignal])
 
 Calculate the signal or magnetization evolution with the full generalized Bloch model assuming a super-Lorentzian lineshape (slow).
 
 The simulation assumes a sequence of rectangular RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
+
+Always returns a tuple `(signal, gradients)` where `signal` is a vector (for `output=:complexsignal`) or matrix (for `output=:realmagnetization`) scaled by `M0`, and `gradients` is a matrix with one column per entry in `grad_list`, or `nothing` if no gradients are requested. `M0` must be real-valued; for complex-valued M0 (e.g. to account for receive coil phase), simulate with `M0=1` and multiply the complex M0 afterward.
 
 # Arguments
 - `α::Vector{Real}`: Array of flip angles in radians
@@ -11,6 +13,7 @@ The simulation assumes a sequence of rectangular RF-pulses with varying flip ang
 - `TR::Real`: Repetition time in seconds
 - `ω0::Real`: Off-resonance frequency in rad/s
 - `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
+- `M0::Real`: Equilibrium magnetization (proton density) scaling factor
 - `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
@@ -19,62 +22,29 @@ The simulation assumes a sequence of rectangular RF-pulses with varying flip ang
 - `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 
 # Optional Arguments:
-- `grad_list=()`: Tuple that specifies the gradients that are calculated; the Tuple can either be empty `()` for no gradient, or contain any subset/order of `grad_list=(grad_m0s(), grad_R1s(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `grad_list=nothing`: Tuple that specifies the gradients that are calculated; the default `nothing` means no gradient, or pass any subset/order of `grad_list=(grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`.
 - `Ncyc=2`: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time.
 - `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
 - `greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian)`: Tuple of a Greens function `G(κ) = G((t-τ)/T2s)` and its partial derivative wrt. T2s, multiplied by T2s `∂G((t-τ)/T2s)/∂T2s * T2s`. This package supplies the three Greens functions `greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian)` (default), `greens=(greens_lorentzian, dG_o_dT2s_x_T2s_lorentzian)`, and `greens=(greens_gaussian, dG_o_dT2s_x_T2s_gaussian)`
 
 # Examples
 ```jldoctest
-julia> calculatesignal_gbloch_ide(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6)
-100×1 Matrix{ComplexF64}:
-   -0.00796631644531007 + 0.0im
-  0.0012590590420428205 - 0.0im
-  -0.006088855588249691 + 0.0im
-  0.0024187389409131197 - 0.0im
-  -0.004361339394954331 + 0.0im
-  0.0034891358222515524 - 0.0im
-  -0.002763371060585636 + 0.0im
-   0.004483217942995653 - 0.0im
- -0.0012812573504847615 + 0.0im
-   0.005408854036525993 - 0.0im
-                        ⋮
-   0.017760808273166815 - 0.0im
-   0.017576118975513207 + 0.0im
-    0.01781395094611691 - 0.0im
-    0.01764385633643116 + 0.0im
-   0.017863575856212212 - 0.0im
-   0.017706926034820686 + 0.0im
-   0.017909914934264932 - 0.0im
-   0.017765650374172208 + 0.0im
-    0.01795318489372217 - 0.0im
+julia> s, g = calculatesignal_gbloch_ide(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.2, 0.3, 15, 20, 2, 10e-6);
 
-julia> calculatesignal_gbloch_ide(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6; grad_list=(grad_R1f(), grad_T2s()), output=:realmagnetization)
-100×15 transpose(::Matrix{Float64}) with eltype Float64:
- -0.00796627   0.0   0.000637773  …   0.0   -10.8757  -335.26   0.0
-  0.00125903  -0.0  -0.00700671      -0.0   125.882   -326.977  0.0
- -0.00608882   0.0   0.00185086       0.0   -30.4187  -317.56   0.0
-  0.00241873  -0.0  -0.00520622      -0.0    96.1776  -309.906  0.0
- -0.00436133   0.0   0.00296471       0.0   -47.5803  -302.948  0.0
-  0.003489    -0.0  -0.00354518   …  -0.0    69.5148  -298.697  0.0
- -0.00276366   0.0   0.00399588       0.0   -62.8453  -294.886  0.0
-  0.00448273  -0.0  -0.00200673      -0.0    45.3179  -292.783  0.0
- -0.00128187   0.0   0.00495478       0.0   -76.6573  -290.321  0.0
-  0.00540814  -0.0  -0.000578836     -0.0    23.1756  -289.245  0.0
-  ⋮                               ⋱
-  0.0177563   -0.0   0.0175372       -0.0  -290.779   -349.855  0.0
-  0.0175716    0.0   0.0177845        0.0  -295.347   -350.002  0.0
-  0.0178094   -0.0   0.0176073       -0.0  -292.44    -350.163  0.0
-  0.0176393    0.0   0.0178359        0.0  -296.668   -350.3    0.0
-  0.017859    -0.0   0.0176727    …  -0.0  -294.001   -350.451  0.0
-  0.0177024    0.0   0.0178838        0.0  -297.914   -350.579  0.0
-  0.0179053   -0.0   0.0177335       -0.0  -295.467   -350.72   0.0
-  0.0177611    0.0   0.0179286        0.0  -299.09    -350.84   0.0
-  0.0179486   -0.0   0.0177902       -0.0  -296.845   -350.972  0.0
+julia> typeof(s)
+Vector{ComplexF64} (alias for Array{Complex{Float64}, 1})
+
+julia> size(s)
+(100,)
+
+julia> typeof(g)
+Nothing
 ```
 """
-function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=(), Ncyc=2, output=:complexsignal, greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian))
+function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=nothing, Ncyc=2, output=:complexsignal, greens=(greens_superlorentzian, dG_o_dT2s_x_T2s_superlorentzian))
     ω1 = α ./ TRF
+
+    isnothing(grad_list) && (grad_list = ())
 
     # Define G(τ) and its derivative as ApproxFuns
     G = interpolate_greens_function(greens[1], 0, maximum(TRF) / T2s)
@@ -89,9 +59,17 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
     alg = MethodOfSteps(DP8())
     s = zeros(N_s, length(TRF))
     m0 = zeros(N_s)
-    m0[3] = (1 - m0s)
-    m0[4] = m0s
-    m0[5] = 1
+    m0[3] = M0 * (1 - m0s)
+    m0[4] = M0 * m0s
+    m0[5] = M0
+    # initialize grad_M0 partial derivatives of initial conditions
+    for i in eachindex(grad_list)
+        if isa(grad_list[i], grad_M0)
+            m0[5i + 3] = (1 - m0s)
+            m0[5i + 4] = m0s
+            m0[5i + 5] = 1
+        end
+    end
     mfun(p, t; idxs=nothing) = typeof(idxs) <: Number ? m0[idxs] : m0
 
     # prep pulse
@@ -142,7 +120,7 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
             TE = TR / 2 - TRF[ip] / 2
             sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rex, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
             if sol.t[2] / TE - 1 > 1e-10
-                throw(DimensionMismatch("sol.t[2] is not equal to TE"))
+                throw(ErrorException("sol.t[2] is not equal to TE"))
             end
             s[:,ip] = sol.u[2]
             s[1:5:end,ip] .*= (-1)^(ip + ic)
@@ -150,19 +128,40 @@ function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
             m0 = sol.u[end]
         end
     end
+
     s = transpose(s)
     if output == :complexsignal
-        s = s[:, 1:5:end] + 1im * s[:, 2:5:end]
+        signal = s[:, 1] + 1im * s[:, 2]
+        if isempty(grad_list)
+            gradients = nothing
+        else
+            gradients = Array{ComplexF64}(undef, length(TRF), length(grad_list))
+            for j in eachindex(grad_list)
+                gradients[:, j] = s[:, 5j+1] + 1im * s[:, 5j+2]
+            end
+        end
+    else
+        signal = s[:, 1:5]
+        if isempty(grad_list)
+            gradients = nothing
+        else
+            gradients = Array{Float64}(undef, length(TRF), 5 * length(grad_list))
+            for j in eachindex(grad_list)
+                gradients[:, (5(j-1)+1):(5j)] = s[:, (5j+1):(5j+5)]
+            end
+        end
     end
-    return s
+    return signal, gradients
 end
 
 """
-    calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list, Ncyc=2, output=:complexsignal])
+    calculatesignal_graham_ode(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s[; grad_list=nothing, Ncyc=2, output=:complexsignal])
 
 Calculate the signal or magnetization evolution with Graham's spectral model assuming a super-Lorentzian lineshape.
 
 The simulation assumes a sequence of rectangular RF-pulses with varying flip angles α and RF-pulse durations TRF, but a fixed repetition time TR. Further, it assumes balanced gradient moments.
+
+Always returns a tuple `(signal, gradients)` where `signal` is a vector (for `output=:complexsignal`) or matrix (for `output=:realmagnetization`) scaled by `M0`, and `gradients` is a matrix with one column per entry in `grad_list`, or `nothing` if no gradients are requested. `M0` must be real-valued; for complex-valued M0 (e.g. to account for receive coil phase), simulate with `M0=1` and multiply the complex M0 afterward.
 
 # Arguments
 - `α::Vector{Real}`: Array of flip angles in radians
@@ -170,6 +169,7 @@ The simulation assumes a sequence of rectangular RF-pulses with varying flip ang
 - `TR::Real`: Repetition time in seconds
 - `ω0::Real`: Off-resonance frequency in rad/s
 - `B1::Real`: Normalized transmit B1 field, i.e. B1 = 1 corresponds to a well-calibrated B1 field
+- `M0::Real`: Equilibrium magnetization (proton density) scaling factor
 - `m0s::Real`: Fractional size of the semi-solid pool; should be in range of 0 to 1
 - `R1f::Real`: Longitudinal relaxation rate of the free pool in 1/seconds
 - `R2f::Real`: Transversal relaxation rate of the free pool in 1/seconds
@@ -178,69 +178,44 @@ The simulation assumes a sequence of rectangular RF-pulses with varying flip ang
 - `T2s::Real`: Transversal relaxation time of the semi-solid pool in seconds
 
 Optional:
-- `grad_list=()`: Tuple that specifies the gradients that are calculated; the Tuple can either be empty `()` for no gradient, or contain any subset/order of `grad_list=(grad_m0s(), grad_R1s(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`
+- `grad_list=nothing`: Tuple that specifies the gradients that are calculated; the default `nothing` means no gradient, or pass any subset/order of `grad_list=(grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1())`; the derivative wrt. to apparent `R1a = R1f = R1s` can be calculated with `grad_R1a()`.
 - `Ncyc=2`: The magnetization is initialized with thermal equilibrium and then performed Ncyc times and only the last cycle is stored. The default value is usually a good approximation for antiperiodic boundary conditions. Increase the number for higher precision at the cost of computation time.
 - `output=:complexsignal`: The default keywords triggers the function to output a complex-valued signal (`xf + 1im yf`); the keyword `output=:realmagnetization` triggers an output of the entire (real valued) vector `[xf, yf, zf, xs, zs]`
 
 # Examples
 ```jldoctest
-julia> calculatesignal_graham_ode(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6)
-100×1 Matrix{ComplexF64}:
-   -0.00807345119183248 + 0.0im
-  0.0012686432905036744 - 0.0im
-  -0.006178694437249284 + 0.0im
-   0.002435865817889169 - 0.0im
-  -0.004437476277210456 + 0.0im
-  0.0035164646498608665 - 0.0im
-   -0.00283155425205221 + 0.0im
-   0.004523902250398101 - 0.0im
- -0.0013422299483480582 + 0.0im
-   0.005454562034859056 - 0.0im
-                        ⋮
-    0.01814822204095453 - 0.0im
-   0.017957696614147724 + 0.0im
-   0.018204860876662482 - 0.0im
-   0.018029363102617015 + 0.0im
-    0.01825782014256331 - 0.0im
-   0.018096168912466293 + 0.0im
-   0.018307337729978102 - 0.0im
-   0.018158444501175805 + 0.0im
-    0.01835363622965507 - 0.0im
+julia> s, g = calculatesignal_graham_ode(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 1, 0.2, 0.3, 15, 20, 2, 10e-6);
 
-julia> calculatesignal_graham_ode(fill(π/2, 100), fill(5e-4, 100), 4e-3, 0, 1, 0.2, 0.3, 15, 20, 2, 10e-6; grad_list=(grad_R1f(), grad_T2s()), output=:realmagnetization)
-100×15 transpose(::Matrix{Float64}) with eltype Float64:
- -0.0080756    0.0   0.000643162  …   0.0   -10.4986  -323.634  0.0
-  0.00126867  -0.0  -0.00710692      -0.0   123.078   -316.358  0.0
- -0.00618067   0.0   0.00186482       0.0   -29.4458  -307.862  0.0
-  0.00243634  -0.0  -0.0052899       -0.0    94.1692  -300.821  0.0
- -0.00443746   0.0   0.00298646       0.0   -46.1422  -294.116  0.0
-  0.00351386  -0.0  -0.00361718   …  -0.0    68.262   -289.421  0.0
- -0.00282882   0.0   0.00402793       0.0   -61.0236  -285.242  0.0
-  0.00451808  -0.0  -0.00206741      -0.0    44.7888  -282.867  0.0
- -0.00133608   0.0   0.00499316       0.0   -74.4075  -280.79   0.0
-  0.00544896  -0.0  -0.00062663      -0.0    23.2536  -280.148  0.0
-  ⋮                               ⋱
-  0.0181755   -0.0   0.0179431       -0.0  -285.071   -337.48   0.0
-  0.0179911    0.0   0.0181963        0.0  -289.591   -337.634  0.0
-  0.0182343   -0.0   0.018019        -0.0  -286.777   -337.804  0.0
-  0.0180645    0.0   0.0182531        0.0  -290.964   -337.948  0.0
-  0.0182893   -0.0   0.0180898    …  -0.0  -288.383   -338.106  0.0
-  0.0181329    0.0   0.0183062        0.0  -292.261   -338.241  0.0
-  0.0183407   -0.0   0.0181559       -0.0  -289.895   -338.39   0.0
-  0.0181968    0.0   0.0183559        0.0  -293.488   -338.516  0.0
-  0.0183888   -0.0   0.0182175       -0.0  -291.318   -338.656  0.0
+julia> typeof(s)
+Vector{ComplexF64} (alias for Array{Complex{Float64}, 1})
+
+julia> size(s)
+(100,)
+
+julia> typeof(g)
+Nothing
 ```
 """
-function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=(), Ncyc=2, output=:complexsignal)
+function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex, R1s, T2s; grad_list=nothing, Ncyc=2, output=:complexsignal)
     ω1 = α ./ TRF
+
+    isnothing(grad_list) && (grad_list = ())
 
     # initialization and memory allocation
     N_s = 5 * (1 + length(grad_list))
     s = zeros(N_s, length(TRF))
     m0 = zeros(N_s)
-    m0[3] = (1 - m0s)
-    m0[4] = m0s
-    m0[5] = 1.0
+    m0[3] = M0 * (1 - m0s)
+    m0[4] = M0 * m0s
+    m0[5] = M0
+    # initialize grad_M0 partial derivatives of initial conditions
+    for i in eachindex(grad_list)
+        if isa(grad_list[i], grad_M0)
+            m0[5i + 3] = (1 - m0s)
+            m0[5i + 4] = m0s
+            m0[5i + 5] = 1
+        end
+    end
 
     # prep pulse
     sol = solve(ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0, (0.0, TRF[2]), (-ω1[2] / 2, B1, ω0, TRF[2], m0s, R1f, R2f, Rex, R1s, T2s, grad_list)), Tsit5(), save_everystep=false)
@@ -290,7 +265,7 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
             TE = TR / 2 - TRF[ip] / 2
             sol = solve(ODEProblem(apply_hamiltonian_freeprecession!, m0, (0.0, T_FP), (ω0, m0s, R1f, R2f, Rex, R1s, grad_list)), Tsit5(), save_everystep=false, saveat=TE)
             if sol.t[2] / TE - 1 > 1e-10
-                throw(DimensionMismatch("sol.t[2] is not equal to TE"))
+                throw(ErrorException("sol.t[2] is not equal to TE"))
             end
             s[:,ip] = sol.u[2]
             s[1:5:end,ip] .*= (-1)^(ip + ic)
@@ -298,9 +273,28 @@ function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1
             m0 = sol.u[end]
         end
     end
+
     s = transpose(s)
     if output == :complexsignal
-        s = s[:, 1:5:end] + 1im * s[:, 2:5:end]
+        signal = s[:, 1] + 1im * s[:, 2]
+        if isempty(grad_list)
+            gradients = nothing
+        else
+            gradients = Array{ComplexF64}(undef, length(TRF), length(grad_list))
+            for j in eachindex(grad_list)
+                gradients[:, j] = s[:, 5j+1] + 1im * s[:, 5j+2]
+            end
+        end
+    else
+        signal = s[:, 1:5]
+        if isempty(grad_list)
+            gradients = nothing
+        else
+            gradients = Array{Float64}(undef, length(TRF), 5 * length(grad_list))
+            for j in eachindex(grad_list)
+                gradients[:, (5(j-1)+1):(5j)] = s[:, (5j+1):(5j+5)]
+            end
+        end
     end
-    return s
+    return signal, gradients
 end

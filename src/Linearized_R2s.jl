@@ -73,7 +73,10 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
             A[iτ,iΩ] = calculate_R2sl(z_fun, τv[iτ], Ωv[iΩ])
         end
     end
-    A[:,1] .= A[:,2] # extrapolation hack as the fit does not work with Ω = 0
+
+    # Flat extrapolation at the left boundary: the first TRF_max grid point has no
+    # independent data, so we copy the second column to avoid undefined values.
+    A[:,1] .= A[:,2]
 
     f = linear_interpolation((τv, Ωv), A)
     dfdτ(   τ, Ω) = Interpolations.gradient(f, τ, Ω)[1]
@@ -110,12 +113,12 @@ function evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
     for i = 1:length(α)
         _R2s[i] = R2slT[1](TRF[i], α[i], B1, T2s)
     end
-    if any(isa.(grad_list, grad_T2s))
+    if !isnothing(grad_list) && any(isa.(grad_list, grad_T2s))
         for i = 1:length(α)
             _dR2sdT2s[i] = R2slT[2](TRF[i], α[i], B1, T2s)
         end
     end
-    if any(isa.(grad_list, grad_B1))
+    if !isnothing(grad_list) && any(isa.(grad_list, grad_B1))
         for i = 1:length(α)
             _dR2sdB1[i] = R2slT[3](TRF[i], α[i], B1, T2s)
         end

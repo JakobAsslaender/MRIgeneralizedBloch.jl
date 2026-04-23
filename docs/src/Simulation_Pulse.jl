@@ -93,7 +93,7 @@ z_gBloch_Lorentzian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Lorentzian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
+    z_gBloch_Lorentzian[i] = solve(prob, MethodOfSteps(DP8())).u[end][1]
 end
 
 # Now we have solved all five models and can plot the solutions for comparison:

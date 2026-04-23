@@ -75,7 +75,7 @@ m0_6D = [0,0,m₀ᶠ,0,m₀ˢ,1]
 
 Mpi_appx = similar(Mpi_full)
 for i in eachindex(t)
-    H = exp(hamiltonian_linear(π/Tʳᶠ, 1, 0, t[i], m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, π, 1, T₂ˢ)))
+    H = exp(hamiltonian_linear(π/Tʳᶠ, 1, 0, t[i], 1, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, π, 1, T₂ˢ)))
     Mpi_appx[i,:] = (H * m0_6D)[[1:3;5]]
 end
 
@@ -102,7 +102,7 @@ for i in eachindex(α)
     prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
     M_full[i,:] = solve(prob, MethodOfSteps(Tsit5())).u[end][1:4]
 
-    u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
+    u = exp(hamiltonian_linear(α[i]/Tʳᶠ, 1, 0, Tʳᶠ, 1, m₀ˢ, R₁, R₂ᶠ, Rₓ, R₁, R₂ˢˡ(Tʳᶠ, α[i], 1, T₂ˢ))) * m0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
 
@@ -130,7 +130,7 @@ prob = DDEProblem(apply_hamiltonian_gbloch!, m0_5D, mfun, (0.0, Tʳᶠ), param)
 @benchmark solve($prob, $(MethodOfSteps(Tsit5())))
 
 # The `$` symbol *interpolates* the variable, which improves the accuracy of the timing measurement. We can compare this time to the time it takes to calculate the linear approximation, including the time it takes to evaluate the interpolated `R₂ˢˡ`:
-@benchmark exp(hamiltonian_linear($(α[end]/Tʳᶠ), 1, 0, $Tʳᶠ, $m₀ˢ, $R₁, $R₂ᶠ, $Rₓ, $R₁, R₂ˢˡ($Tʳᶠ, $α[end], 1, $T₂ˢ))) * $m0_6D
+@benchmark exp(hamiltonian_linear($(α[end]/Tʳᶠ), 1, 0, $Tʳᶠ, 1, $m₀ˢ, $R₁, $R₂ᶠ, $Rₓ, $R₁, R₂ˢˡ($Tʳᶠ, $α[end], 1, $T₂ˢ))) * $m0_6D
 
 # We can see that linear approximation is about 4 orders of magnitude faster compared to the full model.
 

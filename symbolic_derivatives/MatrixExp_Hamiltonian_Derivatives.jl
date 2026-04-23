@@ -6,7 +6,7 @@ using Symbolics: SConst
 using MRIgeneralizedBloch
 
 ##
-@variables ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R1a, T2s, R2s, dR2sdT2s, dR2sdB1, grad_type
+@variables ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R1a, T2s, R2s, dR2sdT2s, dR2sdB1, grad_type
 @variables TRF, dR2sdB1, dR2sdω1, dR2sdTRF, dR2sdT2sdω1, dR2sdB1dω1, dR2sdT2sdTRF, dR2sdB1dTRF
 
 f_R2s(T2s, B1, ω1, TRF) = R2s
@@ -14,29 +14,29 @@ f_R2s(T2s, B1, ω1, TRF) = R2s
 @register_derivative f_R2s(T2s, B1, ω1, TRF) 1 SConst(dR2sdT2s)
 @register_derivative f_R2s(T2s, B1, ω1, TRF) 2 SConst(dR2sdB1)
 
-H = hamiltonian_linear(ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, f_R2s(T2s, B1, ω1, TRF))
+H = hamiltonian_linear(ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, f_R2s(T2s, B1, ω1, TRF))
 Z = zeros(Int, size(H))
 
 ## #########################################################################################
 # derivatives wrt. MT parameters (used for CRB calculations & NLLS fitting)
 ############################################################################################
 fs_str = ""
-for p ∈ [m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
+for p ∈ [M0, m0s, R1f, R2f, Rex, R1s, T2s, B1, ω0, R1a]
     if isequal(p, R1a)
-        Ḣ = expand_derivatives.(Differential(R1f).(H) .+ Differential(R1s).(H))
+        Ḣ = expand_derivatives.(Differential(R1f).(H) .+ Differential(R1s).(H))
     else
-        Ḣ = expand_derivatives.(Differential(p).(H))
+        Ḣ = expand_derivatives.(Differential(p).(H))
     end
 
     dHdp = vcat(
         hcat(H[1:end-1, 1:end-1], Z[1:end-1, 1:end-1], H[1:end-1, end]),
-        hcat(Ḣ[1:end-1, 1:end-1], H[1:end-1, 1:end-1], Ḣ[1:end-1, end]),
+        hcat(Ḣ[1:end-1, 1:end-1], H[1:end-1, 1:end-1], Ḣ[1:end-1, end]),
         zeros(Int, 1, 2size(H, 2) - 1)
     )
 
     dHdp = substitute(dHdp, Dict([f_R2s(T2s, B1, ω1, TRF) => R2s]))
 
-    f_expr = build_function(dHdp, ω1, B1, ω0, T, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type;
+    f_expr = build_function(dHdp, ω1, B1, ω0, T, M0, m0s, R1f, R2f, Rex, R1s, R2s, dR2sdT2s, dR2sdB1, grad_type;
         force_SA=true,
     )
 

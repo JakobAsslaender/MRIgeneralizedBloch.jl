@@ -15,6 +15,7 @@ R1s = 2.0 # 1/s
 R2f = 1 / 50e-3 # 1/s
 T2s = 10e-6 # s
 Rex = 70 # 1/s
+M0 = 0.85
 
 ## pre-calcualtions
 G = interpolate_greens_function(greens_superlorentzian, 0, maximum(TRF) / T2s)
@@ -25,8 +26,8 @@ R2slT = @time precompute_R2sl()
 R2sl = R2slT[1]
 
 ## init
-u0_5D = [0,0,m0f,  m0s,1]
-u0_6D = [0,0,m0f,0,m0s,1]
+u0_5D = [0,0,M0*m0f,  M0*m0s,M0]
+u0_6D = [0,0,M0*m0f,0,M0*m0s,1]
 
 ## simulate and plot magnetization at the end of RF-pulses with different flip angles
 M_full = zeros(length(ω1), 4)
@@ -34,7 +35,7 @@ M_appx = similar(M_full)
 
 for i in eachindex(ω1)
     M_full[i,:] = solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[i], 1, 0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(DP8())).u[end][1:4]
-    u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF, α[i], 1, T2s))) * u0_6D
+    u = exp(hamiltonian_linear(ω1[i], 1, 0, TRF, M0, m0s, R1f, R2f, Rex, R1s, R2sl(TRF, α[i], 1, T2s))) * u0_6D
     M_appx[i,:] = u[[1:3;5]]
 end
 
@@ -45,7 +46,7 @@ print("Time to solve the full gene. Bloch IDE for 100us π-pulse:")
 @btime solve(DDEProblem(apply_hamiltonian_gbloch!, u0_5D, mfun, (0.0, TRF), (ω1[end], 1, 0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(DP8()))
 
 print("Time to solve the linear approximation for 100us π-pulse:")
-@btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, m0s, R1f, R2f, Rex, R1s, R2sl(TRF, α[end-1], 1, T2s))) * u0_6D
+@btime exp(hamiltonian_linear(ω1[end-1], 1, 0, TRF, M0, m0s, R1f, R2f, Rex, R1s, R2sl(TRF, α[end-1], 1, T2s))) * u0_6D
 
 ## ##########################################################################################################
 # Test gradients

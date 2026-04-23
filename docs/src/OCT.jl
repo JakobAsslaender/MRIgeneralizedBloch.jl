@@ -33,11 +33,11 @@ Npulses * TR
 R2slT = precompute_R2sl();
 
 # In the calculation of the CRB, we account for following gradients:
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
+grad_list = (grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
 
 # and we sum up the CRB of all parameters, weighted by the following vector:
 weights = transpose([0, 1, 0, 0, 0, 0, 0, 0, 0]);
-# Note that the vector `weights` has one more entry compared to the `grad_list` vector, as the first derivative is always wrt. ``M_0``, regardless of `grad_list`. Here, we only optimize for the CRB of ``m_0^s``, while accounting for a fit of all 9 model parameters.
+# The vector `weights` has the same length as `grad_list`, with each entry weighting the CRB of the corresponding parameter. Here, we only optimize for the CRB of ``m_0^s``, while accounting for a fit of all 9 model parameters.
 
 # We take some initial guess for the pulse train:
 α = abs.(sin.((1:Npulses) * 2π/Npulses));
@@ -126,8 +126,7 @@ p = plot(p1, p2, layout=(2, 1), legend=:none)
 #md Main.HTMLPlot(p) #hide
 
 # To further analyze the results, we can calculate and plot all magnetization components:
-m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization)
-m = vec(m)
+m, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization)
 
 xf = [m[i][1] for i ∈ eachindex(m)]
 yf = [m[i][2] for i ∈ eachindex(m)]

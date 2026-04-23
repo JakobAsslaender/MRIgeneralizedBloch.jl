@@ -11,7 +11,6 @@ using LinearAlgebra
 using NLsolve
 using ExponentialUtilities
 using LsqFit
-using LinearAlgebra
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_linear!
@@ -43,6 +42,7 @@ export calculatesignal_linearapprox
 export fit_gBloch
 export qMTmap
 
+export grad_M0
 export grad_m0s
 export grad_R1a
 export grad_R1f
@@ -54,6 +54,7 @@ export grad_ω0
 export grad_B1
 
 abstract type grad_param end
+struct grad_M0  <: grad_param end
 struct grad_m0s <: grad_param end
 struct grad_R1a <: grad_param end
 struct grad_R1f <: grad_param end
@@ -67,8 +68,8 @@ struct grad_B1  <: grad_param end
 include("DiffEq_Hamiltonians.jl")
 include("Linearized_R2s.jl")
 include("MatrixExp_Solvers.jl")
-include("DiffEq_Sovlers.jl")
-include("Greens_functions.jl")
+include("DiffEq_Solvers.jl")
+include("Greens_Functions.jl")
 include("MatrixExp_Hamiltonians.jl")
 include("MatrixExp_Hamiltonian_Gradients.jl")
 include("NLLSFit.jl")

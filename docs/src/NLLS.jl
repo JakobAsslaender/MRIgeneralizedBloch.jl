@@ -21,6 +21,7 @@ TR = 3.5e-3
 t = TR .* (1:length(TRF));
 
 # As an example we can assume the following ground truth parameters
+M0 = 1
 m0s = 0.15
 R1f = 0.5 # 1/s
 R2f = 17 # 1/s
@@ -34,8 +35,7 @@ B1 = 0.9; # in units of B1_nominal
 R2slT = precompute_R2sl();
 
 # and simulate the signal:
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
-s = vec(s)
+s, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
 
 # To make this example a bit more realistic, we add complex valued Gaussian noise:
 s .+= 0.01 * randn(ComplexF64, size(s));
@@ -63,8 +63,8 @@ qM.ω0 # rad/s
 qM.B1 # 1/B1_nominal
 
 # We can also simulate the signal with the fitted parameters
-s_fitted = calculatesignal_linearapprox(α, TRF, TR, qM.ω0, qM.B1, qM.m0s, qM.R1f, qM.R2f, qM.Rex, qM.R1s, qM.T2s, R2slT; grad_moment)
-s_fitted = vec(s_fitted);
+s_fitted, _ = calculatesignal_linearapprox(α, TRF, TR, qM.ω0, qM.B1, 1, qM.m0s, qM.R1f, qM.R2f, qM.Rex, qM.R1s, qM.T2s, R2slT; grad_moment)
+s_fitted .*= qM.M0 # multiply with complex M0
 
 # and compare it to the noisy data:
 p = plot(xlabel="t (s)", ylabel="signal (normalized)", legend=:topleft)
@@ -114,7 +114,7 @@ qM.B1
 # As originally suggested by [McGivney et al.](https://ieeexplore.ieee.org/abstract/document/6851901) for MR Fingerprinting, the manifold of signal evolution or fingerprints is low rank and it is often beneficial to [reconstruct images directly in this domain](https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26639). We can calculate a low rank basis with
 sv = Array{ComplexF64}(undef, length(s), 50)
 for i=1:size(sv,2)
-    sv[:,i] = calculatesignal_linearapprox(α, TRF, TR, 500randn(), 0.8 + 0.4rand(), rand(), rand(), 20rand(), 30rand(), 3rand(), 8e-6+5e-6rand(), R2slT; grad_moment)
+    sv[:,i], _ = calculatesignal_linearapprox(α, TRF, TR, 500randn(), 0.8 + 0.4rand(), 1, rand(), rand(), 20rand(), 30rand(), 3rand(), 8e-6+5e-6rand(), R2slT; grad_moment)
 end
 u, _, _ = svd(sv)
 u = u[:,1:9];
@@ -129,7 +129,7 @@ qM = fit_gBloch(sc, α, TRF, TR; R2slT, u, grad_moment)
 # ## Apparent ``R_1``
 # Above fits tread `R1f` and `R1s` of the free and the semi-solid as independent parameters. As we discussed in our [paper](https://arxiv.org/pdf/2207.08259.pdf), many publications in the literature assume an apparent `R1a = R1f = R1s`. The corresponding model can be fitted by specifying `fit_apparentR1=true`:
 R1a = 1 # 1/s
-s = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_moment)
+s, _ = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_moment)
 qM = fit_gBloch(vec(s), α, TRF, TR; fit_apparentR1=true, R1a = (0, 0.7, Inf), R2slT, grad_moment)
 
 # Here, we specified the limits of `R1a` explicitly, which is optional.

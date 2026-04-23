@@ -1,6 +1,17 @@
 ###################################################
 # generalized Bloch Hamiltonians that can take any
 # Green's function as an argument.
+#
+# Dispatch variants for apply_hamiltonian_gbloch!:
+#   p::NTuple{6,Any}   — isolated semi-solid pool: (ω1, B1, ω0, R1s, T2s, g)
+#   p::NTuple{10,Any}  — coupled two-pool, scalar ω1: (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, g)
+#   p::NTuple{11,Any}  — internal: adds zs_idx for multi-gradient indexing
+#   p::NTuple{12,Any}  — coupled two-pool with gradients: adds (dG_o_dT2s_x_T2s, grad_list)
+#
+# For positions 1 (ω1) and 3 (ω0/φ), dispatch distinguishes:
+#   Real, Real     — rectangular pulse, constant off-resonance (ω0)
+#   Function, Real — shaped RF pulse ω1(t), constant off-resonance (ω0)
+#   Function, Function — shaped RF pulse ω1(t), phase-swept φ(t)
 ###################################################
 """
     apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p, t)
@@ -68,29 +79,7 @@ julia> m0 = [0; 0; 1-m0s; m0s; 1];
 
 julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5);
 
-julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()))
-retcode: Success
-Interpolation: specialized 4th order "free" interpolation
-t: 9-element Vector{Float64}:
- 0.0
- 1.375006182301112e-7
- 1.512506800531223e-6
- 8.042561462897698e-6
- 2.107848848643912e-5
- 3.911418153169565e-5
- 6.268793403244071e-5
- 9.147711277097536e-5
- 0.0001
-u: 9-element Vector{Vector{Float64}}:
- [0.0, 0.0, 0.8, 0.2, 1.0]
- [0.0017278806030763402, 0.0, 0.7999981340131751, 0.19999953350448, 1.0]
- [0.019004717382235078, 0.0, 0.7997742277135814, 0.19994357804868362, 1.0]
- [0.10079111057210487, 0.0, 0.7936248126644649, 0.19842287249439766, 1.0]
- [0.26002578123515735, 0.0, 0.7565529685035107, 0.18981913084469726, 1.0]
- [0.46104237185160846, 0.0, 0.6537239507723229, 0.16937683480955013, 1.0]
- [0.6661740252095096, 0.0, 0.4426121112504473, 0.1358931147134579, 1.0]
- [0.7923117749819578, 0.0, 0.10713075535178414, 0.0939026077525371, 1.0]
- [0.7994211188442862, 0.0, 0.00044033743049392323, 0.08214809659226695, 1.0]
+julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G)), MethodOfSteps(Tsit5()));
 
 julia> dG_o_dT2s_x_T2s = interpolate_greens_function(dG_o_dT2s_x_T2s_superlorentzian, 0, TRF / T2s);
 
@@ -98,31 +87,9 @@ julia> grad_list = (grad_R2f(), grad_m0s());
 
 julia> m0 = [0; 0; 1-m0s; m0s; 1; zeros(5*length(grad_list))];
 
-julia> mfun(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5 + 5*length(grad_list));
+julia> mfun2(p, t; idxs=nothing) = typeof(idxs) <: Real ? 0.0 : zeros(5 + 5*length(grad_list));
 
-julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)), MethodOfSteps(Tsit5()))
-retcode: Success
-Interpolation: specialized 4th order "free" interpolation
-t: 9-element Vector{Float64}:
- 0.0
- 1.3749977183723476e-7
- 1.5124974902095823e-6
- 8.55413928087924e-6
- 2.2735031185663937e-5
- 4.19108470558807e-5
- 6.604834675708889e-5
- 9.498577875254548e-5
- 0.0001
-u: 9-element Vector{Vector{Float64}}:
- [0.0, 0.0, 0.8, 0.2, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
- [0.0017278699670365163, 0.0, 0.7999981340361474, 0.19999953351022304, 1.0, -1.1879082228166889e-10, 0.0, 8.552314797346093e-14, 1.7639111626379964e-20, 0.0, -4.504148593116325e-9, 0.0, -4.170810886524201e-6, 4.399976485334709e-6, 0.0]
- [0.019004600420955017, 0.0, 0.7997742304929397, 0.1999435787430011, 1.0, -1.4372150874574205e-8, 0.0, 1.1382351624387973e-10, 2.582351851673891e-16, 0.0, -5.449397614775737e-7, 0.0, -4.586940831786521e-5, 4.8389939712349446e-5, 0.0]
- [0.10716443623865489, 0.0, 0.7927892601714349, 0.19821857478945182, 1.0, -4.583399621367497e-7, 0.0, 2.0553664518760576e-8, 2.6371802289291116e-13, 0.0, -1.7378210958556595e-5, 0.0, -0.00025789082577413444, 0.000272108762962073, 0.0]
- [0.2796150309669262, 0.0, 0.7495316534746568, 0.18828190387976126, 1.0, -3.1783478165730177e-6, 0.0, 3.8161527675201545e-7, 1.3013762608576572e-11, 0.0, -0.00012051934290282377, 0.0, -0.0006606411859023958, 0.0006984066858780591, 0.0]
- [0.4892864720822774, 0.0, 0.632847234166742, 0.16565573509863743, 1.0, -1.0252123180462778e-5, 0.0, 2.3176672964164325e-6, 1.4579058977830925e-10, 0.0, -0.00038904986340924794, 0.0, -0.0010958655218685713, 0.001171980309319979, 0.0]
- [0.6885646541968483, 0.0, 0.4068512686677757, 0.1309174303256667, 1.0, -2.2735398366534667e-5, 0.0, 8.492086356144201e-6, 8.444612435331494e-10, 0.0, -0.0008655167803567697, 0.0, -0.0013568007560206506, 0.001522818443889853, 0.0]
- [0.796968522108364, 0.0, 0.06333054117000982, 0.08900920150401267, 1.0, -3.784041815054497e-5, 0.0, 2.2377155206782674e-5, 3.2320972096434295e-9, 0.0, -0.001454710061558483, 0.0, -0.0011369133117761624, 0.0015299729958457285, 0.0]
- [0.7994211129892578, 0.0, 0.0004402646711967819, 0.08214809793086313, 1.0, -3.995979477323799e-5, 0.0, 2.5441798584056785e-5, 3.87911904112647e-9, 0.0, -0.00154036350300196, 0.0, -0.0010380366536841005, 0.001486424275625734, 0.0]
+julia> sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun2, (0, TRF), (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, G, dG_o_dT2s_x_T2s, grad_list)), MethodOfSteps(Tsit5()));
 ```
 """
 function apply_hamiltonian_gbloch!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
@@ -226,6 +193,10 @@ end
 
 ###################################################
 # Bloch-McConnell model to simulate free precession
+#
+# Dispatch variants for apply_hamiltonian_freeprecession!:
+#   p::NTuple{6,Any}  — no gradients: (ω0, m0s, R1f, R2f, Rex, R1s)
+#   p::NTuple{7,Any}  — with gradients: adds (grad_list,)
 ###################################################
 function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{6,Any}, t)
     ω0, m0s, R1f, R2f, Rex, R1s = p
@@ -249,15 +220,32 @@ function apply_hamiltonian_freeprecession!(∂m∂t, m, p::NTuple{7,Any}, t)
         @views apply_hamiltonian_freeprecession!(∂m∂t_m[:,i], m_m[:,i], (ω0, m0s, R1f, R2f, Rex, R1s), t)
 
         if i > 1
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (0, 1, ω0, m0s, R1f, R2f, Rex, R1s, undef, undef, undef), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (0, 1, ω0, m0s, R1f, R2f, Rex, R1s, nothing, nothing, nothing), t, grad_list[i-1])
         end
     end
     return ∂m∂t
 end
 
 #########################################################################
-# implementation of the partial derivatives for calculating the gradients
+# Implementation of the partial derivatives for calculating the gradients.
+#
+# Dispatch on grad_type (last argument) selects the parameter.
+# Dispatch on p distinguishes the model variant:
+#   p::NTuple{11,Any}                    — gBloch or Graham (generic, for m0s/R1f/R1s/R2f/Rex/ω0)
+#   p::Tuple{Real,Real,Real,...}         — gBloch, scalar ω1, constant ω0
+#   p::Tuple{Function,Real,Real,...}     — gBloch, shaped ω1(t), constant ω0
+#   p::Tuple{Function,Real,Function,...} — gBloch, shaped ω1(t), phase-swept φ(t)
+#   p::Tuple{...,Nothing,...}            — free precession (no-op for T2s/B1)
+#   p::Tuple{Real,...,Real,Real}         — Graham's model (scalar ω1, T2s-specific saturation)
 #########################################################################
+function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_M0)
+    ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
+
+    ∂m∂t[3] += (1 - m0s) * R1f
+    ∂m∂t[4] += m0s * R1s
+    return ∂m∂t
+end
+
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_m0s)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
@@ -269,22 +257,22 @@ end
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_R1a)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[3] += - m[3] + (1 - m0s)
-    ∂m∂t[4] += - m[4] + m0s
+    ∂m∂t[3] += - m[3] + (1 - m0s) * m[5]
+    ∂m∂t[4] += - m[4] + m0s * m[5]
     return ∂m∂t
 end
 
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_R1f)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[3] += - m[3] + (1 - m0s)
+    ∂m∂t[3] += - m[3] + (1 - m0s) * m[5]
     return ∂m∂t
 end
 
 function add_partial_derivative!(∂m∂t, m, mfun, p::NTuple{11,Any}, t, grad_type::grad_R1s)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, _, dG_o_dT2s_x_T2s = p
 
-    ∂m∂t[4] += - m[4] + m0s
+    ∂m∂t[4] += - m[4] + m0s * m[5]
     return ∂m∂t
 end
 
@@ -328,7 +316,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Funct
 end
 
 # version for free precession (does nothing)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,UndefInitializer,UndefInitializer}, t, grad_type::grad_T2s)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Nothing,Nothing}, t, grad_type::grad_T2s)
     return ∂m∂t
 end
 
@@ -432,7 +420,7 @@ function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Function,Real,Funct
 end
 
 # version for free precession (does nothing)
-function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,UndefInitializer,UndefInitializer}, t, grad_type::grad_B1)
+function add_partial_derivative!(∂m∂t, m, mfun, p::Tuple{Any,Any,Any,Any,Any,Any,Any,Any,Any,Nothing,Nothing}, t, grad_type::grad_B1)
     return ∂m∂t
 end
 
@@ -450,7 +438,11 @@ end
 
 ##############################################################################
 # Implementation for comparison: the super-Lorentzian Green's function
-# is hard coded, which allows to use special solvers for the double integral
+# is hard coded, which allows to use special solvers for the double integral.
+#
+# Dispatch variants for apply_hamiltonian_gbloch_superlorentzian!:
+#   p::NTuple{10,Any} — coupled two-pool: (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, N)
+#   p::NTuple{11,Any} — internal: adds zs_idx for multi-gradient indexing
 ##############################################################################
 function apply_hamiltonian_gbloch_superlorentzian!(∂m∂t, m, mfun, p::NTuple{11,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, zs_idx, N = p
@@ -490,6 +482,13 @@ end
 
 ###################################################
 # Graham's spectral model
+#
+# Dispatch variants for apply_hamiltonian_graham_superlorentzian!:
+#   p::NTuple{10,Any} — no gradients: (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s)
+#   p::NTuple{11,Any} — with gradients: adds (grad_list,)
+#
+# Note: TRF is at position 4 (before the tissue params) because
+# the saturation rate f_PSD depends on TRF/T2s.
 ###################################################
 function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{10,Any}, t)
     ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s = p
@@ -511,7 +510,7 @@ function apply_hamiltonian_graham_superlorentzian!(∂m∂t, m, p::NTuple{11,Any
         @views apply_hamiltonian_graham_superlorentzian!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s), t)
 
         if i > 1
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, undef), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, nothing), t, grad_list[i-1])
         end
     end
     return ∂m∂t
@@ -528,21 +527,30 @@ function apply_hamiltonian_graham_superlorentzian_inversionpulse!(∂m∂t, m, p
         @views apply_hamiltonian_graham_superlorentzian!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, TRF, m0s, R1f, R2f, Rex, R1s, T2s), t)
 
         if i > 1 && (isa(grad_list[i-1], grad_B1) || isa(grad_list[i-1], grad_T2s))
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, undef), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, TRF, nothing), t, grad_list[i-1])
         end
     end
     return ∂m∂t
 end
 
+# Dispatch variants for apply_hamiltonian_linear!:
+#   p::NTuple{9,Any}  — scalar ω1: (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf)
+#   p::NTuple{11,Any} — scalar ω1 with gradients: adds (dRrfdT2s, grad_list)
+#   p::Tuple{Function,...} — shaped ω1(t) variants (evaluate ω1(t) and forward)
+#   p::Tuple{Function,Real,Function,...} — shaped ω1(t) with phase-swept φ(t)
+
+# shaped ω1(t), constant ω0, no gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf = p
     apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf), t)
 end
+# shaped ω1(t), constant ω0, with gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Real,Real,Real,Real,Real,Real,Real,Real,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf, dRrfdT2s, grad_list = p
     return apply_hamiltonian_linear!(∂m∂t, m, (ω1(t), B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf, dRrfdT2s, grad_list), t)
 end
 
+# shaped ω1(t), phase-swept φ(t)
 function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Function,Real,Real,Real,Real,Real,Real}, t)
     ω1, B1, φ, m0s, R1f, R2f, Rex, R1s, Rrf = p
 
@@ -556,6 +564,7 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::Tuple{Function,Real,Function,
     return ∂m∂t
 end
 
+# scalar ω1, constant ω0, no gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf = p
 
@@ -567,6 +576,7 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{9,Any}, t)
     return ∂m∂t
 end
 
+# scalar ω1, constant ω0, with gradients
 function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{11,Any}, t)
     ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf, dRrfdT2s, grad_list = p
 
@@ -578,7 +588,7 @@ function apply_hamiltonian_linear!(∂m∂t, m, p::NTuple{11,Any}, t)
         @views apply_hamiltonian_linear!(∂m∂t_m[:,i], m_m[:,i], (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, Rrf), t)
 
         if i > 1
-            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], undef, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, 0, Rrf, dRrfdT2s), t, grad_list[i-1])
+            @views add_partial_derivative!(∂m∂t_m[:,i], m_m[:,1], nothing, (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, 0, Rrf, dRrfdT2s), t, grad_list[i-1])
         end
     end
     return ∂m∂t
@@ -678,6 +688,15 @@ end
 
 ##################################################################
 # Sled's model
+#
+# Dispatch variants for apply_hamiltonian_sled!:
+#   Isolated semi-solid pool:
+#     p::Tuple{Real,Real,Real,Real,Real,Function}       — scalar ω1
+#     p::Tuple{Function,Real,Any,Real,Real,Function}    — shaped ω1(t)
+#   Coupled two-pool system:
+#     p::Tuple{Real,Real,Real,...,Function}     — scalar ω1, constant ω0
+#     p::Tuple{Function,Real,Real,...,Function} — shaped ω1(t), constant ω0
+#     p::Tuple{Function,Real,Function,...,Function} — shaped ω1(t), phase-swept φ(t)
 ##################################################################
 """
     apply_hamiltonian_sled!(∂m∂t, m, p, t)
@@ -722,21 +741,7 @@ julia> G = interpolate_greens_function(greens_superlorentzian, 0, TRF / T2s);
 
 julia> m0 = [1];
 
-julia> sol = solve(ODEProblem(apply_hamiltonian_sled!, m0, (0, TRF), (ω1, 1, ω0, R1s, T2s, G)), Tsit5())
-retcode: Success
-Interpolation: specialized 4th order "free" interpolation
-t: 3-element Vector{Float64}:
- 0.0
- 7.475414666720001e-5
- 0.0001
-u: 3-element Vector{Vector{Float64}}:
- [1.0]
- [0.6313928231811967]
- [0.4895365449661913]
-
-julia> using Plots
-
-julia> plot(sol, labels=["zs"], xlabel="t (s)", ylabel="m(t)");
+julia> sol = solve(ODEProblem(apply_hamiltonian_sled!, m0, (0, TRF), (ω1, 1, ω0, R1s, T2s, G)), Tsit5());
 ```
 """
 function apply_hamiltonian_sled!(∂m∂t, m, p::Tuple{Real,Real,Real,Real,Real,Function}, t)

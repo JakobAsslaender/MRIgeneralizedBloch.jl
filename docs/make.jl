@@ -1,5 +1,5 @@
 using Pkg
-Pkg.activate("docs")
+Pkg.activate(Base.source_dir())
 Pkg.develop(PackageSpec(path=pwd()))
 Pkg.instantiate()
 
