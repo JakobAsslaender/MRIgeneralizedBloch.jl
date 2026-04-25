@@ -3,21 +3,22 @@
 # ============================================================================
 
 # Renamed in v0.11: calculatesignal_* → simulate_*
-function calculatesignal_linearapprox(args...; kwargs...)
-    Base.depwarn("`calculatesignal_linearapprox` is deprecated, use `simulate_linearapprox` instead.", :calculatesignal_linearapprox)
-    simulate_linearapprox(args...; kwargs...)
+# Updated in v0.12: insert M0=1 since the old functions did not have M0
+function calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; kwargs...)
+    Base.depwarn("`calculatesignal_linearapprox` is deprecated, use `simulate_linearapprox` instead (note the added `M0` argument).", :calculatesignal_linearapprox)
+    simulate_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; kwargs...)
 end
 export calculatesignal_linearapprox
 
-function calculatesignal_gbloch_ide(args...; kwargs...)
-    Base.depwarn("`calculatesignal_gbloch_ide` is deprecated, use `simulate_gbloch_ide` instead.", :calculatesignal_gbloch_ide)
-    simulate_gbloch_ide(args...; kwargs...)
+function calculatesignal_gbloch_ide(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s; kwargs...)
+    Base.depwarn("`calculatesignal_gbloch_ide` is deprecated, use `simulate_gbloch_ide` instead (note the added `M0` argument).", :calculatesignal_gbloch_ide)
+    simulate_gbloch_ide(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s; kwargs...)
 end
 export calculatesignal_gbloch_ide
 
-function calculatesignal_graham_ode(args...; kwargs...)
-    Base.depwarn("`calculatesignal_graham_ode` is deprecated, use `simulate_graham_ode` instead.", :calculatesignal_graham_ode)
-    simulate_graham_ode(args...; kwargs...)
+function calculatesignal_graham_ode(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s; kwargs...)
+    Base.depwarn("`calculatesignal_graham_ode` is deprecated, use `simulate_graham_ode` instead (note the added `M0` argument).", :calculatesignal_graham_ode)
+    simulate_graham_ode(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s; kwargs...)
 end
 export calculatesignal_graham_ode
 
