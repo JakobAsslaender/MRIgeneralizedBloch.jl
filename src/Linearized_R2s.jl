@@ -74,7 +74,7 @@ function precompute_R2sl(;TRF_min=100e-6, TRF_max=500e-6, T2s_min=5e-6, T2s_max=
             du[1] = -ω1^2 * quadgk(x -> g((t - x) / T2s) * mfun(p, x)[1], 0.0, t)[1]
         end
 
-        z = solve(DDEProblem(hamiltonian_1D!, [1.0], mfun, (0, τ), (Ω, 1, G)), MethodOfSteps(Tsit5()))
+        z = solve(DDEProblem(hamiltonian_1D!, [1.0], mfun, (0, τ), (Ω, 1, G)), MethodOfSteps(DP8()))
         return z
     end
 

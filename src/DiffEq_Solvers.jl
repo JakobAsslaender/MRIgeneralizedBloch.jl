@@ -56,7 +56,7 @@ function simulate_gbloch_ide(α, TRF, TR, ω0, B1, M0::Real, m0s, R1f, R2f, Rex,
 
     # initialization and memory allocation
     N_s = 5 * (1 + length(grad_list))
-    alg = MethodOfSteps(Tsit5())
+    alg = MethodOfSteps(DP8())
     s = zeros(N_s, length(TRF))
     m0 = zeros(N_s)
     m0[3] = M0 * (1 - m0s)
