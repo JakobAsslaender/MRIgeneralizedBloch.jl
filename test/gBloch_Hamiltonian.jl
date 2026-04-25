@@ -30,7 +30,7 @@ mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, greens_lorentzian)
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
-sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(DP8()))
+sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(Tsit5()))
 
 u_gBloch = sol.u[end]
 
