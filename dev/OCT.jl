@@ -33,11 +33,11 @@ Npulses * TR
 R2slT = precompute_R2sl();
 
 # In the calculation of the CRB, we account for following gradients:
-grad_list = (grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
+grad_list = (grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
 
 # and we sum up the CRB of all parameters, weighted by the following vector:
 weights = transpose([0, 1, 0, 0, 0, 0, 0, 0, 0]);
-# Note that the vector `weights` has one more entry compared to the `grad_list` vector, as the first derivative is always wrt. ``M_0``, regardless of `grad_list`. Here, we only optimize for the CRB of ``m_0^s``, while accounting for a fit of all 9 model parameters.
+# The vector `weights` has the same length as `grad_list`, with each entry weighting the CRB of the corresponding parameter. Here, we only optimize for the CRB of ``m_0^s``, while accounting for a fit of all 9 model parameters.
 
 # We take some initial guess for the pulse train:
 α = abs.(sin.((1:Npulses) * 2π/Npulses));
@@ -59,8 +59,8 @@ p2 = plot(TR*(1:Npulses), 1e6TRF, ylim=(0, 1e3), xlabel="t (s)", ylabel="TRF (μ
 p = plot(p1, p2, layout=(2, 1), legend=:none)
 #md Main.HTMLPlot(p) #hide
 
-# With above defined weights, the function [`MRIgeneralizedBloch.CRB_gradient_OCT`](@ref) returns the CRB
-CRBm0s, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment)
+# With above defined weights, the function [`crb_gradient`](@ref) returns the CRB
+CRBm0s, grad_ω1, grad_TRF = crb_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment)
 CRBm0s
 
 # along with the gradients:
@@ -77,28 +77,28 @@ p = plot(p1, p2, layout=(2, 1), legend=:none)
 TRF_min = fill(100e-6, length(ω1))  # s
 TRF_max = fill(500e-6, length(ω1)); # s
 
-# and the function [`MRIgeneralizedBloch.bound_ω1_TRF!`](@ref) modifies `ω1` and `TRF` to comply with these bounds and returns a single vector in the range `[-Inf, Inf]` that relates to the bounded control by a `tanh` transformation:
-x0 = MRIgeneralizedBloch.bound_ω1_TRF!(ω1, TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+# and the function [`bound_omega1_TRF!`](@ref) modifies `ω1` and `TRF` to comply with these bounds and returns a single vector in the range `[-Inf, Inf]` that relates to the bounded control by a `tanh` transformation:
+x0 = bound_omega1_TRF!(ω1, TRF; ω1_min, ω1_max, TRF_min, TRF_max)
 
 # Further, we initialize a gradient of the same length:
 G = similar(x0);
 
 # and define the cost function:
 function fg!(F, G, x)
-    ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(x; ω1_min, ω1_max, TRF_min, TRF_max)
+    ω1, TRF = get_bounded_omega1_TRF(x; ω1_min, ω1_max, TRF_min, TRF_max)
 
-    F, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment)
+    F, grad_ω1, grad_TRF = crb_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment)
     F = abs(F)
 
-    F += MRIgeneralizedBloch.second_order_α!(grad_ω1, grad_TRF, ω1, TRF; grad_moment, λ=1e4)
-    F += MRIgeneralizedBloch.RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e-3, Pmax=3e6, TR)
-    F += MRIgeneralizedBloch.TRF_TV!(grad_TRF, TRF; grad_moment, λ=1e3)
+    F += penalty_alpha_curvature!(grad_ω1, grad_TRF, ω1, TRF; grad_moment, λ=1e4)
+    F += penalty_RF_power!(grad_ω1, grad_TRF, ω1, TRF; λ=1e-3, Pmax=3e6, TR)
+    F += penalty_TRF_variation!(grad_TRF, TRF; grad_moment, λ=1e3)
 
-    MRIgeneralizedBloch.apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min, ω1_max, TRF_min, TRF_max)
+    apply_bounds_to_grad!(G, x, grad_ω1, grad_TRF; ω1_min, ω1_max, TRF_min, TRF_max)
     return F
 end;
 
-# We perform the optimization with the package [Optim.jl](https://julianlsolvers.github.io/Optim.jl/stable/), which requires the cost function `fg!(F, G, x)` to take the cost, the gradient, and the control as input variables and to over-write the gradient in place. The cost function calculates the gradient of the CRB with above described optimal control code and we, further, add some regularization terms: [`MRIgeneralizedBloch.second_order_α!`](@ref) penalizes the curvature of α, which smoothes the flip angle train and helps ensuring the [hybrid state conditions](https://www.nature.com/articles/s42005-019-0174-0). The penalty [`MRIgeneralizedBloch.RF_power!`](@ref) penalizes the power deposition of the RF-pulse train if ``\Sigma_i(ω_1^2[i] ⋅ T_{\text{RF}}[i]) / T_{\text{cycle}} ≥ P_{\max}`` and helps with compliance to safety limits. Assuming a reasonable `λ`, the optimization will converge to an average RF-power deposition equal to or less than `Pmax` in units of (rad/s)². Heuristically, the value `Pmax=3e6` (rad/s)² proofed to be a reasonable choice for 3T systems. The penalty [`MRIgeneralizedBloch.TRF_TV!`](@ref) penalizes fast fluctuations of ``T_\text{RF}``. This penalty is justified by the knowledge that fluctuations of the control have negligible effect if they are fast compared to the biophysical time constants. We note, however, that this penalty is not required and rather ensure *beauty* of the result and speeds up convergence.
+# We perform the optimization with the package [Optim.jl](https://julianlsolvers.github.io/Optim.jl/stable/), which requires the cost function `fg!(F, G, x)` to take the cost, the gradient, and the control as input variables and to over-write the gradient in place. The cost function calculates the gradient of the CRB with above described optimal control code and we, further, add some regularization terms: [`penalty_alpha_curvature!`](@ref) penalizes the curvature of α, which smoothes the flip angle train and helps ensuring the [hybrid state conditions](https://www.nature.com/articles/s42005-019-0174-0). The penalty [`penalty_RF_power!`](@ref) penalizes the power deposition of the RF-pulse train if ``\Sigma_i(ω_1^2[i] ⋅ T_{\text{RF}}[i]) / T_{\text{cycle}} ≥ P_{\max}`` and helps with compliance to safety limits. Assuming a reasonable `λ`, the optimization will converge to an average RF-power deposition equal to or less than `Pmax` in units of (rad/s)². Heuristically, the value `Pmax=3e6` (rad/s)² proofed to be a reasonable choice for 3T systems. The penalty [`penalty_TRF_variation!`](@ref) penalizes fast fluctuations of ``T_\text{RF}``. This penalty is justified by the knowledge that fluctuations of the control have negligible effect if they are fast compared to the biophysical time constants. We note, however, that this penalty is not required and rather ensure *beauty* of the result and speeds up convergence.
 
 # With all this in place, we can start the actual optimization
 result = optimize(Optim.only_fg!(fg!), # cost function
@@ -112,11 +112,11 @@ result = optimize(Optim.only_fg!(fg!), # cost function
 
 
 # After transforming the optimized control back into the space of bounded ``ω_1`` and ``T_\text{RF}`` values
-ω1, TRF = MRIgeneralizedBloch.get_bounded_ω1_TRF(result.minimizer; ω1_min, ω1_max, TRF_min, TRF_max)
+ω1, TRF = get_bounded_omega1_TRF(result.minimizer; ω1_min, ω1_max, TRF_min, TRF_max)
 α = ω1 .* TRF;
 
 # we analyze the CRB(m0s):
-CRBm0s, grad_ω1, grad_TRF = MRIgeneralizedBloch.CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment)
+CRBm0s, grad_ω1, grad_TRF = crb_gradient(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT, grad_list, weights; grad_moment)
 CRBm0s
 
 # and observe a substantial reduction. Further, we plot the optimized control:
@@ -126,8 +126,7 @@ p = plot(p1, p2, layout=(2, 1), legend=:none)
 #md Main.HTMLPlot(p) #hide
 
 # To further analyze the results, we can calculate and plot all magnetization components:
-m = calculatesignal_linearapprox(α, TRF, TR, ω0, B1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization)
-m = vec(m)
+m, _ = simulate_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; output=:realmagnetization)
 
 xf = [m[i][1] for i ∈ eachindex(m)]
 yf = [m[i][2] for i ∈ eachindex(m)]

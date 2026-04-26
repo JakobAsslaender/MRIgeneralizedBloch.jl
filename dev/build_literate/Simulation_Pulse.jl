@@ -44,7 +44,7 @@ z_gBloch_Lorentzian = similar(Tʳᶠ)
 for i ∈ eachindex(Tʳᶠ)
     param = (ω₁[i], 1, ω₀, R₁, T₂ˢ, greens_lorentzian)
     prob = DDEProblem(apply_hamiltonian_gbloch!, z₀, z_fun, (0, Tʳᶠ[i]), param)
-    z_gBloch_Lorentzian[i] = solve(prob, MethodOfSteps(Tsit5())).u[end][1]
+    z_gBloch_Lorentzian[i] = solve(prob, MethodOfSteps(Tsit5()); dtmax=Tʳᶠ[i]/10).u[end][1]
 end
 
 p = plot(xaxis=:log, legend=:bottomright, xlabel="Tʳᶠ [s]", ylabel="zˢ(Tʳᶠ)")
