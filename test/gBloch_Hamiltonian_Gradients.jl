@@ -21,7 +21,7 @@ M0 = 0.85
 
 m0 = [0.5 * M0 * (1 - m0s), 0, 0.5 * M0 * (1 - m0s), M0 * m0s, M0]
 
-alg = MethodOfSteps(DP8())
+alg = MethodOfSteps(Tsit5())
 N = Inf
 
 t = 0:1e-5:TRF
