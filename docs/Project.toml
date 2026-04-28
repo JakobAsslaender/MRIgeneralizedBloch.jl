@@ -1,6 +1,7 @@
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 BufferedStreams = "e1450e63-4bb3-523b-b2a4-4ffa8c0fd77d"
+DelayDiffEq = "bcd4f6db-9728-5f36-b5f7-82caef46ccdb"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"

@@ -1,6 +1,7 @@
 using MRIgeneralizedBloch
 using Test
 using FiniteDifferences
+using DelayDiffEq
 using DifferentialEquations
 using SpecialFunctions
 using QuadGK

@@ -6,6 +6,7 @@
 
 # We need the following packages for this tutorial:
 using MRIgeneralizedBloch
+using DelayDiffEq
 using DifferentialEquations
 using SpecialFunctions
 using QuadGK
