@@ -1,0 +1,74 @@
+using MRIgeneralizedBloch
+using MAT
+using Plots
+plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
+
+control = matread(normpath(joinpath(pathof(MRIgeneralizedBloch), "../../docs/control_MT_v3p2_TR3p5ms_discretized.mat")))
+α   = control["alpha"]
+TRF = control["TRF"]
+grad_moment = [i == 1 ? :crusher : :balanced for i ∈ eachindex(α)];
+
+TR = 3.5e-3; # s
+
+t = TR .* (1:length(TRF))
+p1 = plot(t, α/π, ylabel="α/π", label=:none)
+p2 = plot(t, TRF, xlabel="t (s)", ylabel="TRF (s)", label=:none)
+p = plot(p1, p2, layout=(2,1))
+
+M0 = 1
+m0s = 0.15
+R1f = 0.5   # 1/s
+R2f = 15    # 1/s
+Rex = 30    # 1/s
+R1s = 3     # 1/s
+T2s = 10e-6 # s
+ω0 = 0      # rad/s
+B1 = 1;     # in units of B1_nominal
+
+R2slT = precompute_R2sl();
+
+s_linapp, _ = simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_moment)
+
+p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
+plot!(p, t, real.(vec(s_linapp)), label="Re(s); lin. approx.")
+plot!(p, t, imag.(vec(s_linapp)), label="Im(s); lin. approx.")
+
+s_ide, _ = simulate_gbloch_ide(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s)
+
+plot!(p, t, real.(vec(s_ide)), label="Re(s); IDE")
+plot!(p, t, imag.(vec(s_ide)), label="Im(s); IDE")
+
+m_linapp, _ = simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1f, R2f, Rex, R1s, T2s, R2slT;
+    output=:realmagnetization, grad_moment)
+
+p = plot(xlabel="t (s)", ylabel="magnetization (normalized)"; legend=:topleft)
+plot!(p, t, [m_linapp[i][1] for i ∈ axes(m_linapp,1)] ./ (1 - m0s), label="xᶠ / m₀ᶠ")
+plot!(p, t, [m_linapp[i][2] for i ∈ axes(m_linapp,1)] ./ (1 - m0s), label="yᶠ / m₀ᶠ")
+plot!(p, t, [m_linapp[i][3] for i ∈ axes(m_linapp,1)] ./ (1 - m0s), label="zᶠ / m₀ᶠ")
+plot!(p, t, [m_linapp[i][4] for i ∈ axes(m_linapp,1)] ./      m0s , label="xˢ / m₀ˢ")
+plot!(p, t, [m_linapp[i][5] for i ∈ axes(m_linapp,1)] ./      m0s , label="zˢ / m₀ˢ")
+
+grad_list = (grad_M0(), grad_m0s(), grad_R1f(), grad_R2f(), grad_Rex(), grad_R1s(), grad_T2s(), grad_ω0(), grad_B1());
+
+_, g_linapp = simulate_linearapprox(α, TRF, TR, ω0, B1, 1, m0s, R1f, R2f, Rex, R1s, T2s, R2slT; grad_list, grad_moment);
+
+p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
+plot!(p, t, real.(g_linapp[:,1] .* M0 ), label="Re(∂s/∂M₀ )*M₀")
+plot!(p, t, real.(g_linapp[:,2] .* m0s), label="Re(∂s/∂m₀ˢ)*m₀ˢ")
+plot!(p, t, real.(g_linapp[:,3] .* R1f), label="Re(∂s/∂R₁ᶠ)*R₁ᶠ")
+plot!(p, t, real.(g_linapp[:,4] .* R2f), label="Re(∂s/∂R₂ᶠ)*R₂ᶠ")
+plot!(p, t, real.(g_linapp[:,5] .* Rex), label="Re(∂s/∂Rₓ )*Rₓ ")
+plot!(p, t, real.(g_linapp[:,6] .* R1s), label="Re(∂s/∂R₁ˢ)*R₁ˢ")
+plot!(p, t, real.(g_linapp[:,7] .* T2s), label="Re(∂s/∂T₂ˢ)*T₂ˢ")
+plot!(p, t, real.(g_linapp[:,8] .* ω0 ), label="Re(∂s/∂ω₀ )*ω₀ ")
+plot!(p, t, real.(g_linapp[:,9] .* B1 ), label="Re(∂s/∂B₁ )*B₁ ")
+
+R1a = 1 # 1/s
+grad_list = (grad_M0(), grad_R1a())
+_, g_linapp = simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0s, R1a, R2f, Rex, R1a, T2s, R2slT; grad_list, grad_moment)
+
+p = plot(xlabel="t (s)", ylabel="signal (normalized)"; legend=:topleft)
+plot!(p, t, real.(g_linapp[:,1] .* M0 ), label="Re(∂s/∂M₀)/M₀")
+plot!(p, t, real.(g_linapp[:,2] .* R1a), label="Re(∂s/∂R₁ᵃ)*R₁ᵃ")
+
+# This file was generated using Literate.jl, https://github.com/fredrikekre/Literate.jl
