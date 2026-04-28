@@ -49,6 +49,8 @@ Optional:
 
 # Examples
 ```jldoctest
+julia> using DelayDiffEq
+
 julia> using DifferentialEquations
 
 julia> α = π/2;
