@@ -5,6 +5,7 @@
 
 # For this analysis we need the following packages:
 using MRIgeneralizedBloch
+using DelayDiffEq
 using DifferentialEquations
 using LinearAlgebra
 using LsqFit

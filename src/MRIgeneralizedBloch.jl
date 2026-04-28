@@ -1,7 +1,9 @@
 module MRIgeneralizedBloch
 
 using QuadGK
+using DelayDiffEq
 using DifferentialEquations
+using OrdinaryDiffEqHighOrderRK
 using Interpolations
 using ApproxFun
 import Cubature

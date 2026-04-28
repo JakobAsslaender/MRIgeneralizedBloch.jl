@@ -1,3 +1,4 @@
+using DelayDiffEq
 using DifferentialEquations
 using BenchmarkTools
 using MRIgeneralizedBloch
