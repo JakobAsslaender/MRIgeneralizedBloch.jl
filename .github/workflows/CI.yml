@@ -28,13 +28,27 @@ jobs:
             Pkg.instantiate()'
       - run: julia --project=symbolic_derivatives symbolic_derivatives/MatrixExp_Hamiltonian_Derivatives.jl
       - run: cat src/MatrixExp_Hamiltonian_Gradients.jl
-      - name: Commit derivatives
+      - name: Commit or verify derivatives
         run: |
-          git config --global user.name 'GitHubAction'
-          git config --global user.email 'GitHubAction@users.noreply.github.com'
-          git add src/MatrixExp_Hamiltonian_Gradients.jl
-          git diff --cached --quiet || git commit -m "Update derivatives"
-          git push
+          if git symbolic-ref -q HEAD > /dev/null 2>&1; then
+            # On a branch: commit and push updated derivatives
+            git config --global user.name 'GitHubAction'
+            git config --global user.email 'GitHubAction@users.noreply.github.com'
+            git add src/MatrixExp_Hamiltonian_Gradients.jl
+            git diff --cached --quiet || git commit -m "Update derivatives"
+            git push
+          else
+            # On a tag (detached HEAD): verify derivatives are up-to-date
+            if git diff --quiet src/MatrixExp_Hamiltonian_Gradients.jl; then
+              echo "✅ Symbolic derivatives are up-to-date with the tagged commit"
+            else
+              echo "❌ ERROR: Symbolic derivatives in the tagged commit are outdated!"
+              echo "The regenerated MatrixExp_Hamiltonian_Gradients.jl differs from the tagged version."
+              echo "Diff:"
+              git diff src/MatrixExp_Hamiltonian_Gradients.jl
+              exit 1
+            fi
+          fi
       - name: Get the commit hash
         id: get_commit_hash
         run: echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT  # Capture the commit hash as an environment variable
