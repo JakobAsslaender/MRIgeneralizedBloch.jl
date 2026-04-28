@@ -6,6 +6,7 @@
 # For these simulations we need the following packages:
 using MRIgeneralizedBloch
 using QuadGK
+using DelayDiffEq
 using DifferentialEquations
 using SpecialFunctions
 using Plots

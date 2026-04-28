@@ -1,4 +1,5 @@
 using MRIgeneralizedBloch
+using DelayDiffEq
 using DifferentialEquations
 using LinearAlgebra
 using LsqFit

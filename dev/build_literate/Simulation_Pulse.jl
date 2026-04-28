@@ -1,5 +1,6 @@
 using MRIgeneralizedBloch
 using QuadGK
+using DelayDiffEq
 using DifferentialEquations
 using SpecialFunctions
 using Plots

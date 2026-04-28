@@ -4,6 +4,7 @@
 # The following code demonstrates the linear approximation of the generalized Bloch model and replicates Figs. 7 and 8 in the paper.
 
 # For this analysis we need the following packages:
+using DelayDiffEq
 using DifferentialEquations
 using BenchmarkTools
 using LinearAlgebra
