@@ -13,6 +13,7 @@ using ExponentialUtilities
 using Polyester
 using LsqFit
 using LinearAlgebra
+using CUDA
 
 export apply_hamiltonian_gbloch!
 export apply_hamiltonian_linear!

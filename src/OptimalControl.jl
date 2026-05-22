@@ -73,9 +73,7 @@ function CRB_gradient_OCT(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2
 end
 
 
-
-function CRB_gradient_OCT_ortho_multi(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, _dUidVk; isInversionPulse = [true; falses(length(ω1)-1)], nSeq = 1)
-
+function CRB_gradient_OCT_ortho_multi(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, weights2, λ, _dUidVk; isInversionPulse = [true; falses(length(ω1)-1)], nSeq = 1)
 
     E_cat      = Vector{Array{SMatrix{11,11,Float64,121},3}}(undef, nSeq)
     dEdω1_cat  = similar(E_cat)
@@ -104,7 +102,62 @@ function CRB_gradient_OCT_ortho_multi(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, 
 
 
     # (CRB, d) = dCRBdm(Y, weights)
-    (C, d) = dCostdm(cat(Y_cat...,dims=1), weights,_dUidVk)
+    (C, d) = dCostdm(cat(Y_cat...,dims=1), weights, weights2,_dUidVk, λ)
+
+    for iSeq = 1:nSeq
+        P = calculate_adjoint_state(d, Q_cat[iSeq], E_cat[iSeq], iSeq)
+        (grad_ω1[:,iSeq], grad_TRF[:,iSeq]) = calculate_gradient_inner_product(P, Y_cat[iSeq], E_cat[iSeq], dEdω1_cat[iSeq], dEdTRF_cat[iSeq])
+    end
+
+    grad_ω1 = vec(grad_ω1)
+    grad_TRF = vec(grad_TRF)
+    return (C, grad_ω1, grad_TRF)
+end
+
+function CRB_gradient_OCT_ortho_gpu(ω1, TRF, TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, weights, weights2, λ, _dUidVk; isInversionPulse = [true; falses(length(ω1)-1)], nSeq = 1)
+
+    E_cat      = Vector{Array{SMatrix{11,11,Float64,121},3}}(undef, nSeq)
+    dEdω1_cat  = similar(E_cat)
+    dEdTRF_cat = similar(E_cat)
+
+    Q_cat = Vector{Array{SMatrix{11,11,Float64}}}(undef, nSeq)
+    Y_cat = Vector{Array{SVector{11,Float64}}}(undef, nSeq)
+
+    ω1 = reshape(ω1,:,nSeq)
+    TRF = reshape(TRF,:,nSeq)
+    isInversionPulse = reshape(isInversionPulse,:,nSeq)
+    
+    grad_ω1 = similar(ω1)
+    grad_TRF = similar(ω1)
+
+    Threads.@threads for iSeq = 1:nSeq
+        @views E, dEdω1, dEdTRF = calculate_propagators_ω1(ω1[:,iSeq], TRF[:,iSeq], TR, ω0, B1, m0s, R1f, R2f, Rx, R1s, T2s, R2slT, grad_list, isInversionPulse=isInversionPulse[:,iSeq])
+        E_cat[iSeq] = E
+        dEdω1_cat[iSeq] = dEdω1
+        dEdTRF_cat[iSeq] = dEdTRF
+
+        Q_cat[iSeq] = calcualte_cycle_propgator(E_cat[iSeq])
+        Y_cat[iSeq] = propagate_magnetization(Q_cat[iSeq], E_cat[iSeq])
+    end
+
+    Y = cat(Y_cat...,dims=1)
+    V = Array{ComplexF32}(undef, size(Y,1),size(Y, 3) + 1) # not implemented for phase-cycling
+    
+    for g in 0:size(Y, 3), t in 1:size(Y, 1)
+        if g == 0
+            V[t,1]     =  Y[t,1,1][1]  + 1im * Y[t,1,1][2]
+        else
+            V[t,g+1] =  Y[t,1,g][6] + 1im * Y[t,1,g][7]
+        end
+    end
+
+    Vgpu = CuArray(ComplexF32.(V))
+
+    # (CRB, d) = dCRBdm(Y, weights)
+    # @time (C, d) = dCostdm(cat(Y_cat...,dims=1), weights, weights2,_dUidVk, λ)
+   (C, d) = dCostdm_gpu(Vgpu, weights, weights2,_dUidVk, λ)
+
+
     for iSeq = 1:nSeq
         P = calculate_adjoint_state(d, Q_cat[iSeq], E_cat[iSeq], iSeq)
         (grad_ω1[:,iSeq], grad_TRF[:,iSeq]) = calculate_gradient_inner_product(P, Y_cat[iSeq], E_cat[iSeq], dEdω1_cat[iSeq], dEdTRF_cat[iSeq])
@@ -365,7 +418,7 @@ function dCRBdm(Y, w)
 end
 
 
-function dCostdm(Y, w,_dUidVk)
+function dCostdm(Y, w, w2, _dUidVk, λ)
     _dCdx = Array{Float64}(undef, size(Y, 1), size(Y, 3) + 1)
     _dCdy = similar(_dCdx)
     
@@ -387,11 +440,10 @@ function dCostdm(Y, w,_dUidVk)
 
     C = 0
     for i in 1:size(Gperp,2)
-        C += w[i]/norm(Gperp[:,i],1)
+        C += (1 - λ) * w[i]/norm(Gperp[:,i],1) + λ * w2[i] /norm(Gperp[:,i],2).^2
     end
 
     y = [zeros(ComplexF64,size(Y, 1),) for i = 1:size(Y,3)+1]
-
     _dCdx .= 0
     _dCdy .= 0
     for j in eachindex(w)
@@ -404,8 +456,13 @@ function dCostdm(Y, w,_dUidVk)
                 
                 shiftIdx = sortperm(circshift(1:length(U), length(U)-j))                
 
-                _dCdx[:,i]    .+= w[j] / (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(real.(Gperp[:,j])).* real.(_dUidVk[end,shiftIdx[i]]'),dims=1))
-                _dCdy[:,i]    .+= w[j] / (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(imag.(Gperp[:,j])).* imag.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+                _dCdx[:,i]    .+= (1 - λ) * w[j] / (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(real.(Gperp[:,j])).* real.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+                _dCdy[:,i]    .+= (1 - λ) * w[j] / (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(imag.(Gperp[:,j])).* imag.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+
+                _dCdx[:,i]    .+= λ * 2 * w2[j] / (sum(Gperp[:,j].^2)).^2 .* transpose(sum( real.(Gperp[:,j]).* real.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+                _dCdy[:,i]    .+= λ * 2 * w2[j] / (sum(Gperp[:,j].^2)).^2 .* transpose(sum( imag.(Gperp[:,j]).* imag.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+
+
                 # the orth. grad of each paramter is always in the last row of the respective U matrix (also Vshift).
                 # Thus the derivative of (ds/dR1f)perp wrt. to (ds/dM0) for example is d U[3][:,end]/ d Vshift[3][:,X]. X has to be the index of ds/dM0
                 # in the Vshift[j] matrix, shiftIdx helps to undo these circshifts.
@@ -416,6 +473,65 @@ function dCostdm(Y, w,_dUidVk)
     d(t, r, g) = @SVector [_dCdx[t,1], _dCdy[t,1],0,0,0,_dCdx[t,g + 1], _dCdy[t,g + 1],0,0,0,0]
     return (C, d)
 end
+
+
+function dCostdm_gpu(V, w, w2, _dUidVk, λ)
+    # _dCdx = Array{Float32}(undef, size(V, 1), size(V, 2))
+    _dCdx = CuArray{Float32}(undef, size(V, 1), size(V, 2))
+    _dCdy = similar(_dCdx)
+    
+    Vshift = [circshift(V,(0,i)) for i = size(V,2)-1: -1 : 0] # shift corresponding derivative to the end
+    U      = [CalcU(Vshift[i])   for i = 1:size(V,2)]
+    
+    # Gperp = Array(cat(dims =3, U...)[:,end,:])
+    Gperp = cat(dims =3, U...)[:,end,:]
+
+    C = 0
+    for i in 1:size(Gperp,2)
+        C += (1 - λ) * w[i]/norm(Gperp[:,i],1) + λ * w2[i] /norm(Gperp[:,i],2).^2
+    end
+
+    y = [CuArray(zeros(ComplexF32,size(V, 1),)) for i = 1:size(V,2)]
+    _dCdx .= 0
+    _dCdy .= 0
+    for j in eachindex(w)
+        if (w[j] != 0)
+
+
+            dUidVk_mat_real!(U[j],Vshift[j],_dUidVk,y)
+
+            shiftIdx = sortperm(circshift(1:length(U), length(U)-j))                
+
+            W = CUDA.fill(w[j],size(V,1))
+            W2 = CUDA.fill(w2[j],size(V,1))
+
+            for i in 1:size(V,2)
+
+                
+                # _dCdx[:,i]    .+= (1 - λ) * w[j]./ (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(real.(Gperp[:,j])).* real.(Array(_dUidVk[end,shiftIdx[i]])'),dims=1))
+                # _dCdy[:,i]    .+= (1 - λ) * w[j] ./ (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(imag.(Gperp[:,j])).* imag.(Array(_dUidVk[end,shiftIdx[i]])'),dims=1))
+                # _dCdx[:,i]    .+= λ * 2 * w2[j] ./ (sum(Gperp[:,j].^2)).^2 .* transpose(sum( real.(Gperp[:,j]).* real.(Array(_dUidVk[end,shiftIdx[i]])'),dims=1))
+                # _dCdy[:,i]    .+= λ * 2 * rw2[j] ./ (sum(Gperp[:,j].^2)).^2 .* transpose(sum( imag.(Gperp[:,j]).* imag.(Array(_dUidVk[end,shiftIdx[i]])'),dims=1))
+
+                _dCdx[:,i]    .+= (1 - λ) * W ./ (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(real.(Gperp[:,j])).* real.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+                _dCdy[:,i]    .+= (1 - λ) * W ./ (sum(abs.(Gperp[:,j]))).^2 .* transpose(sum( sign.(imag.(Gperp[:,j])).* imag.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+
+                _dCdx[:,i]    .+= λ * 2 * W2 ./ (sum(Gperp[:,j].^2)).^2 .* transpose(sum( real.(Gperp[:,j]).* real.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+                _dCdy[:,i]    .+= λ * 2 * W2 ./ (sum(Gperp[:,j].^2)).^2 .* transpose(sum( imag.(Gperp[:,j]).* imag.(_dUidVk[end,shiftIdx[i]]'),dims=1))
+
+                # the orth. grad of each paramter is always in the last row of the respective U matrix (also Vshift).
+                # Thus the derivative of (ds/dR1f)perp wrt. to (ds/dM0) for example is d U[3][:,end]/ d Vshift[3][:,X]. X has to be the index of ds/dM0
+                # in the Vshift[j] matrix, shiftIdx helps to undo these circshifts.
+            end 
+        end
+    end
+    _dCdx = Array(_dCdx)
+    _dCdy = Array(_dCdy)
+
+    d(t, r, g) = @SVector [_dCdx[t,1], _dCdy[t,1],0,0,0,_dCdx[t,g + 1], _dCdy[t,g + 1],0,0,0,0]
+    return (C, d)
+end
+
 
 function CalcU(V)
     U = similar(V)
@@ -445,10 +561,21 @@ function dVidVk!(U,i,k,_dUidVk_el)
     end
 end
 
+function dVidVk!(U::CuArray,i,k,_dUidVk_el)
+    if i == k
+        _dUidVk_el .= CuArray(I,size(_dUidVk_el))
+    else
+        _dUidVk_el .= 0
+    end
+end
+
+
 
 function dUidVk_mat_real!(U,V,_dUidVk,y)
 
-    Threads.@threads for idxV = 1:size(U,2)
+    # Threads.@threads for idxV = 1:size(U,2)
+    for idxV = 1:size(U,2)  # disable for GPU
+
         for idxU = 1:size(U,2)
             if (idxV <= idxU)
             

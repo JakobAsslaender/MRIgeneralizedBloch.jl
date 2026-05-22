@@ -5,6 +5,7 @@ version = "0.8.7-DEV"
 
 [deps]
 ApproxFun = "28f2ccd6-bb30-5033-b560-165f7b14dc2f"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Cubature = "667455a9-e2ce-5579-9412-b964f529a492"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
@@ -19,6 +20,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 ApproxFun = "0.12, 0.13"
+CUDA = "5.5.2"
 Cubature = "1"
 DifferentialEquations = "6, 7"
 ExponentialUtilities = "1"
