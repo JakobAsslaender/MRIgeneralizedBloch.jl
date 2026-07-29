@@ -59,6 +59,18 @@ export grad_Rex
 export grad_T2s
 export grad_ω0
 export grad_B1
+# 3-pool gradient parameter types
+export grad_m0_mm
+export grad_m0_rw
+export grad_R1_fw
+export grad_R1_rw
+export grad_R1_mm
+export grad_R2_fw
+export grad_R2_rw
+export grad_T2_mm
+export grad_Rx_fw_mm
+export grad_Rx_rw_fw
+export grad_Rx_mm_rw
 
 abstract type grad_param end
 struct grad_M0  <: grad_param end
@@ -71,6 +83,18 @@ struct grad_Rex <: grad_param end
 struct grad_T2s <: grad_param end
 struct grad_ω0  <: grad_param end
 struct grad_B1  <: grad_param end
+# 3-pool gradient parameter types
+struct grad_m0_mm  <: grad_param end
+struct grad_m0_rw  <: grad_param end
+struct grad_R1_fw  <: grad_param end
+struct grad_R1_rw  <: grad_param end
+struct grad_R1_mm  <: grad_param end
+struct grad_R2_fw  <: grad_param end
+struct grad_R2_rw  <: grad_param end
+struct grad_T2_mm  <: grad_param end
+struct grad_Rx_fw_mm <: grad_param end
+struct grad_Rx_rw_fw <: grad_param end
+struct grad_Rx_mm_rw <: grad_param end
 
 include("DiffEq_Hamiltonians.jl")
 include("Linearized_R2s.jl")
