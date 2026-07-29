@@ -208,3 +208,182 @@ function ms_setindex!(S::AbstractVector{<:AbstractVector}, G::AbstractVector{<:A
     G[i] = y
     return S
 end
+
+##############################################################################
+# 3-pool (free water, restricted water, macromolecular) simulation
+##############################################################################
+"""
+    simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT; ...)
+
+3-pool version of simulate_linearapprox for the free water / restricted water / macromolecular model.
+
+Returns a tuple `(signal, gradients)`.
+"""
+function simulate_linearapprox(α, TRF, TR, ω0, B1, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT;
+    grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal,
+    grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+
+    R2_mm, dR2_mm_dT2_mm, dR2_mm_dB1 = evaluate_R2sl_vector(abs.(α), TRF, B1, T2_mm, R2slT, grad_list)
+
+    return simulate_linearapprox_3pool(α, TRF, TR, ω0, B1, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1;
+        grad_list, rfphase_increment, m0, preppulse, output, grad_moment)
+end
+
+function simulate_linearapprox_3pool(α, TRF, TR, ω0, B1, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1;
+    grad_list=nothing, rfphase_increment=π, m0=:periodic, preppulse=false, output=:complexsignal,
+    grad_moment=[i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)])
+
+    if isnothing(grad_list) || isempty(grad_list)
+        grad_list = (nothing,)
+    end
+    calculate_gradients = grad_list != (nothing,)
+
+    ω1 = α ./ TRF
+    m0_fw = 1 - m0_rw - m0_mm
+
+    # Allocate output
+    if output == :complexsignal
+        signal = Vector{ComplexF64}(undef, length(ω1))
+    elseif output == :realmagnetization
+        signal = Vector{SVector{9,Float64}}(undef, length(ω1))
+    end
+
+    if calculate_gradients
+        if output == :complexsignal
+            gradients = Array{ComplexF64}(undef, length(ω1), length(grad_list))
+        elseif output == :realmagnetization
+            gradients = Array{SVector{17,Float64}}(undef, length(ω1), length(grad_list))
+        end
+    else
+        gradients = nothing
+    end
+
+    # Set up initial magnetization (scaled by M0)
+    if m0 == :thermal || m0 == :IR
+        if calculate_gradients
+            _m0 = @SVector [0, 0, M0*m0_fw, 0, 0, M0*m0_rw, 0, M0*m0_mm, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+        else
+            _m0 = @SVector [0, 0, M0*m0_fw, 0, 0, M0*m0_rw, 0, M0*m0_mm, 1]
+        end
+    elseif isa(m0, AbstractVector)
+        if calculate_gradients
+            _m0 = length(m0) == 17 ? SVector{17}(m0) : SVector{17}([m0; zeros(16 - length(m0)); 1])
+        else
+            _m0 = length(m0) == 9 ? SVector{9}(m0) : SVector{9}([m0; zeros(8 - length(m0)); 1])
+        end
+    elseif m0 != :periodic
+        error("m0 must either be :periodic, :IR, :thermal, or a vector")
+    end
+
+    for j in eachindex(grad_list)
+        if m0 == :periodic
+            m = antiperiodic_boundary_conditions_linear_3pool(ω1, B1, ω0, TRF, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad_list[j], rfphase_increment, grad_moment)
+        elseif m0 == :thermal || isa(m0, AbstractVector)
+            m = _m0
+        elseif m0 == :IR
+            u_ip = propagator_linear_crushed_pulse(ω1[1], TRF[1], B1, R2_mm[1], dR2_mm_dT2_mm[1], dR2_mm_dB1[1], grad_list[j])
+            m = u_ip * _m0
+            u_fp = exp(hamiltonian_linear(0, B1, ω0, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0, 0, grad_list[j]))
+            u_fp = x_mm_destructor(u_fp) * u_fp
+            m = u_fp * m
+        end
+
+        if preppulse
+            k = (m0 == :IR) ? 2 : 1
+            u_pr = exp(hamiltonian_linear(ω1[k]/2, B1, ω0, TRF[k], M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm[k], Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm[k], dR2_mm_dB1[k], grad_list[j]))
+            m = u_pr * m
+        end
+
+        Gj = calculate_gradients ? (@view gradients[:, j]) : nothing
+        propagate_magnetization_linear_3pool!(signal, Gj, m, ω1, B1, ω0, TRF, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad_list[j], rfphase_increment, grad_moment)
+    end
+
+    return signal, gradients
+end
+
+############################################################################
+# 3-pool helper functions
+############################################################################
+function evolution_matrix_linear_3pool(ω1, B1, ω0, TRF, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad, rfphase_increment, grad_moment)
+    u_rot = z_rotation_propagator_3pool(rfphase_increment, grad)
+
+    u_fp, u_pl = pulse_propagators_3pool(ω1[1], B1, ω0, TRF[1], TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm[1], Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm[1], dR2_mm_dB1[1], grad, grad_moment[1])
+    A = u_fp * u_pl * u_rot * u_fp
+
+    for i = length(ω1):-1:2
+        u_fp, u_pl = pulse_propagators_3pool(ω1[i], B1, ω0, TRF[i], TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm[i], Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm[i], dR2_mm_dB1[i], grad, grad_moment[i])
+        A = A * u_fp * u_pl * u_rot * u_fp
+    end
+    return A
+end
+
+function antiperiodic_boundary_conditions_linear_3pool(ω1, B1, ω0, TRF, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad, rfphase_increment, grad_moment)
+    A = evolution_matrix_linear_3pool(ω1, B1, ω0, TRF, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad, rfphase_increment, grad_moment)
+    Q = A - A0(A)
+    m = Q \ C(A)
+    return m
+end
+
+function propagate_magnetization_linear_3pool!(S, G, m, ω1, B1, ω0, TRF, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad, rfphase_increment, grad_moment)
+    u_rot = z_rotation_propagator_3pool(rfphase_increment, grad)
+    ms_setindex_3pool!(S, G, m, 1)
+    for i = 2:length(ω1)
+        u_fp, u_pl = pulse_propagators_3pool(ω1[i], B1, ω0, TRF[i], TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm[i], Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm[i], dR2_mm_dB1[i], grad, grad_moment[i])
+        m = u_fp * (u_pl * (u_rot * (u_fp * m)))
+        ms_setindex_3pool!(S, G, m, i)
+    end
+    return S
+end
+
+function pulse_propagators_3pool(ω1, B1, ω0, TRF, TR, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad, grad_moment)
+    if grad_moment == :balanced
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0, 0, grad))
+        u_fp = x_mm_destructor(u_fp) * u_fp
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad))
+    elseif grad_moment == :spoiler_prepulse
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0, 0, grad))
+        u_fp = x_mm_destructor(u_fp) * u_fp
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad))
+        u_pl = u_pl * xy_destructor(u_pl)
+    elseif grad_moment == :spoiler_dual
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, (TR - TRF) / 2, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0, 0, grad))
+        u_fp = x_mm_destructor(u_fp) * u_fp
+        u_pl = exp(hamiltonian_linear(ω1, B1, ω0, TRF, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, dR2_mm_dT2_mm, dR2_mm_dB1, grad))
+        u_pl = xy_destructor(u_pl) * u_pl * xy_destructor(u_pl)
+    elseif grad_moment == :crusher
+        u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0, 0, grad))
+        u_fp = x_mm_destructor(u_fp) * u_fp
+        u_pl = propagator_linear_crushed_pulse(ω1, TRF, B1, R2_mm, dR2_mm_dT2_mm, dR2_mm_dB1, grad)
+    else
+        error("Unknown gradient moment type.")
+    end
+    return u_fp, u_pl
+end
+
+# 3-pool signal: sum of free water + restricted water transverse magnetization
+function ms_setindex_3pool!(S::AbstractVector{<:Complex}, ::Nothing, y, i)
+    S[i] = y[1] + 1im * y[2] + y[4] + 1im * y[5]
+    return S
+end
+
+function ms_setindex_3pool!(S::AbstractVector{<:Complex}, G::AbstractVector{<:Complex}, y, i)
+    S[i] = y[1] + 1im * y[2] + y[4] + 1im * y[5]
+    G[i] = y[9] + 1im * y[10] + y[12] + 1im * y[13]
+    return S
+end
+
+function ms_setindex_3pool!(S::AbstractVector{<:AbstractVector}, ::Nothing, y, i)
+    S[i] = SVector{9}(y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[9])
+    return S
+end
+
+function ms_setindex_3pool!(S::AbstractVector{<:AbstractVector}, G::AbstractVector{<:AbstractVector}, y, i)
+    S[i] = SVector{9}(y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[17])
+    G[i] = y
+    return S
+end
+
+# Handle the no-gradient case for z_rotation_propagator_3pool
+function z_rotation_propagator_3pool(rfphase_increment, ::Nothing)
+    return z_rotation_propagator_3pool(rfphase_increment)
+end
