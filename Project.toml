@@ -10,6 +10,7 @@ Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 ExponentialUtilities = "d4d017d3-3776-5f7e-afef-a10c40355c18"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LsqFit = "2fda8390-95c7-5789-9bda-21331edee243"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 OrdinaryDiffEqHighOrderRK = "d28bc4f8-55e1-4f49-af69-84c1a99f0f58"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -23,17 +24,24 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Cubature = "1"
-DelayDiffEq = "5, 6"
+DelayDiffEq = "6.1.1"
 Interpolations = "0.14.2, 0.15, 0.16"
 ExponentialUtilities = "1"
-LinearAlgebra = "1.6"
+LinearAlgebra = "1.10"
 LsqFit = "0.13, 0.14, 0.15, 0.16"
-OrdinaryDiffEqHighOrderRK = "1, 2"
+# OrdinaryDiffEqCore is not used directly; it is listed as a dependency only so
+# that we can cap its version. DelayDiffEq builds OrdinaryDiffEqCore's
+# `DEOptions` struct itself but declares an unbounded `OrdinaryDiffEqCore = "4"`
+# compat. OrdinaryDiffEqCore >= 4.12 added fields to `DEOptions`, so newer cores
+# break DelayDiffEq's constructor call (MethodError, 44 vs 46 arguments) and
+# crash `precompute_R2sl()`. Remove this cap once DelayDiffEq is fixed upstream.
+OrdinaryDiffEqCore = "4.8.1 - 4.11"
+OrdinaryDiffEqHighOrderRK = "2.1.1 - 2"
 QuadGK = "2"
 StaticArrays = "1"
-julia = "1.6"
+julia = "1.10"
 NLsolve = "4"
-DifferentialEquations = "6, 7, 8"
+DifferentialEquations = "8"
 SpecialFunctions = "1, 2"
 ApproxFun = "0.12, 0.13"
 
