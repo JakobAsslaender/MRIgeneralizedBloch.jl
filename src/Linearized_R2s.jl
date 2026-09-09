@@ -141,7 +141,7 @@ end
 
 function evaluate_R2sl_vector(α, TRF, B1, T2s, R2slT, grad_list)
     _R2s      = [R2slT.R2sl(TRF[i], α[i], B1, T2s) for i ∈ eachindex(α)]
-    _dR2sdT2s = !isnothing(grad_list) && any(isa.(grad_list, grad_T2s)) ? [R2slT.dR2sl_dT2s(TRF[i], α[i], B1, T2s) for i ∈ eachindex(α)] : similar(α)
-    _dR2sdB1  = !isnothing(grad_list) && any(isa.(grad_list, grad_B1 )) ? [R2slT.dR2sl_dB1(TRF[i], α[i], B1, T2s)  for i ∈ eachindex(α)] : similar(α)
+    _dR2sdT2s = !isnothing(grad_list) && any(x -> isa(x, grad_T2s) || isa(x, grad_T2_mm), grad_list) ? [R2slT.dR2sl_dT2s(TRF[i], α[i], B1, T2s) for i ∈ eachindex(α)] : similar(α)
+    _dR2sdB1  = !isnothing(grad_list) && any(x -> isa(x, grad_B1), grad_list) ? [R2slT.dR2sl_dB1(TRF[i], α[i], B1, T2s)  for i ∈ eachindex(α)] : similar(α)
     return (_R2s, _dR2sdT2s, _dR2sdB1)
 end
