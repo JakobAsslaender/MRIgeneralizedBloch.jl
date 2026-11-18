@@ -23,3 +23,6 @@ WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
 
 [extras]
 CPUSummary = "2a0fbf3d-bb9c-48f3-b0a9-814d99fd7ab9"
+
+[compat]
+WebIO = "0.8.21"
