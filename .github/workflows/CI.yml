@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: touch src/MatrixExp_Hamiltonian_Gradients.jl
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
           arch: x64
@@ -70,7 +70,7 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history so we can checkout specific commits
       - run: git checkout ${{ needs.SymbolicDerivatives.outputs.commit_hash }}  # Checkout the commit hash passed from the 'commit' job
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
       - uses: actions/cache@v4
@@ -98,7 +98,7 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history so we can checkout specific commits
       - run: git checkout ${{ needs.SymbolicDerivatives.outputs.commit_hash }}  # Checkout the commit hash passed from the 'commit' job
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
           arch: x64
