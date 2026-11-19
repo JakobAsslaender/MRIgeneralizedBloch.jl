@@ -8,6 +8,7 @@ using MRIgeneralizedBloch
 using LinearAlgebra
 BLAS.set_num_threads(1) # single threaded is faster in this case
 using Optim             # provides the optimization algorithm
+using NLSolversBase     # provides the function `only_fg!`
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide #!nb
 
@@ -101,7 +102,7 @@ end;
 # We perform the optimization with the package [Optim.jl](https://julianlsolvers.github.io/Optim.jl/stable/), which requires the cost function `fg!(F, G, x)` to take the cost, the gradient, and the control as input variables and to over-write the gradient in place. The cost function calculates the gradient of the CRB with above described optimal control code and we, further, add some regularization terms: [`penalty_alpha_curvature!`](@ref) penalizes the curvature of α, which smoothes the flip angle train and helps ensuring the [hybrid state conditions](https://www.nature.com/articles/s42005-019-0174-0). The penalty [`penalty_RF_power!`](@ref) penalizes the power deposition of the RF-pulse train if ``\Sigma_i(ω_1^2[i] ⋅ T_{\text{RF}}[i]) / T_{\text{cycle}} ≥ P_{\max}`` and helps with compliance to safety limits. Assuming a reasonable `λ`, the optimization will converge to an average RF-power deposition equal to or less than `Pmax` in units of (rad/s)². Heuristically, the value `Pmax=3e6` (rad/s)² proofed to be a reasonable choice for 3T systems. The penalty [`penalty_TRF_variation!`](@ref) penalizes fast fluctuations of ``T_\text{RF}``. This penalty is justified by the knowledge that fluctuations of the control have negligible effect if they are fast compared to the biophysical time constants. We note, however, that this penalty is not required and rather ensure *beauty* of the result and speeds up convergence.
 
 # With all this in place, we can start the actual optimization
-result = optimize(Optim.only_fg!(fg!), # cost function
+result = optimize(NLSolversBase.only_fg!(fg!), # cost function
     x0,                                # initialization
     BFGS(),                            # algorithm
     Optim.Options(

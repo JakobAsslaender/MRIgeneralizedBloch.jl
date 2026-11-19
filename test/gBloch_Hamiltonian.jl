@@ -2,6 +2,7 @@
 using MRIgeneralizedBloch
 using DelayDiffEq
 using DifferentialEquations
+using OrdinaryDiffEqHighOrderRK
 using StaticArrays
 using Test
 
@@ -31,8 +32,7 @@ mfun = (p, t; idxs = nothing) -> typeof(idxs) <: Number ? 0.0 : zeros(5)
 p = (ω1, B1, ω0, m0s, R1f, R2f, Rex, R1s, T2s, greens_lorentzian)
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), ms, 1]
 
-sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(Tsit5()))
-
+sol = solve(DDEProblem(apply_hamiltonian_gbloch!, m0, mfun, (0.0, TRF), p), MethodOfSteps(DP8()))
 u_gBloch = sol.u[end]
 
 ## Solve original Bloch-McConnell with Lorentzian lineshape
@@ -48,10 +48,5 @@ H = @SMatrix [
 m0 = [mf * sin(ϑ) * cos(φ), mf * sin(ϑ) * sin(φ), mf * cos(ϑ), 0, ms, 1]
 u_Bloch = exp(H * TRF) * m0
 
-## Test!
-max_error = 1e-3
-@test u_gBloch[1] ≈ u_Bloch[1] atol = max_error
-@test u_gBloch[2] ≈ u_Bloch[2] atol = max_error
-@test u_gBloch[3] ≈ u_Bloch[3] atol = max_error
-@test u_gBloch[4] ≈ u_Bloch[5] atol = max_error
-@test u_gBloch[5] ≈ u_Bloch[6] atol = max_error
+## Test
+@test u_gBloch ≈ u_Bloch[[1:3;5:6]] atol = 1e-3
