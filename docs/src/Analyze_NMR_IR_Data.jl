@@ -7,6 +7,7 @@
 using MRIgeneralizedBloch
 using DelayDiffEq
 using DifferentialEquations
+using ExponentialUtilities
 using LinearAlgebra
 using LsqFit
 using Statistics
@@ -173,25 +174,23 @@ mean(residual)
 # ### Global IR Fit
 # As an alternative to individual fits to the inversion recovery curves with different ``T_\text{RF}``, we can also perform a global fit that accounts for the ``T_2^{*,f}`` decay during the inversion pulse. The model first simulates the ``T_2^{*,f}`` decay during the inversion pulse, followed by ``T_1`` recovery:
 function Bloch_IR_model(p, Tʳᶠ, Tᵢ, T2)
-    (m0, m0_inv, R₁) = p
+    m0, m0_inv, R₁ = p
+    T  = eltype(p)
     R2 = 1 / T2
 
-    M = zeros(Float64, length(Tᵢ), length(Tʳᶠ))
+    M = zeros(T, length(Tᵢ), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
         ## simulate inversion pulse
         ω₁ = π / Tʳᶠ[i]
-        H = [-R2 -ω₁ 0 ;
-              ω₁ -R₁ R₁;
-               0   0 0 ]
+        H = T[-R2  -ω₁  0;
+               ω₁  -R₁  R₁;
+               0    0   0] .* Tʳᶠ[i]
 
-        m_inv = m0_inv * (exp(H * Tʳᶠ[i])*[0, 1, 1])[2]
+        m_inv = m0_inv * (exponential!(H) * T[0, 1, 1])[2]
 
-        ## simulate T1 recovery
-        H = [-R₁ R₁*m0;
-               0     0]
-
+        ## simulate T1 recovery (closed-form solution)
         for j ∈ eachindex(Tᵢ)
-            M[j, i] = m0 * (exp(H .* (Tᵢ[j] - Tʳᶠ[i] / 2)) * [m_inv, 1])[1]
+            M[j, i] = m0 * (m0 + (m_inv - m0) * exp(-R₁ * (Tᵢ[j] - Tʳᶠ[i] / 2)))
         end
     end
     return vec(M)
@@ -339,39 +338,40 @@ std(R₁) # 1/s
 # ### Global IR Fit - Generalized Bloch Model
 # In order to repeat the global fit that includes all ``T_\text{RF}`` values, we have to account for the spin dynamics in the semi-solid pool during the RF-pulse. First, we do this with the proposed generalized Bloch model:
 function gBloch_IR_model(p, G, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
+    m0, m0f_inv, m0s, R₁, T₂ˢ, Rex = p
+    T   = eltype(p)
     m0f = 1 - m0s
-    ω₁ = π ./ Tʳᶠ
+    ω₁  = π ./ Tʳᶠ
 
-    m0vec = [0, 0, m0f, m0s, 1]
-    m_fun(p, t; idxs=nothing) = typeof(idxs) <: Number ? 0.0 : zeros(5)
+    m0vec = T[0, 0, m0f, m0s, 1]
+    m_fun(p, t; idxs=nothing) = typeof(idxs) <: Number ? zero(T) : zeros(T, 5)
 
+    H = T[-R₁-m0s*Rex     m0f*Rex   R₁*m0f;
+              m0s*Rex  -R₁-m0f*Rex  R₁*m0s;
+               0            0           0 ]
 
-    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
-             m0s*Rex -R₁-m0f*Rex R₁*m0s;
-              0           0          0 ]
-
-    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    M = zeros(T, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rex, R₁, T₂ˢ, G)
-        prob = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob, MethodOfSteps(Tsit5())).u[end]
+        prob  = DDEProblem(apply_hamiltonian_gbloch!, m0vec, m_fun, (0.0, Tʳᶠ[i]), param)
+        m     = solve(prob, MethodOfSteps(Tsit5())).u[end]
 
+        x0 = T[m0f_inv * m[3], m[4], 1]
         for j ∈ eachindex(TI)
-            M[j, i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2))*[m0f_inv * m[3], m[4], 1])[1]
+            M[j, i] = m0 * (exponential!(H .* (TI[j] - Tʳᶠ[i] / 2)) * x0)[1]
         end
     end
     return vec(M)
 end;
 
 # Here, we use assume a super-Lorentzian lineshape, whose Green's function is interpolated to speed up the fitting routine:
-T₂ˢ_min = 5e-6 # s
+T₂ˢ_min = 1e-7 # s
 G_superLorentzian = interpolate_greens_function(greens_superlorentzian, 0, maximum(Tʳᶠ) / T₂ˢ_min);
 
 # The fit is initialized with `p0 = [m0, m0f_inv, m0_s, R₁, T2_s, Rex]` and we set some reasonable bounds to the fitted parameters:
-p0   = [  1, 0.932,  0.1,   1, 10e-6, 50]
-pmin = [  0, 0.100,   .0, 0.3,  1e-9, 10]
-pmax = [Inf,   Inf,  1.0, Inf, 20e-6,1e3]
+p0   = [  1, 0.932,  0.1,   1,   10e-6, 50]
+pmin = [  0, 0.100,    0, 0.3,    1e-6, 10]
+pmax = [Inf,   Inf,  1.0, Inf,   20e-6,1e3]
 
 fit_gBloch = curve_fit((x, p) -> gBloch_IR_model(p, G_superLorentzian, Tʳᶠ, Tᵢ, 1 / T₂star_BSA), [], vec(M), p0, lower=pmin, upper=pmax);
 
@@ -431,24 +431,26 @@ close(io) #src
 # ### Global IR Fit - Graham's Spectral Model
 # For comparison, we repeat the same fit with [Graham's spectral model](http://dx.doi.org/10.1002/jmri.1880070520):
 function Graham_IR_model(p, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
+    m0, m0f_inv, m0s, R₁, T₂ˢ, Rex = p
+    T   = eltype(p)          # Float64 normally, Dual during autodiff
     m0f = 1 - m0s
-    ω₁ = π ./ Tʳᶠ
+    ω₁  = π ./ Tʳᶠ
 
-    m0vec = [0, 0, m0f, m0s, 1]
+    m0vec = T[0, 0, m0f, m0s, 1]
 
-    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
-             m0s*Rex -R₁-m0f*Rex R₁*m0s;
-              0           0          0 ]
+    H = T[-R₁-m0s*Rex     m0f*Rex   R₁*m0f;
+              m0s*Rex  -R₁-m0f*Rex  R₁*m0s;
+               0            0           0]
 
-    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    M = zeros(T, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
         param = (ω₁[i], 1, 0, Tʳᶠ[i], m0s, R₁, R2f, Rex, R₁, T₂ˢ)
-        prob = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob).u[end]
+        prob  = ODEProblem(apply_hamiltonian_graham_superlorentzian!, m0vec, (0.0, Tʳᶠ[i]), param)
+        m     = solve(prob).u[end]
 
+        x0 = T[m0f_inv * m[3], m[4], 1]
         for j ∈ eachindex(TI)
-            M[j, i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2)) * [m0f_inv * m[3], m[4], 1])[1]
+            M[j, i] = m0 * (exponential!(H .* (TI[j] - Tʳᶠ[i] / 2)) * x0)[1]
         end
     end
     return vec(M)
@@ -511,24 +513,26 @@ close(io) #src
 # ### Global IR Fit - Sled's Model
 # We also performed the fit with [Sled's model](http://dx.doi.org/10.1006/jmre.2000.2059):
 function Sled_IR_model(p, G, Tʳᶠ, TI, R2f)
-    (m0, m0f_inv, m0s, R₁, T₂ˢ, Rex) = p
+    m0, m0f_inv, m0s, R₁, T₂ˢ, Rex = p
+    T   = eltype(p)
     m0f = 1 - m0s
-    ω₁ = π ./ Tʳᶠ
+    ω₁  = π ./ Tʳᶠ
 
-    m0vec = [0, 0, m0f, m0s, 1]
+    m0vec = T[0, 0, m0f, m0s, 1]
 
-    H = [-R₁-m0s*Rex     m0f*Rex R₁*m0f;
-             m0s*Rex -R₁-m0f*Rex R₁*m0s;
-              0           0          0 ]
+    H = T[-R₁-m0s*Rex     m0f*Rex   R₁*m0f;
+              m0s*Rex  -R₁-m0f*Rex  R₁*m0s;
+               0            0           0 ]
 
-    M = zeros(Float64, length(TI), length(Tʳᶠ))
+    M = zeros(T, length(TI), length(Tʳᶠ))
     for i ∈ eachindex(Tʳᶠ)
         param = (ω₁[i], 1, 0, m0s, R₁, R2f, Rex, R₁, T₂ˢ, G)
-        prob = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
-        m = solve(prob).u[end]
+        prob  = ODEProblem(apply_hamiltonian_sled!, m0vec, (0.0, Tʳᶠ[i]), param)
+        m     = solve(prob, Tsit5()).u[end]
 
+        x0 = T[m0f_inv * m[3], m[4], 1]
         for j ∈ eachindex(TI)
-            M[j, i] = m0 * (exp(H .* (TI[j] - Tʳᶠ[i] / 2))*[m0f_inv * m[3], m[4], 1])[1]
+            M[j, i] = m0 * (exponential!(H .* (TI[j] - Tʳᶠ[i] / 2)) * x0)[1]
         end
     end
     return vec(M)
