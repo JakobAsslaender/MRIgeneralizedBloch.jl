@@ -2,6 +2,7 @@ using MRIgeneralizedBloch
 using LinearAlgebra
 BLAS.set_num_threads(1) # single threaded is faster in this case
 using Optim             # provides the optimization algorithm
+using NLSolversBase     # provides the function `only_fg!`
 using Plots
 plotlyjs(bg = RGBA(31/255,36/255,36/255,1.0), ticks=:native); #hide
 
@@ -70,7 +71,7 @@ function fg!(F, G, x)
     return F
 end;
 
-result = optimize(Optim.only_fg!(fg!), # cost function
+result = optimize(NLSolversBase.only_fg!(fg!), # cost function
     x0,                                # initialization
     BFGS(),                            # algorithm
     Optim.Options(
