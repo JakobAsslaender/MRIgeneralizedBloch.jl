@@ -273,3 +273,202 @@ end
 function Base.ndims(::Type{qMTparam})
     return 0
 end
+
+##############################################################################
+# 3-pool fitting
+##############################################################################
+struct qMTparam_3pool
+    M0
+    m0_rw
+    m0_mm
+    R1_fw
+    R1_rw
+    R1_mm
+    R2_fw
+    R2_rw
+    T2_mm
+    Rx_fw_mm
+    Rx_rw_fw
+    Rx_mm_rw
+    ω0
+    B1
+    resid
+    lsqfit_result
+end
+
+function qMTmap_3pool(N...)
+    qMTparam_3pool(
+        zeros(ComplexF64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        zeros(Float64, N...),
+        Array{LsqFit.LsqFitResult}(undef, N...)
+    )
+end
+
+function Base.getindex(A::qMTparam_3pool, i...)
+    return qMTparam_3pool(
+        A.M0[i...], A.m0_rw[i...], A.m0_mm[i...],
+        A.R1_fw[i...], A.R1_rw[i...], A.R1_mm[i...],
+        A.R2_fw[i...], A.R2_rw[i...], A.T2_mm[i...],
+        A.Rx_fw_mm[i...], A.Rx_rw_fw[i...], A.Rx_mm_rw[i...],
+        A.ω0[i...], A.B1[i...], A.resid[i...], A.lsqfit_result[i...])
+end
+
+function Base.setindex!(A::qMTparam_3pool, v::qMTparam_3pool, i...)
+    A.M0[i...] = v.M0; A.m0_rw[i...] = v.m0_rw; A.m0_mm[i...] = v.m0_mm
+    A.R1_fw[i...] = v.R1_fw; A.R1_rw[i...] = v.R1_rw; A.R1_mm[i...] = v.R1_mm
+    A.R2_fw[i...] = v.R2_fw; A.R2_rw[i...] = v.R2_rw; A.T2_mm[i...] = v.T2_mm
+    A.Rx_fw_mm[i...] = v.Rx_fw_mm; A.Rx_rw_fw[i...] = v.Rx_rw_fw; A.Rx_mm_rw[i...] = v.Rx_mm_rw
+    A.ω0[i...] = v.ω0; A.B1[i...] = v.B1
+    A.resid[i...] = v.resid; A.lsqfit_result[i...] = v.lsqfit_result
+    return A
+end
+
+Base.length(A::qMTparam_3pool) = length(A.m0_rw)
+function Base.iterate(A::qMTparam_3pool, state=(eachindex(A.M0),))
+    y = iterate(state...)
+    y === nothing && return nothing
+    A[y[1]], (state[1], Base.tail(y)...)
+end
+Base.ndims(A::qMTparam_3pool) = Base.ndims(A.M0)
+Base.ndims(::Type{qMTparam_3pool}) = 0
+
+"""
+    fit_gBloch_3pool(data, α, TRF, TR; ...)
+
+3-pool version of fit_gBloch for the free water / restricted water / macromolecular model.
+"""
+function fit_gBloch_3pool(data, α::Vector{T}, TRF::Vector{T}, TR; grad_moment = [i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α)],
+    reM0 = (-Inf,   1,  Inf),
+    imM0 = (-Inf,   0,  Inf),
+    m0_rw  = (   0, 0.2,    1),
+    m0_mm  = (   0, 0.2,    1),
+    R1_fw  = (   0, 0.3,  Inf),
+    R1_rw  = (   0, 0.3,  Inf),
+    R1_mm  = (   0, 0.3,  Inf),
+    R2_fw  = (   0,  15,  Inf),
+    R2_rw  = (   0,  15,  Inf),
+    T2_mm  = (8e-6,1e-5,12e-6),
+    Rx_fw_mm  = (   0,  20,  Inf),
+    Rx_rw_fw  = (   0,  20,  Inf),
+    Rx_mm_rw  = (   0,  20,  Inf),
+    ω0   = (-Inf,   0,  Inf),
+    B1   = (   0,   1,  1.5),
+    u=1,
+    show_trace=false,
+    maxIter=100,
+    R2slT = precompute_R2sl(TRF_min=minimum(TRF), TRF_max=maximum(TRF), T2s_min=minimum(T2_mm), T2s_max=maximum(T2_mm), ω1_max=maximum(α ./ TRF), B1_max=maximum(B1)),
+    ) where T <: Real
+
+    fit_gBloch_3pool(data, [α], [TRF], TR; grad_moment=[grad_moment], reM0, imM0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, ω0, B1, u, show_trace, maxIter, R2slT)
+end
+
+function fit_gBloch_3pool(data, α::Vector{Vector{T}}, TRF::Vector{Vector{T}}, TR; grad_moment = fill([i == 1 ? :spoiler_dual : :balanced for i ∈ eachindex(α[1])], length(α)),
+    reM0 = (-Inf,   1,  Inf),
+    imM0 = (-Inf,   0,  Inf),
+    m0_rw  = (   0, 0.2,    1),
+    m0_mm  = (   0, 0.2,    1),
+    R1_fw  = (   0, 0.3,  Inf),
+    R1_rw  = (   0, 0.3,  Inf),
+    R1_mm  = (   0, 0.3,  Inf),
+    R2_fw  = (   0,  15,  Inf),
+    R2_rw  = (   0,  15,  Inf),
+    T2_mm  = (8e-6,1e-5,12e-6),
+    Rx_fw_mm  = (   0,  20,  Inf),
+    Rx_rw_fw  = (   0,  20,  Inf),
+    Rx_mm_rw  = (   0,  20,  Inf),
+    ω0   = (-Inf,   0,  Inf),
+    B1   = (   0,   1,  1.5),
+    u=1,
+    show_trace=false,
+    maxIter=100,
+    R2slT = precompute_R2sl(TRF_min=minimum(minimum.(TRF)), TRF_max=maximum(maximum.(TRF)), T2s_min=minimum(T2_mm), T2s_max=maximum(T2_mm), ω1_max=maximum(maximum.(α ./ TRF)), B1_max=maximum(B1)),
+    ) where T <: Real
+
+    grad_list = MRIgeneralizedBloch.grad_param[]
+    pmin = Float64[reM0[1], imM0[1]]
+    p0   = Float64[reM0[2], imM0[2]]
+    pmax = Float64[reM0[3], imM0[3]]
+
+    idx = Vector{Int}(undef, 13)
+
+    param    = [m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, ω0, B1]
+    grad_all = [grad_m0_rw(), grad_m0_mm(), grad_R1_fw(), grad_R1_rw(), grad_R1_mm(), grad_R2_fw(), grad_R2_rw(), grad_T2_mm(), grad_Rx_fw_mm(), grad_Rx_rw_fw(), grad_Rx_mm_rw(), grad_ω0(), grad_B1()]
+
+    for i ∈ eachindex(param)
+        idx[i] = if isa(param[i], Number)
+            0
+        else
+            push!(grad_list, grad_all[i])
+            push!(pmin, param[i][1])
+            push!(p0  , param[i][2])
+            push!(pmax, param[i][3])
+            length(p0)
+        end
+    end
+
+    getparameters(p) = ((p[1]+1im*p[2]), ntuple(i-> idx[i] == 0 ? param[i] : p[idx[i]], length(idx))...)
+
+    function model!(F, _, p)
+        M0, _m0_rw, _m0_mm, _R1_fw, _R1_rw, _R1_mm, _R2_fw, _R2_rw, _T2_mm, _Rx_fw_mm, _Rx_rw_fw, _Rx_mm_rw, _ω0, _B1 = getparameters(p)
+
+        m = Vector{Vector{ComplexF64}}(undef, length(α))
+        Threads.@threads for i ∈ eachindex(α)
+            s, _ = simulate_linearapprox(α[i], TRF[i], TR, _ω0, _B1, 1.0, _m0_rw, _m0_mm, _R1_fw, _R1_rw, _R1_mm, _R2_fw, _R2_rw, _T2_mm, _Rx_fw_mm, _Rx_rw_fw, _Rx_mm_rw, R2slT; grad_moment=grad_moment[i])
+            m[i] = s
+        end
+
+        m_vec = reduce(vcat, m)
+        m_vec .*= M0
+        m_vec = u' * m_vec
+        F[1:end÷2]     .= real.(m_vec)
+        F[end÷2+1:end] .= imag.(m_vec)
+        return F
+    end
+
+    function jacobian!(J, _, p)
+        M0, _m0_rw, _m0_mm, _R1_fw, _R1_rw, _R1_mm, _R2_fw, _R2_rw, _T2_mm, _Rx_fw_mm, _Rx_rw_fw, _Rx_mm_rw, _ω0, _B1 = getparameters(p)
+
+        grad_all_arr = zeros(ComplexF64, size(α[1], 1), length(α), length(grad_list))
+        Threads.@threads for i ∈ eachindex(α)
+            s, g = simulate_linearapprox(α[i], TRF[i], TR, _ω0, _B1, 1.0, _m0_rw, _m0_mm, _R1_fw, _R1_rw, _R1_mm, _R2_fw, _R2_rw, _T2_mm, _Rx_fw_mm, _Rx_rw_fw, _Rx_mm_rw, R2slT; grad_list=Tuple(grad_list), grad_moment=grad_moment[i])
+            grad_all_arr[:, i, :] = g
+        end
+
+        G = u' * reshape(grad_all_arr, :, length(grad_list))
+
+        # Column 1: ∂/∂(reM0) = signal (at M0=1)
+        s_all = zeros(ComplexF64, size(α[1], 1), length(α))
+        Threads.@threads for i ∈ eachindex(α)
+            s, _ = simulate_linearapprox(α[i], TRF[i], TR, _ω0, _B1, 1.0, _m0_rw, _m0_mm, _R1_fw, _R1_rw, _R1_mm, _R2_fw, _R2_rw, _T2_mm, _Rx_fw_mm, _Rx_rw_fw, _Rx_mm_rw, R2slT; grad_moment=grad_moment[i])
+            s_all[:, i] = s
+        end
+        s_vec = u' * vec(s_all)
+        J[:, 1] = [real.(s_vec); imag.(s_vec)]
+        J[:, 2] = [-imag.(s_vec); real.(s_vec)]
+
+        for (gc, pc) ∈ enumerate(findall(x -> x != 0, idx))
+            g = M0 .* G[:, gc]
+            J[:, pc + 2] = [real.(g); imag.(g)]
+        end
+        return J
+    end
+
+    result = curve_fit(model!, jacobian!, 1:(2*size(u,2)), [real(data); imag(data)], p0, lower=pmin, upper=pmax, show_trace=show_trace, maxIter=maxIter, inplace=true)
+
+    M0, _m0_rw, _m0_mm, _R1_fw, _R1_rw, _R1_mm, _R2_fw, _R2_rw, _T2_mm, _Rx_fw_mm, _Rx_rw_fw, _Rx_mm_rw, _ω0, _B1 = getparameters(result.param)
+
+    return qMTparam_3pool(M0, _m0_rw, _m0_mm, _R1_fw, _R1_rw, _R1_mm, _R2_fw, _R2_rw, _T2_mm, _Rx_fw_mm, _Rx_rw_fw, _Rx_mm_rw, _ω0, _B1, norm(result.resid), result)
+end

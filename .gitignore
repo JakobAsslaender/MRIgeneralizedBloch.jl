@@ -8,3 +8,4 @@ test/Manifest.toml
 .DS_Store
 docs/LocalPreferences.toml
 symbolic_derivatives/Manifest.toml
+ref_3comp/

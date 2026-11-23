@@ -434,3 +434,281 @@ function control_gradients(costate, magnetization, propagators, dprop_dω1, dpro
     end
     return grad_ω1, grad_TRF
 end
+
+##############################################################################
+# 3-pool Optimal Control
+##############################################################################
+"""
+    CRB, grad_ω1, grad_TRF = crb_gradient(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad_list, weights; ...)
+
+3-pool version of crb_gradient for the free water / restricted water / macromolecular model.
+"""
+function crb_gradient(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad_list, weights; grad_moment=[i[1] == 1 ? :spoiler_dual : :balanced for i ∈ CartesianIndices(ω1)])
+    nSeq = size(ω1, 2)
+
+    E = Vector{Matrix{Matrix{Float64}}}(undef, nSeq)
+    dEdω1 = similar(E)
+    dEdTRF = similar(E)
+    Q = Vector{Vector{Matrix{Float64}}}(undef, nSeq)
+    Y = Vector{Matrix{Vector{Float64}}}(undef, nSeq)
+
+    grad_ω1 = similar(ω1)
+    grad_TRF = similar(ω1)
+
+    Threads.@threads for iSeq ∈ eachindex(E)
+        E[iSeq], dEdω1[iSeq], dEdTRF[iSeq] = @views build_propagators_3pool(
+            ω1[:, iSeq], TRF[:, iSeq], TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad_list; grad_moment=grad_moment[:, iSeq])
+        Q[iSeq] = steady_state_operator_3pool(E[iSeq])
+        Y[iSeq] = steady_state_magnetization_3pool(Q[iSeq], E[iSeq])
+    end
+
+    CRB, d = crb_and_derivatives_3pool(Y, weights)
+
+    for iSeq ∈ eachindex(E)
+        P = adjoint_backpropagate_3pool(d[iSeq], Q[iSeq], E[iSeq])
+        grad_ω1[:, iSeq], grad_TRF[:, iSeq] = control_gradients_3pool(P, Y[iSeq], E[iSeq], dEdω1[iSeq], dEdTRF[iSeq])
+    end
+
+    return CRB, grad_ω1, grad_TRF
+end
+
+function build_propagators_3pool(ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad_list; grad_moment)
+    E      = Array{Matrix{Float64}}(undef, length(ω1), length(grad_list))
+    dEdω1  = Array{Matrix{Float64}}(undef, length(ω1), length(grad_list))
+    dEdTRF = Array{Matrix{Float64}}(undef, length(ω1), length(grad_list))
+
+    cache = ExponentialUtilities.alloc_mem(zeros(34, 34), ExpMethodHigham2005Base())
+    dH = zeros(Float64, 34, 34)
+
+    u_rot = z_rotation_propagator_3pool(π, grad_m0_rw())
+    for g ∈ eachindex(grad_list)
+        grad = grad_list[g]
+
+        for t ∈ 1:length(ω1)
+            if grad_moment[t] == :crusher
+                build_crushed_propagator_3pool!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad, u_rot, dH, cache)
+            else
+                build_pulse_propagator_3pool!(E, dEdω1, dEdTRF, t, g, ω1[t], TRF[t], TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad, u_rot, dH, cache, grad_moment[t])
+            end
+        end
+    end
+    return E, dEdω1, dEdTRF
+end
+
+function build_pulse_propagator_3pool!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad, u_rot, dH, cache, grad_moment)
+    M0 = 1.0  # M0 handled externally for optimal control
+    H_fp = hamiltonian_linear(0.0, B1, ω0, 1.0, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0.0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0.0, 0.0, grad)
+    ux = grad_moment == :spoiler_dual ? xy_destructor(H_fp) : x_mm_destructor(H_fp)
+    u_fp = ux * exp(H_fp * ((TR - TRF) / 2))
+
+    H_pl = hamiltonian_linear(ω1, B1, ω0, 1, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, R2slT[1](TRF, ω1 * TRF, B1, T2_mm), Rx_fw_mm, Rx_rw_fw, Rx_mm_rw,
+        R2slT[2](TRF, ω1 * TRF, B1, T2_mm),
+        R2slT[3](TRF, ω1 * TRF, B1, T2_mm),
+        grad)
+
+    dHdω1 = d_hamiltonian_linear_dω1_3pool(B1, 1,
+        R2slT[4](TRF, ω1 * TRF, B1, T2_mm),
+        R2slT[6](TRF, ω1 * TRF, B1, T2_mm),
+        R2slT[7](TRF, ω1 * TRF, B1, T2_mm),
+        grad)
+
+    @views dH[1:17, 1:17] .= H_pl
+    @views dH[18:34, 18:34] .= H_pl
+    @views dH[1:17, 18:34] .= 0
+    @views dH[18:34, 1:17] .= dHdω1
+    dH .*= TRF
+    E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
+
+    E_pl1 = @view E_pl[1:17, 1:17]
+    E_pl2 = @view E_pl[18:end, 1:17]
+    E[t, g] = u_fp * E_pl1 * u_rot * u_fp
+    dEdω1[t, g] = u_fp * E_pl2 * u_rot * u_fp
+
+    # TRF derivative
+    dHdTRF = H_pl + d_hamiltonian_linear_dTRF_add_3pool(TRF,
+        R2slT[5](TRF, ω1 * TRF, B1, T2_mm),
+        R2slT[8](TRF, ω1 * TRF, B1, T2_mm),
+        R2slT[9](TRF, ω1 * TRF, B1, T2_mm),
+        grad)
+    H_pl *= TRF
+    @views dH[1:17, 1:17] .= H_pl
+    @views dH[18:34, 18:34] .= H_pl
+    @views dH[1:17, 18:34] .= 0
+    @views dH[18:34, 1:17] .= dHdTRF
+    E_pl = exponential!(dH, ExpMethodHigham2005Base(), cache)
+
+    E_pl1 = @view E_pl[1:17, 1:17]
+    E_pl2 = @view E_pl[18:end, 1:17]
+    dEdTRF[t, g] = u_fp * ((E_pl2 - (1 / 2 * H_fp * E_pl1)) * u_rot - (1 / 2 * E_pl1 * u_rot * H_fp)) * u_fp
+    return nothing
+end
+
+function build_crushed_propagator_3pool!(E, dEdω1, dEdTRF, t, g, ω1, TRF, TR, ω0, B1, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, T2_mm, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, R2slT, grad, u_rot, _, _)
+    M0 = 1.0
+    u_fp = exp(hamiltonian_linear(0, B1, ω0, TR / 2, M0, m0_rw, m0_mm, R1_fw, R1_rw, R1_mm, R2_fw, R2_rw, 0.0, Rx_fw_mm, Rx_rw_fw, Rx_mm_rw, 0.0, 0.0, grad))
+    # TODO: implement crushed pulse propagator for 3-pool
+    @info "3-pool crushed pulse propagator not yet implemented"
+    E[t, g] = zeros(17, 17)
+    dEdω1[t, g] = zeros(17, 17)
+    dEdTRF[t, g] = zeros(17, 17)
+    return nothing
+end
+
+function steady_state_operator_3pool(E)
+    Q = Vector{Matrix{Float64}}(undef, size(E, 2))
+    for g ∈ axes(E, 2)
+        A = E[1, g]
+        for t = size(E, 1):-1:2
+            A = A * E[t, g]
+        end
+        Q[g] = A0(A) - A
+    end
+    return Q
+end
+
+function steady_state_magnetization_3pool(Q, E)
+    Y = similar(E, Vector{Float64})
+    for g ∈ axes(E, 2)
+        m = Q[g] \ C(Q[g])
+        Y[1, g] = m
+        for t = 2:size(E, 1)
+            m = E[t, g] * m
+            Y[t, g] = m
+        end
+    end
+    return Y
+end
+
+function crb_and_derivatives_3pool(Y, w)
+    N_grad = size(Y[1], 2)
+
+    F = zeros(ComplexF64, N_grad + 1, N_grad + 1)
+    for iSeq ∈ eachindex(Y), g2 ∈ 0:N_grad, g1 ∈ 0:N_grad, t ∈ axes(Y[iSeq], 1)
+        s1 = g1 == 0 ? Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] - 1im * Y[iSeq][t, 1][5] : Y[iSeq][t, g1][9] - 1im * Y[iSeq][t, g1][10] + Y[iSeq][t, g1][12] - 1im * Y[iSeq][t, g1][13]
+        s2 = g2 == 0 ? Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] + 1im * Y[iSeq][t, 1][5] : Y[iSeq][t, g2][9] + 1im * Y[iSeq][t, g2][10] + Y[iSeq][t, g2][12] + 1im * Y[iSeq][t, g2][13]
+        F[g1+1, g2+1] += s1 * s2
+    end
+    Fi = inv(F)
+    CRB = w * real.(diag(Fi))
+
+    _dCRBdx_fw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdy_fw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdx_rw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    _dCRBdy_rw = [Array{Float64}(undef, size(Yi, 1), size(Yi, 2) + 1) for Yi ∈ Y]
+    dFdy = similar(F)
+    tmp = similar(F)
+    for iSeq ∈ eachindex(Y), g1 ∈ 0:N_grad, t ∈ axes(Y[iSeq], 1)
+        # derivative wrt. x fw
+        dFdy .= 0
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] + 1im * Y[iSeq][t, 1][5]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2] + Y[iSeq][t, 1][4] - 1im * Y[iSeq][t, 1][5]
+        for g2 ∈ axes(Y[iSeq], 2)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][9] + 1im * Y[iSeq][t, g2][10] + Y[iSeq][t, g2][12] + 1im * Y[iSeq][t, g2][13]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][9] - 1im * Y[iSeq][t, g2][10] + Y[iSeq][t, g2][12] - 1im * Y[iSeq][t, g2][13]
+        end
+        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
+        _dCRBdx_fw[iSeq][t, g1+1] = real.(w * diag(dFdy))
+
+        # derivative wrt. x rw
+        dFdy .= 0
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][4] + 1im * Y[iSeq][t, 1][5] + Y[iSeq][t, 1][1] + 1im * Y[iSeq][t, 1][2]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][4] - 1im * Y[iSeq][t, 1][5] + Y[iSeq][t, 1][1] - 1im * Y[iSeq][t, 1][2]
+        for g2 ∈ axes(Y[iSeq], 2)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][12] + 1im * Y[iSeq][t, g2][13] + Y[iSeq][t, g2][9] + 1im * Y[iSeq][t, g2][10]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][12] - 1im * Y[iSeq][t, g2][13] + Y[iSeq][t, g2][9] - 1im * Y[iSeq][t, g2][10]
+        end
+        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
+        _dCRBdx_rw[iSeq][t, g1+1] = real.(w * diag(dFdy))
+
+        # derivative wrt. y fw
+        dFdy .= 0
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][2] - 1im * Y[iSeq][t, 1][1] + Y[iSeq][t, 1][5] - 1im * Y[iSeq][t, 1][4]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][2] + 1im * Y[iSeq][t, 1][1] + Y[iSeq][t, 1][5] + 1im * Y[iSeq][t, 1][4]
+        for g2 ∈ axes(Y[iSeq], 2)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][10] - 1im * Y[iSeq][t, g2][9] + Y[iSeq][t, g2][13] - 1im * Y[iSeq][t, g2][12]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][10] + 1im * Y[iSeq][t, g2][9] + Y[iSeq][t, g2][13] + 1im * Y[iSeq][t, g2][12]
+        end
+        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
+        _dCRBdy_fw[iSeq][t, g1+1] = real.(w * diag(dFdy))
+
+        # derivative wrt. y rw
+        dFdy .= 0
+        dFdy[g1+1, 1] = Y[iSeq][t, 1][5] - 1im * Y[iSeq][t, 1][4] + Y[iSeq][t, 1][2] - 1im * Y[iSeq][t, 1][1]
+        dFdy[1, g1+1] = Y[iSeq][t, 1][5] + 1im * Y[iSeq][t, 1][4] + Y[iSeq][t, 1][2] + 1im * Y[iSeq][t, 1][1]
+        for g2 ∈ axes(Y[iSeq], 2)
+            dFdy[g1+1, g2+1] = Y[iSeq][t, g2][13] - 1im * Y[iSeq][t, g2][12] + Y[iSeq][t, g2][10] - 1im * Y[iSeq][t, g2][9]
+            dFdy[g2+1, g1+1] = Y[iSeq][t, g2][13] + 1im * Y[iSeq][t, g2][12] + Y[iSeq][t, g2][10] + 1im * Y[iSeq][t, g2][9]
+        end
+        dFdy[g1+1, g1+1] = 2 * real(dFdy[g1+1, g1+1])
+        mul!(dFdy, Fi, mul!(tmp, dFdy, Fi))
+        _dCRBdy_rw[iSeq][t, g1+1] = real.(w * diag(dFdy))
+    end
+
+    d = [(t, g) -> [_dCRBdx_fw[iSeq][t, 1], _dCRBdy_fw[iSeq][t, 1], 0, _dCRBdx_rw[iSeq][t, 1], _dCRBdy_rw[iSeq][t, 1], 0, 0, 0, _dCRBdx_fw[iSeq][t, g+1], _dCRBdy_fw[iSeq][t, g+1], 0, _dCRBdx_rw[iSeq][t, g+1], _dCRBdy_rw[iSeq][t, g+1], 0, 0, 0, 0] for iSeq ∈ eachindex(_dCRBdx_fw)]
+
+    return CRB, d
+end
+
+function adjoint_backpropagate_3pool(d, Q, E)
+    P = Array{Vector{Float64}}(undef, size(E, 1), size(E, 2))
+    λ = @view P[end, :]
+
+    for g ∈ 1:size(E, 2)
+        λ[g] = d(size(E, 1), g)
+    end
+
+    for t = size(E, 1)-1:-1:1
+        λ[1] = transpose(E[t+1, 1]) * λ[1]
+        λ[1] += d(t, 1)
+        for g = 2:size(E, 2)
+            λ[g] = transpose(E[t+1, g][9:16, :]) * λ[g][9:16]
+            λ[1][1:8] .+= λ[g][1:8]
+            λ[g] .+= d(t, g)
+        end
+    end
+
+    P[end, 1] = inv(transpose(Q[1])) * λ[1]
+    for g = 2:size(E, 2)
+        λ[g] = inv(transpose(Q[g]))[:, 9:16] * λ[g][9:16]
+        λ[1][1:8] .+= λ[g][1:8]
+    end
+
+    for t ∈ size(E, 1):-1:2
+        for g ∈ axes(E, 2)
+            _E = E[mod(t, size(E, 1))+1, g]
+            if g == 1
+                P[t-1, g] = transpose(_E) * P[t, g]
+            else
+                P[t-1, g] = transpose(_E[9:16, :]) * P[t, g][9:16]
+                P[t-1, 1][1:8] .+= P[t-1, g][1:8]
+                P[t-1, 1][end] += P[t-1, g][end]
+            end
+            P[t-1, g] .+= d(t, g)
+        end
+    end
+    return P
+end
+
+function control_gradients_3pool(P, Y, E, dEdω1, dEdTRF)
+    grad_ω1 = zeros(size(E, 1))
+    grad_TRF = zeros(size(E, 1))
+
+    for g ∈ axes(Y, 2), t ∈ axes(Y, 1)
+        tm1 = mod1(t - 1, size(Y, 1))
+        if g == 1
+            grad_ω1[t] -= transpose(P[tm1, g]) * (dEdω1[t, g] * Y[tm1, g])
+            grad_TRF[t] -= transpose(P[tm1, g]) * (dEdTRF[t, g] * Y[tm1, g])
+        else
+            a = dEdω1[t, g] * Y[tm1, g]
+            b = dEdTRF[t, g] * Y[tm1, g]
+            @inbounds for i = 9:16
+                grad_ω1[t] -= P[tm1, g][i] * a[i]
+                grad_TRF[t] -= P[tm1, g][i] * b[i]
+            end
+        end
+    end
+    return grad_ω1, grad_TRF
+end
